@@ -41,19 +41,19 @@ export function UploadPanel({
 
   return (
     <section className="space-y-5">
-      <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
-          <Play className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+      <div className="rounded-lg bg-zinc-950 p-4 text-white shadow-soft">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-white">
+          <Play className="h-5 w-5 text-emerald-300" aria-hidden="true" />
           Start
         </h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-600">
+        <p className="mt-2 text-sm leading-6 text-zinc-300">
           Load the built-in synthetic lecture or paste a transcript to create a local timeline.
         </p>
         <button
           type="button"
           onClick={onLoadSample}
           disabled={isBusy}
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-emerald-50 disabled:text-emerald-950"
+          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400 active:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-emerald-950 disabled:text-emerald-200"
         >
           {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
           Load Sample Lecture
@@ -95,7 +95,7 @@ export function UploadPanel({
         </button>
       </form>
 
-      <form onSubmit={submitVideo} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
+      <form onSubmit={submitVideo} className="rounded-lg border border-violet-200 bg-white p-4 shadow-soft">
         <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
           <Video className="h-5 w-5 text-violet-700" aria-hidden="true" />
           Upload Video

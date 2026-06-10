@@ -2,11 +2,12 @@
 
 ## Style Summary
 
-AccessiNote is a restrained product workbench. It should look calm, precise, and source-aware rather than promotional. The interface uses familiar panels, explicit controls, and readable density so repeated lecture review feels efficient.
+AccessiNote is a restrained product workbench with a confident app shell. It should look calm, precise, and source-aware rather than promotional. The interface uses a dark top bar, familiar panels, explicit controls, and readable density so repeated lecture review feels efficient.
 
 ## Color
 
-- Background: neutral zinc surfaces, with a soft app background and white primary panels.
+- Shell: near-black zinc top bar for product identity and app status.
+- Background: cool neutral work surface with white primary panels.
 - Primary action: emerald for sample/start and successful local status.
 - Secondary action: sky for transcript creation and informational emphasis.
 - Media action: violet for video upload and scanning capability.

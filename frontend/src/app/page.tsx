@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Sparkles } from "lucide-react";
+import { Activity, Database, FileCheck2, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Header } from "@/components/Header";
@@ -97,12 +97,12 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-100 text-zinc-950">
+    <main className="min-h-screen bg-[#e8edf0] text-zinc-950">
       <Header apiStatus={apiStatus} />
       <SafetyBanner />
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:px-8">
-        <aside className="space-y-5">
+      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:px-8">
+        <aside className="space-y-5 lg:sticky lg:top-6">
           <UploadPanel
             onLoadSample={handleLoadSample}
             onCreateLecture={handleCreateLecture}
@@ -137,6 +137,44 @@ export default function Home() {
         </aside>
 
         <div className="space-y-6">
+          <section className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                <Activity className="h-4 w-4" aria-hidden="true" />
+                Source
+              </p>
+              <p className="mt-2 text-sm font-semibold text-zinc-950">
+                {lecture ? lecture.source.type : "No lecture loaded"}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-zinc-600">
+                {lecture ? lecture.title : "No source selected."}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-sky-700">
+                <Database className="h-4 w-4" aria-hidden="true" />
+                Timeline
+              </p>
+              <p className="mt-2 text-sm font-semibold text-zinc-950">
+                {lecture ? `${lecture.chunks.length} chunks` : "Waiting"}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-zinc-600">
+                {lecture ? `${lecture.source.type} timeline ready.` : "Awaiting source."}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-violet-700">
+                <FileCheck2 className="h-4 w-4" aria-hidden="true" />
+                Output
+              </p>
+              <p className="mt-2 text-sm font-semibold text-zinc-950">
+                {output ? output.title : selectedMode.replaceAll("_", " ")}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-zinc-600">
+                {output ? "Markdown generated." : "Not generated yet."}
+              </p>
+            </div>
+          </section>
           <TimelineViewer lecture={lecture} />
           <OutputViewer output={output} />
         </div>
