@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 from .models import LectureTimeline, SourceInfo, TimelineChunk
@@ -20,15 +22,33 @@ class VideoProcessingResult:
     timeline: LectureTimeline
     warnings: list[str]
     frame_count: int
+    ocr_frame_count: int
     ocr_engine: str
+
+
+@dataclass
+class ExtractedFrame:
+    path: Path
+    start_seconds: int
+
+
+@dataclass
+class OcrResult:
+    lines: list[str]
+    confidence: float
+    engine: str
 
 
 def build_capability_notes() -> list[str]:
     notes = []
     if not ffmpeg_available():
         notes.append("ffmpeg is unavailable. Reinstall backend requirements or install ffmpeg to extract keyframes.")
-    if not tesseract_available():
-        notes.append("Tesseract OCR is not on PATH, so extracted frames will not be OCR-scanned yet.")
+    if rapidocr_available():
+        notes.append("RapidOCR is available for offline frame text detection.")
+    elif tesseract_available():
+        notes.append("Tesseract OCR is available for local frame text detection.")
+    else:
+        notes.append("No OCR engine is available. Install backend requirements or Tesseract to scan frame text.")
     if not notes:
         notes.append("Local video keyframe extraction and OCR are available.")
     return notes
@@ -58,6 +78,14 @@ def tesseract_available() -> bool:
     return find_tesseract() is not None
 
 
+def rapidocr_available() -> bool:
+    try:
+        import rapidocr  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 def find_tesseract() -> str | None:
     path_match = shutil.which("tesseract")
     if path_match:
@@ -71,6 +99,13 @@ def find_tesseract() -> str | None:
         if path.exists():
             return str(path)
     return None
+
+
+@lru_cache(maxsize=1)
+def get_rapidocr_engine():
+    from rapidocr import RapidOCR
+
+    return RapidOCR()
 
 
 def process_video_to_timeline(
@@ -102,10 +137,16 @@ def process_video_to_timeline(
             ),
             confidence=0.35,
         )
-        return VideoProcessingResult(timeline=timeline, warnings=warnings, frame_count=0, ocr_engine="none")
+        return VideoProcessingResult(
+            timeline=timeline,
+            warnings=warnings,
+            frame_count=0,
+            ocr_frame_count=0,
+            ocr_engine="none",
+        )
 
-    frame_paths = extract_keyframes(video_path, frames_dir, ffmpeg_path)
-    if not frame_paths:
+    frames = extract_keyframes(video_path, frames_dir, ffmpeg_path)
+    if not frames:
         warnings.append("ffmpeg ran, but no keyframes were extracted from the uploaded video.")
         timeline = placeholder_timeline(
             lecture_id=lecture_id,
@@ -116,23 +157,38 @@ def process_video_to_timeline(
             visual_message="No video frames were extracted. Confirm the file is a readable video.",
             confidence=0.4,
         )
-        return VideoProcessingResult(timeline=timeline, warnings=warnings, frame_count=0, ocr_engine="none")
+        return VideoProcessingResult(
+            timeline=timeline,
+            warnings=warnings,
+            frame_count=0,
+            ocr_frame_count=0,
+            ocr_engine="none",
+        )
 
+    has_rapidocr = rapidocr_available()
     tesseract_path = find_tesseract()
-    if not tesseract_path:
-        warnings.append("Tesseract OCR is not installed or not on PATH. Keyframes were extracted without OCR text.")
+    if not has_rapidocr and not tesseract_path:
+        warnings.append("No local OCR engine is available. Keyframes were extracted without OCR text.")
 
     chunks = []
-    for index, frame_path in enumerate(frame_paths, start=1):
-        start_seconds = (index - 1) * FRAME_INTERVAL_SECONDS
-        ocr_text = run_tesseract(frame_path, tesseract_path) if tesseract_path else ""
-        transcript_text = transcript_for_frame(transcript_chunks, index, len(frame_paths))
+    used_engines: set[str] = set()
+    ocr_frame_count = 0
+    for index, frame in enumerate(frames, start=1):
+        start_seconds = frame.start_seconds
+        ocr_result = run_local_ocr(frame.path, tesseract_path=tesseract_path, prefer_rapidocr=has_rapidocr)
+        if ocr_result.engine != "none":
+            used_engines.add(ocr_result.engine)
+        if ocr_result.lines:
+            ocr_frame_count += 1
+
+        transcript_text = transcript_for_frame(transcript_chunks, index, len(frames))
         transcript = transcript_text or (
             "Video keyframe extracted locally. No audio transcription provider is configured, "
             "so transcript text is not available for this timestamp."
         )
-        ocr_items = [ocr_text] if ocr_text else ["No OCR text detected or OCR engine unavailable for this frame."]
-        concepts = extract_concepts(" ".join([transcript, ocr_text]))[:5]
+        ocr_items = ocr_result.lines or [ocr_status_message(ocr_result.engine)]
+        concepts = extract_concepts(" ".join([transcript, " ".join(ocr_result.lines)]))[:5]
+        source_confidence = source_confidence_for(transcript_text, ocr_result)
         chunks.append(
             TimelineChunk(
                 chunk_id=f"c{index}",
@@ -140,13 +196,13 @@ def process_video_to_timeline(
                 end=format_timestamp(start_seconds + FRAME_INTERVAL_SECONDS),
                 transcript=transcript,
                 ocr=ocr_items,
+                ocr_confidence=ocr_result.confidence,
                 visual_description=(
-                    f"Keyframe extracted from the uploaded video around {format_timestamp(start_seconds)}. "
-                    "Use this frame as local visual evidence; human review is still required."
+                    visual_description_for_frame(start_seconds, ocr_result)
                 ),
                 concepts=concepts,
-                source_confidence=0.68 if ocr_text else 0.52,
-                keyframe_path=f"/api/lectures/{lecture_id}/frames/{frame_path.name}",
+                source_confidence=source_confidence,
+                keyframe_path=f"/api/lectures/{lecture_id}/frames/{frame.path.name}",
             )
         )
 
@@ -164,67 +220,160 @@ def process_video_to_timeline(
     return VideoProcessingResult(
         timeline=timeline,
         warnings=warnings,
-        frame_count=len(frame_paths),
-        ocr_engine="tesseract" if tesseract_path else "none",
+        frame_count=len(frames),
+        ocr_frame_count=ocr_frame_count,
+        ocr_engine=primary_engine_name(used_engines, has_rapidocr, tesseract_path),
     )
 
 
-def extract_keyframes(video_path: Path, frames_dir: Path, ffmpeg_path: str) -> list[Path]:
+def extract_keyframes(video_path: Path, frames_dir: Path, ffmpeg_path: str) -> list[ExtractedFrame]:
     for existing in frames_dir.glob("frame_*.jpg"):
         existing.unlink(missing_ok=True)
 
-    first_frame = frames_dir / "frame_0001.jpg"
-    first_frame_command = [
-        ffmpeg_path,
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-y",
-        "-i",
-        str(video_path),
-        "-frames:v",
-        "1",
-        str(first_frame),
-    ]
+    sample_points = sample_seconds(parse_video_duration(video_path, ffmpeg_path))
+    frames: list[ExtractedFrame] = []
+    for index, start_seconds in enumerate(sample_points, start=1):
+        frame_path = frames_dir / f"frame_{index:04d}.jpg"
+        command = [
+            ffmpeg_path,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-ss",
+            str(start_seconds),
+            "-i",
+            str(video_path),
+            "-frames:v",
+            "1",
+            "-q:v",
+            "2",
+            str(frame_path),
+        ]
+        try:
+            subprocess.run(command, check=True, capture_output=True, text=True, timeout=45)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+            continue
+        if frame_path.exists() and frame_path.stat().st_size > 0:
+            frames.append(ExtractedFrame(path=frame_path, start_seconds=start_seconds))
+
+    return frames
+
+
+def parse_video_duration(video_path: Path, ffmpeg_path: str) -> int | None:
+    command = [ffmpeg_path, "-hide_banner", "-i", str(video_path)]
     try:
-        subprocess.run(first_frame_command, check=True, capture_output=True, text=True, timeout=60)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-        return []
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=30)
+    except (subprocess.TimeoutExpired, OSError):
+        return None
 
-    output_pattern = frames_dir / "frame_%04d.jpg"
-    interval_command = [
-        ffmpeg_path,
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-y",
-        "-i",
-        str(video_path),
-        "-vf",
-        f"fps=1/{FRAME_INTERVAL_SECONDS}",
-        "-start_number",
-        "2",
-        "-frames:v",
-        str(MAX_FRAMES - 1),
-        str(output_pattern),
-    ]
+    output = f"{completed.stderr}\n{completed.stdout}"
+    match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", output)
+    if not match:
+        return None
+    hours, minutes, seconds = match.groups()
+    duration = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+    return max(1, int(duration))
+
+
+def sample_seconds(duration_seconds: int | None) -> list[int]:
+    if duration_seconds is None:
+        return [index * FRAME_INTERVAL_SECONDS for index in range(MAX_FRAMES)]
+    points = list(range(0, duration_seconds + 1, FRAME_INTERVAL_SECONDS))
+    if not points:
+        points = [0]
+    return points[:MAX_FRAMES]
+
+
+def run_local_ocr(frame_path: Path, tesseract_path: str | None, prefer_rapidocr: bool) -> OcrResult:
+    if prefer_rapidocr:
+        rapid_result = run_rapidocr(frame_path)
+        if rapid_result.lines:
+            return rapid_result
+        if rapid_result.engine == "rapidocr" and not tesseract_path:
+            return rapid_result
+
+    tesseract_result = run_tesseract(frame_path, tesseract_path)
+    if tesseract_result.lines:
+        return tesseract_result
+
+    return OcrResult(lines=[], confidence=0.0, engine="rapidocr" if prefer_rapidocr else "none")
+
+
+def run_rapidocr(frame_path: Path) -> OcrResult:
     try:
-        subprocess.run(interval_command, check=True, capture_output=True, text=True, timeout=120)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-        pass
+        result = get_rapidocr_engine()(str(frame_path))
+    except Exception:
+        return OcrResult(lines=[], confidence=0.0, engine="none")
 
-    return sorted(frames_dir.glob("frame_*.jpg"))
+    texts = list(getattr(result, "txts", None) or [])
+    scores = list(getattr(result, "scores", None) or [])
+    accepted_lines = []
+    accepted_scores = []
+    for index, text in enumerate(texts):
+        clean_text = normalize_whitespace(str(text))
+        score = float(scores[index]) if index < len(scores) else 0.0
+        if clean_text and score >= 0.45:
+            accepted_lines.append(clean_text)
+            accepted_scores.append(score)
+
+    confidence = sum(accepted_scores) / len(accepted_scores) if accepted_scores else 0.0
+    return OcrResult(lines=accepted_lines, confidence=round(confidence, 3), engine="rapidocr")
 
 
-def run_tesseract(frame_path: Path, tesseract_path: str | None) -> str:
+def run_tesseract(frame_path: Path, tesseract_path: str | None) -> OcrResult:
     if not tesseract_path:
-        return ""
+        return OcrResult(lines=[], confidence=0.0, engine="none")
     command = [tesseract_path, str(frame_path), "stdout", "--psm", "6"]
     try:
         completed = subprocess.run(command, check=True, capture_output=True, text=True, timeout=30)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-        return ""
-    return normalize_whitespace(completed.stdout)
+        return OcrResult(lines=[], confidence=0.0, engine="tesseract")
+
+    lines = [normalize_whitespace(line) for line in completed.stdout.splitlines()]
+    clean_lines = [line for line in lines if line]
+    return OcrResult(lines=clean_lines, confidence=0.7 if clean_lines else 0.0, engine="tesseract")
+
+
+def ocr_status_message(engine: str) -> str:
+    if engine in {"rapidocr", "tesseract"}:
+        return "OCR engine ran, but no readable text was detected in this frame."
+    return "No OCR engine was available for this frame."
+
+
+def visual_description_for_frame(start_seconds: int, ocr_result: OcrResult) -> str:
+    timestamp = format_timestamp(start_seconds)
+    if ocr_result.lines:
+        return (
+            f"Keyframe extracted around {timestamp}. Local {ocr_result.engine} OCR detected visible text; "
+            "review the frame to confirm diagrams, equations, and layout."
+        )
+    if ocr_result.engine in {"rapidocr", "tesseract"}:
+        return (
+            f"Keyframe extracted around {timestamp}. OCR ran but did not find readable text; "
+            "human review is needed for diagrams or low-contrast board work."
+        )
+    return (
+        f"Keyframe extracted around {timestamp}. AccessiNote could not run OCR on this machine, "
+        "so visible text and diagrams need human review."
+    )
+
+
+def source_confidence_for(transcript_text: str, ocr_result: OcrResult) -> float:
+    confidence = 0.5
+    if transcript_text:
+        confidence += 0.18
+    if ocr_result.lines:
+        confidence += min(0.22, ocr_result.confidence * 0.22)
+    return round(min(confidence, 0.92), 2)
+
+
+def primary_engine_name(used_engines: set[str], has_rapidocr: bool, tesseract_path: str | None) -> str:
+    if "rapidocr" in used_engines or has_rapidocr:
+        return "rapidocr"
+    if "tesseract" in used_engines or tesseract_path:
+        return "tesseract"
+    return "none"
 
 
 def placeholder_timeline(

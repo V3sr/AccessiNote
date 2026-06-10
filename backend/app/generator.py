@@ -250,7 +250,7 @@ def build_notetaker_quality_report(timeline: LectureTimeline) -> str:
     chunks = timeline.chunks
     completeness = min(100, 55 + len(chunks) * 7)
     structure = 88 if all(chunk.start and chunk.end for chunk in chunks) else 60
-    accessibility = 90 if all(chunk.visual_description and chunk.ocr for chunk in chunks) else 62
+    accessibility = 90 if all(chunk.visual_description and has_ocr_evidence(chunk) for chunk in chunks) else 62
     clarity = int(sum(chunk.source_confidence for chunk in chunks) / max(1, len(chunks)) * 100)
 
     lines = [
@@ -348,6 +348,14 @@ def ocr_text(chunk: TimelineChunk) -> str:
     return "; ".join(chunk.ocr) if chunk.ocr else "No OCR text available"
 
 
+def has_ocr_evidence(chunk: TimelineChunk) -> bool:
+    for item in chunk.ocr:
+        text = item.strip().lower()
+        if text and not text.startswith("no ocr") and "no readable text" not in text:
+            return True
+    return False
+
+
 def definition_for(concept: str) -> str:
     return DEFINITIONS.get(concept.lower(), f"a key idea discussed in the source around this timestamp")
 
@@ -361,4 +369,3 @@ def simplify_sentence(text: str) -> str:
 
 def title_case(text: str) -> str:
     return " ".join(word.capitalize() for word in text.split())
-

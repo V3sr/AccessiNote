@@ -18,6 +18,14 @@ body {
     "cv02" 1,
     "cv03" 1,
     "cv04" 1;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 button,

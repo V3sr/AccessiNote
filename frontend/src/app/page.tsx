@@ -29,6 +29,7 @@ export default function Home() {
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const ocrChunkCount = lecture?.chunks.filter((chunk) => hasReadableOcrEvidence(chunk.ocr)).length ?? 0;
 
   useEffect(() => {
     getHealth()
@@ -79,7 +80,7 @@ export default function Home() {
       setOutput(null);
       const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
       setNotice(
-        `Video timeline created with ${uploaded.frame_count} extracted frame(s). OCR engine: ${uploaded.ocr_engine}.${warningText}`,
+        `Video timeline created with ${uploaded.frame_count} extracted frame(s). OCR text found in ${uploaded.ocr_frame_count} frame(s). Engine: ${uploaded.ocr_engine}.${warningText}`,
       );
     });
   }
@@ -97,12 +98,12 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#e8edf0] text-zinc-950">
+    <main className="min-h-screen w-full overflow-x-hidden bg-[#e8edf0] text-zinc-950">
       <Header apiStatus={apiStatus} />
       <SafetyBanner />
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:px-8">
-        <aside className="space-y-5 lg:sticky lg:top-6">
+      <div className="mx-auto grid min-w-0 max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:px-8">
+        <aside className="min-w-0 space-y-5 lg:sticky lg:top-6">
           <UploadPanel
             onLoadSample={handleLoadSample}
             onCreateLecture={handleCreateLecture}
@@ -136,7 +137,7 @@ export default function Home() {
           )}
         </aside>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <section className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
@@ -159,7 +160,7 @@ export default function Home() {
                 {lecture ? `${lecture.chunks.length} chunks` : "Waiting"}
               </p>
               <p className="mt-1 text-xs leading-5 text-zinc-600">
-                {lecture ? `${lecture.source.type} timeline ready.` : "Awaiting source."}
+                {lecture ? `${ocrChunkCount} chunks with OCR text.` : "Awaiting source."}
               </p>
             </div>
             <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
@@ -180,5 +181,14 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+}
+
+function hasReadableOcrEvidence(items: string[]): boolean {
+  return items.some(
+    (item) =>
+      item.trim().length > 0 &&
+      !item.toLowerCase().startsWith("no ocr") &&
+      !item.toLowerCase().includes("no readable text"),
   );
 }

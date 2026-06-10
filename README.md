@@ -35,7 +35,8 @@ Open `http://localhost:3000`.
 - Paste a custom transcript and create an approximate timeline.
 - Upload a permitted video and create a local timeline.
 - Extract video keyframes when `ffmpeg` is installed.
-- OCR extracted frames when Tesseract OCR is installed.
+- OCR extracted frames with bundled local RapidOCR, or Tesseract OCR when installed.
+- Show frame-level OCR confidence and scan coverage.
 - Select an output mode.
 - Generate deterministic markdown with timestamps and source references.
 - Copy or download the generated markdown.
@@ -45,10 +46,10 @@ Open `http://localhost:3000`.
 Video upload works without cloud services. The backend uses a Python-packaged ffmpeg fallback for
 keyframe extraction when system `ffmpeg` is not on PATH. If no ffmpeg executable is available,
 AccessiNote saves the video and creates a placeholder timeline explaining that frames could not be
-extracted. If Tesseract OCR is not installed, AccessiNote still extracts frames, but marks OCR as
-unavailable.
+extracted.
 
-Install optional local OCR tooling when you want text extraction from slides and board work:
+RapidOCR runs locally through ONNX Runtime and is installed with the backend requirements. Tesseract
+is optional and can be used as a fallback local OCR engine:
 
 ```powershell
 winget install UB-Mannheim.TesseractOCR

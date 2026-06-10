@@ -10,16 +10,16 @@ export function Header({ apiStatus }: HeaderProps) {
 
   return (
     <header className="flex flex-col gap-4 border-b border-zinc-800 bg-zinc-950 px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between lg:px-8">
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-soft">
           <Accessibility className="h-6 w-6" aria-hidden="true" />
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-normal text-white">AccessiNote</h1>
             <GraduationCap className="h-5 w-5 text-sky-300" aria-hidden="true" />
           </div>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-300">
+          <p className="mt-1 max-w-full break-words text-sm leading-6 text-zinc-300 sm:max-w-3xl">
             Local lecture accessibility workbench for timestamped notes, study packs, screen-reader
             notes, and exam prep.
           </p>

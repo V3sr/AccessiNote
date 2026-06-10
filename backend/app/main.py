@@ -22,6 +22,7 @@ from .video_processor import (
     build_capability_notes,
     ffmpeg_available,
     process_video_to_timeline,
+    rapidocr_available,
     tesseract_available,
 )
 
@@ -49,9 +50,17 @@ def health() -> dict[str, str]:
 
 @app.get("/api/capabilities", response_model=CapabilityResponse)
 def get_capabilities() -> CapabilityResponse:
+    ocr_engines = []
+    if rapidocr_available():
+        ocr_engines.append("rapidocr")
+    if tesseract_available():
+        ocr_engines.append("tesseract")
+
     return CapabilityResponse(
         ffmpeg_available=ffmpeg_available(),
+        rapidocr_available=rapidocr_available(),
         tesseract_available=tesseract_available(),
+        ocr_engines=ocr_engines,
         notes=build_capability_notes(),
     )
 
@@ -116,6 +125,7 @@ async def upload_video(
     return VideoUploadResponse(
         lecture_id=result.timeline.lecture_id,
         frame_count=result.frame_count,
+        ocr_frame_count=result.ocr_frame_count,
         ocr_engine=result.ocr_engine,
         warnings=result.warnings,
     )

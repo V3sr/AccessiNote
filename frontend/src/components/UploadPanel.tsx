@@ -1,6 +1,16 @@
 "use client";
 
-import { FileText, Loader2, Play, PlusCircle, Upload, Video } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  Play,
+  PlusCircle,
+  ScanText,
+  Upload,
+  Video,
+} from "lucide-react";
 import { FormEvent, useState } from "react";
 
 import type { CapabilityResponse } from "@/lib/types";
@@ -26,6 +36,9 @@ export function UploadPanel({
   const [videoTranscript, setVideoTranscript] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
+  const ocrReady = Boolean(capabilities?.ocr_engines.length);
+  const primaryOcr = capabilities?.ocr_engines.map(formatEngineName).join(", ") || "Not ready";
+
   async function submitTranscript(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onCreateLecture(title, transcript);
@@ -40,13 +53,13 @@ export function UploadPanel({
   }
 
   return (
-    <section className="space-y-5">
-      <div className="rounded-lg bg-zinc-950 p-4 text-white shadow-soft">
+    <section className="min-w-0 space-y-5">
+      <div className="min-w-0 max-w-full rounded-lg bg-zinc-950 p-4 text-white shadow-soft">
         <h2 className="flex items-center gap-2 text-base font-semibold text-white">
           <Play className="h-5 w-5 text-emerald-300" aria-hidden="true" />
           Start
         </h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-300">
+        <p className="mt-2 break-words text-sm leading-6 text-zinc-300">
           Load the built-in synthetic lecture or paste a transcript to create a local timeline.
         </p>
         <button
@@ -60,7 +73,10 @@ export function UploadPanel({
         </button>
       </div>
 
-      <form onSubmit={submitTranscript} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
+      <form
+        onSubmit={submitTranscript}
+        className="min-w-0 max-w-full rounded-lg border border-zinc-200 bg-white p-4 shadow-soft"
+      >
         <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
           <PlusCircle className="h-5 w-5 text-sky-700" aria-hidden="true" />
           Paste Transcript
@@ -95,27 +111,35 @@ export function UploadPanel({
         </button>
       </form>
 
-      <form onSubmit={submitVideo} className="rounded-lg border border-violet-200 bg-white p-4 shadow-soft">
+      <form
+        onSubmit={submitVideo}
+        className="min-w-0 max-w-full rounded-lg border border-violet-200 bg-white p-4 shadow-soft"
+      >
         <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
           <Video className="h-5 w-5 text-violet-700" aria-hidden="true" />
           Upload Video
         </h2>
-        <div className="mt-3 space-y-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-800">
-          {capabilities ? (
-            <>
-              <p>
-                ffmpeg: <strong>{capabilities.ffmpeg_available ? "available" : "not found"}</strong>
-                {" · "}
-                OCR: <strong>{capabilities.tesseract_available ? "available" : "not found"}</strong>
-              </p>
-              {capabilities.notes.map((note) => (
-                <p key={note}>{note}</p>
-              ))}
-            </>
-          ) : (
-            <p>Checking local video/OCR tools...</p>
-          )}
+
+        <div className="mt-3 grid gap-2 text-xs leading-5">
+          <CapabilityRow
+            label="Frame extraction"
+            value={capabilities ? (capabilities.ffmpeg_available ? "Ready" : "Unavailable") : "Checking"}
+            ready={Boolean(capabilities?.ffmpeg_available)}
+          />
+          <CapabilityRow
+            label="OCR scan"
+            value={capabilities ? primaryOcr : "Checking"}
+            ready={ocrReady}
+          />
         </div>
+
+        {capabilities?.notes.length ? (
+          <div className="mt-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs leading-5 text-zinc-800">
+            {capabilities.notes.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
+          </div>
+        ) : null}
 
         <label className="mt-4 block text-sm font-medium text-zinc-800" htmlFor="video-title">
           Video title
@@ -146,12 +170,12 @@ export function UploadPanel({
           value={videoTranscript}
           onChange={(event) => setVideoTranscript(event.target.value)}
           rows={5}
-          placeholder="Optional: paste a transcript, captions, or notes to pair with scanned video frames."
+          placeholder="Optional: paste captions or notes to pair with scanned video frames."
           className="mt-2 w-full resize-y rounded-md border border-zinc-300 px-3 py-2 text-sm leading-6 text-zinc-950 outline-none transition placeholder:text-zinc-500 focus:border-violet-600 focus:ring-2 focus:ring-violet-100"
         />
         <button
           type="submit"
-          disabled={isBusy || !videoFile}
+          disabled={isBusy || !videoFile || !capabilities?.ffmpeg_available}
           className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-violet-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-800 active:bg-violet-900 disabled:cursor-not-allowed disabled:bg-violet-50 disabled:text-violet-950"
         >
           {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -160,4 +184,46 @@ export function UploadPanel({
       </form>
     </section>
   );
+}
+
+function CapabilityRow({
+  label,
+  value,
+  ready,
+}: {
+  label: string;
+  value: string;
+  ready: boolean;
+}) {
+  const Icon = ready ? CheckCircle2 : AlertTriangle;
+  return (
+    <div className="flex min-h-11 min-w-0 flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2">
+      <span className="flex min-w-0 items-center gap-2 font-semibold text-zinc-800">
+        {label === "OCR scan" ? (
+          <ScanText className="h-4 w-4 text-violet-700" aria-hidden="true" />
+        ) : (
+          <Video className="h-4 w-4 text-zinc-600" aria-hidden="true" />
+        )}
+        {label}
+      </span>
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-1 font-semibold ${
+          ready ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-950"
+        }`}
+      >
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function formatEngineName(engine: string): string {
+  if (engine === "rapidocr") {
+    return "RapidOCR";
+  }
+  if (engine === "tesseract") {
+    return "Tesseract";
+  }
+  return engine;
 }

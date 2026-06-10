@@ -37,7 +37,8 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Header: compact brand mark, product name, tagline, and API status.
 - Safety banner: persistent, readable, and visually distinct.
 - Input panels: task-specific sections for sample, transcript, and video.
-- Timeline chunks: repeated cards with timestamp, concepts, transcript, OCR, visual evidence, and optional keyframes.
+- Video pre-flight: compact capability rows for frame extraction and OCR engine readiness.
+- Timeline chunks: repeated evidence cards with timestamp, concepts, transcript, OCR confidence, visual evidence, and optional keyframes.
 - Mode selector: button-list with clear icon, label, and short description.
 - Output viewer: markdown preview plus source references and export actions.
 
@@ -46,6 +47,7 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Every button needs hover, disabled, and keyboard focus states.
 - Async actions show inline loading via the button that triggered them.
 - Local capability warnings should appear before upload, not after failure.
+- Video scans should report OCR coverage and engine choice immediately after upload.
 - Generated output export actions should stay close to the output title.
 
 ## Motion

@@ -19,6 +19,7 @@ export interface TimelineChunk {
   end: string;
   transcript: string;
   ocr: string[];
+  ocr_confidence: number;
   visual_description: string;
   concepts: string[];
   source_confidence: number;
@@ -55,8 +56,10 @@ export interface GenerateResponse {
 
 export interface CapabilityResponse {
   ffmpeg_available: boolean;
+  rapidocr_available: boolean;
   tesseract_available: boolean;
   video_upload_enabled: boolean;
+  ocr_engines: string[];
   notes: string[];
 }
 
@@ -64,6 +67,7 @@ export interface VideoUploadResponse {
   lecture_id: string;
   status: string;
   frame_count: number;
+  ocr_frame_count: number;
   ocr_engine: string;
   warnings: string[];
 }
