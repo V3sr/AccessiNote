@@ -4,3 +4,4 @@ pydantic>=2,<3
 python-multipart>=0.0.9
 python-dotenv>=1,<2
 aiofiles>=24,<25
+imageio-ffmpeg>=0.5,<1

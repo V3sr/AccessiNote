@@ -12,8 +12,12 @@
 
 body {
   margin: 0;
-  background: #f4f4f5;
+  background: #eef1f4;
   color: #09090b;
+  font-feature-settings:
+    "cv02" 1,
+    "cv03" 1,
+    "cv04" 1;
 }
 
 button,
@@ -27,6 +31,22 @@ input:focus-visible,
 textarea:focus-visible {
   outline: 3px solid rgba(14, 165, 233, 0.3);
   outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: #bbf7d0;
+  color: #052e16;
 }
 
 .prose {
@@ -68,4 +88,15 @@ textarea:focus-visible {
   background: #f4f4f5;
   padding: 0.1rem 0.35rem;
   color: #18181b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

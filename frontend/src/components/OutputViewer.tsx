@@ -51,7 +51,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
           <button
             type="button"
             onClick={copyMarkdown}
-            className="inline-flex items-center gap-2 rounded-md border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
+            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 active:bg-zinc-200"
           >
             <Clipboard className="h-4 w-4" aria-hidden="true" />
             Copy
@@ -59,7 +59,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
           <button
             type="button"
             onClick={downloadMarkdown}
-            className="inline-flex items-center gap-2 rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 active:bg-zinc-700"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             Download
@@ -99,4 +99,3 @@ export function OutputViewer({ output }: OutputViewerProps) {
     </section>
   );
 }
-

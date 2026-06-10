@@ -219,6 +219,8 @@ __marimo__/
 
 # Private AI/coding-assistant handoff files
 .ai-handoff/
+.agents/
+.impeccable/
 .private/
 *_handoff*
 PROMPTS.md
@@ -250,3 +252,7 @@ node_modules/
 .next/
 dist/
 *.tsbuildinfo
+
+# Frontend source helpers are app code, not generated Python lib output
+!frontend/src/lib/
+!frontend/src/lib/**

@@ -77,8 +77,8 @@ export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelec
               className={`flex min-h-20 w-full items-start gap-3 rounded-md border p-3 text-left transition ${
                 selected
                   ? "border-emerald-700 bg-emerald-50 text-emerald-950"
-                  : "border-zinc-200 bg-white text-zinc-800 hover:border-sky-300 hover:bg-sky-50"
-              } disabled:cursor-not-allowed disabled:opacity-60`}
+                  : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300 hover:bg-zinc-50"
+              } disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500`}
             >
               <Icon
                 className={`mt-0.5 h-5 w-5 shrink-0 ${selected ? "text-emerald-700" : "text-zinc-500"}`}
@@ -95,4 +95,3 @@ export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelec
     </section>
   );
 }
-

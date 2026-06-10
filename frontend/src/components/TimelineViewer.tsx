@@ -1,5 +1,6 @@
 import { Clock, Eye, FileText } from "lucide-react";
 
+import { assetUrl } from "@/lib/api";
 import type { LectureTimeline } from "@/lib/types";
 
 interface TimelineViewerProps {
@@ -42,6 +43,14 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
               </span>
             </div>
             <p className="mt-3 text-sm leading-6 text-zinc-800">{chunk.transcript}</p>
+            {chunk.keyframe_path && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={assetUrl(chunk.keyframe_path)}
+                alt={`Video keyframe for ${chunk.start}-${chunk.end}`}
+                className="mt-4 aspect-video w-full rounded-md border border-zinc-200 bg-zinc-100 object-contain"
+              />
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               {chunk.concepts.map((concept) => (
                 <span
@@ -78,4 +87,3 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
     </section>
   );
 }
-

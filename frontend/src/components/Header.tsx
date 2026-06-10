@@ -26,7 +26,7 @@ export function Header({ apiStatus }: HeaderProps) {
         </div>
       </div>
       <div
-        className="inline-flex w-fit items-center gap-2 rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700"
+        className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800"
         aria-live="polite"
       >
         <span

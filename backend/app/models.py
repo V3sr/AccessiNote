@@ -70,3 +70,18 @@ class GenerateResponse(BaseModel):
     content_markdown: str
     sources: list[SourceReference]
     warnings: list[str]
+
+
+class CapabilityResponse(BaseModel):
+    ffmpeg_available: bool
+    tesseract_available: bool
+    video_upload_enabled: bool = True
+    notes: list[str] = Field(default_factory=list)
+
+
+class VideoUploadResponse(BaseModel):
+    lecture_id: str
+    status: str = "created"
+    frame_count: int = 0
+    ocr_engine: str = "none"
+    warnings: list[str] = Field(default_factory=list)

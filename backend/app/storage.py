@@ -10,6 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT_DIR / "data"
 SAMPLE_PATH = DATA_DIR / "samples" / "sample_lecture_timeline.json"
 OUTPUTS_DIR = DATA_DIR / "outputs"
+UPLOADS_DIR = DATA_DIR / "uploads"
 
 
 def load_sample_timeline() -> LectureTimeline:

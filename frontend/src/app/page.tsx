@@ -12,29 +12,37 @@ import { UploadPanel } from "@/components/UploadPanel";
 import {
   createLectureFromTranscript,
   generateOutput,
+  getCapabilities,
   getHealth,
   getLecture,
   loadSampleLecture,
+  uploadVideoLecture,
 } from "@/lib/api";
-import type { GenerateResponse, LectureTimeline, OutputMode } from "@/lib/types";
+import type { CapabilityResponse, GenerateResponse, LectureTimeline, OutputMode } from "@/lib/types";
 
 export default function Home() {
   const [apiStatus, setApiStatus] = useState<"checking" | "ok" | "offline">("checking");
   const [lecture, setLecture] = useState<LectureTimeline | null>(null);
+  const [capabilities, setCapabilities] = useState<CapabilityResponse | null>(null);
   const [selectedMode, setSelectedMode] = useState<OutputMode>("adhd_study_pack");
   const [output, setOutput] = useState<GenerateResponse | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     getHealth()
       .then(() => setApiStatus("ok"))
       .catch(() => setApiStatus("offline"));
+    getCapabilities()
+      .then(setCapabilities)
+      .catch(() => setCapabilities(null));
   }, []);
 
   async function runAction(action: () => Promise<void>) {
     setIsBusy(true);
     setError(null);
+    setNotice(null);
     try {
       await action();
       setApiStatus("ok");
@@ -63,6 +71,19 @@ export default function Home() {
     });
   }
 
+  async function handleUploadVideo(title: string, videoFile: File, transcript: string) {
+    await runAction(async () => {
+      const uploaded = await uploadVideoLecture(title, videoFile, transcript);
+      const nextLecture = await getLecture(uploaded.lecture_id);
+      setLecture(nextLecture);
+      setOutput(null);
+      const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
+      setNotice(
+        `Video timeline created with ${uploaded.frame_count} extracted frame(s). OCR engine: ${uploaded.ocr_engine}.${warningText}`,
+      );
+    });
+  }
+
   async function handleGenerate() {
     if (!lecture) {
       setError("Load or create a lecture before generating an output.");
@@ -85,6 +106,8 @@ export default function Home() {
           <UploadPanel
             onLoadSample={handleLoadSample}
             onCreateLecture={handleCreateLecture}
+            onUploadVideo={handleUploadVideo}
+            capabilities={capabilities}
             isBusy={isBusy}
           />
           <ModeSelector
@@ -96,7 +119,7 @@ export default function Home() {
             type="button"
             onClick={handleGenerate}
             disabled={!lecture || isBusy}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-zinc-800 active:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500"
           >
             {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             Generate Output
@@ -104,6 +127,11 @@ export default function Home() {
           {error && (
             <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">
               {error}
+            </div>
+          )}
+          {notice && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
+              {notice}
             </div>
           )}
         </aside>
@@ -116,4 +144,3 @@ export default function Home() {
     </main>
   );
 }
-
