@@ -1,0 +1,78 @@
+{
+  "lecture_id": "sample_synthetic_linear_algebra",
+  "title": "Synthetic Lecture: Vectors, Matrices, and Linear Transformations",
+  "source": {
+    "type": "synthetic",
+    "attribution": "Synthetic demo content created for AccessiNote.",
+    "license": "Demo only",
+    "url": ""
+  },
+  "chunks": [
+    {
+      "chunk_id": "c1",
+      "start": "00:00:00",
+      "end": "00:02:15",
+      "transcript": "The lecture begins by introducing vectors as objects with both magnitude and direction. The instructor explains that vectors can represent movement, force, or data features.",
+      "ocr": ["vector = magnitude + direction", "examples: displacement, force, features"],
+      "visual_description": "The board shows arrows starting from the origin and pointing in different directions. Each arrow is labeled as a vector.",
+      "concepts": ["vectors", "magnitude", "direction", "representation"],
+      "source_confidence": 0.91,
+      "keyframe_path": ""
+    },
+    {
+      "chunk_id": "c2",
+      "start": "00:02:15",
+      "end": "00:05:00",
+      "transcript": "The instructor moves from vectors to matrices, describing a matrix as a structured grid of numbers that can transform vectors.",
+      "ocr": ["A = [[a,b],[c,d]]", "matrix transforms vector"],
+      "visual_description": "A 2 by 2 matrix is written beside a column vector. An arrow points from the input vector to a transformed output vector.",
+      "concepts": ["matrices", "linear transformation", "matrix-vector multiplication"],
+      "source_confidence": 0.88,
+      "keyframe_path": ""
+    },
+    {
+      "chunk_id": "c3",
+      "start": "00:05:00",
+      "end": "00:07:30",
+      "transcript": "The lecture explains that multiplying a matrix by a vector can rotate, scale, shear, or reflect the vector.",
+      "ocr": ["rotation", "scaling", "reflection", "shear"],
+      "visual_description": "Four small coordinate grids show different transformations of the same arrow: one rotated, one stretched, one reflected, and one slanted.",
+      "concepts": ["rotation", "scaling", "reflection", "shear", "geometric intuition"],
+      "source_confidence": 0.84,
+      "keyframe_path": ""
+    },
+    {
+      "chunk_id": "c4",
+      "start": "00:07:30",
+      "end": "00:10:20",
+      "transcript": "The instructor introduces the idea of basis vectors and explains that a matrix can be understood by watching where it sends the standard basis vectors.",
+      "ocr": ["e1 = [1,0]", "e2 = [0,1]", "columns of A"],
+      "visual_description": "The board shows the standard x and y basis vectors. The instructor draws their transformed positions and connects them to the columns of a matrix.",
+      "concepts": ["basis vectors", "standard basis", "columns of a matrix"],
+      "source_confidence": 0.9,
+      "keyframe_path": ""
+    },
+    {
+      "chunk_id": "c5",
+      "start": "00:10:20",
+      "end": "00:13:00",
+      "transcript": "The lecture works through an example where a matrix is applied to a vector step by step.",
+      "ocr": ["A[2,1]^T", "multiply row by column", "output vector"],
+      "visual_description": "A worked example shows each row of the matrix dotted with the input vector to produce the output coordinates.",
+      "concepts": ["worked example", "row-column multiplication", "output vector"],
+      "source_confidence": 0.86,
+      "keyframe_path": ""
+    },
+    {
+      "chunk_id": "c6",
+      "start": "00:13:00",
+      "end": "00:15:00",
+      "transcript": "The lecture summarizes the main idea: matrices can be understood as functions that move vectors while preserving linear structure.",
+      "ocr": ["matrix = function on vectors", "linear structure"],
+      "visual_description": "The final board section summarizes the relationship between vectors, basis vectors, and transformations.",
+      "concepts": ["summary", "linear structure", "matrix as function"],
+      "source_confidence": 0.89,
+      "keyframe_path": ""
+    }
+  ]
+}

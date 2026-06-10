@@ -216,3 +216,37 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Private AI/coding-assistant handoff files
+.ai-handoff/
+.private/
+*_handoff*
+PROMPTS.md
+HANDOFF.md
+CLAUDE.md
+CODEX.md
+
+# Secrets and local outputs
+.env
+.env.local
+data/uploads/*
+!data/uploads/.gitkeep
+data/outputs/*
+!data/outputs/.gitkeep
+
+# Media files
+*.mp4
+*.mov
+*.mkv
+*.wav
+*.mp3
+
+# Python / Node
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+.next/
+dist/
+*.tsbuildinfo
