@@ -1,57 +1,68 @@
-import { Accessibility, HardDrive, ShieldCheck } from "lucide-react";
+import { Accessibility, Activity, ArrowDown, HardDrive } from "lucide-react";
 
 interface HeaderProps {
   apiStatus: "checking" | "ok" | "offline";
 }
+
+const navItems = [
+  { label: "Product", href: "#workbench" },
+  { label: "Workflow", href: "#source-desk" },
+  { label: "Local OCR", href: "#source-desk" },
+  { label: "Outputs", href: "#workbench" },
+  { label: "Safety", href: "#safety" },
+];
 
 export function Header({ apiStatus }: HeaderProps) {
   const statusLabel =
     apiStatus === "ok" ? "API connected" : apiStatus === "offline" ? "API offline" : "Checking API";
 
   return (
-    <header className="border-b border-zinc-800 bg-zinc-950 px-5 py-4 text-white lg:px-8">
-      <div className="mx-auto flex max-w-[1500px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-emerald-500 text-emerald-950">
-            <Accessibility className="h-6 w-6" aria-hidden="true" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-normal text-white">AccessiNote</h1>
-              <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-xs font-semibold text-zinc-300">
-                Local MVP
-              </span>
-            </div>
-            <p className="mt-1 max-w-3xl text-sm leading-5 text-zinc-300">
-              Evidence-first lecture notes from transcripts, slides, and permitted recordings.
-            </p>
-          </div>
-        </div>
+    <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 px-5 py-3 lg:px-8">
+      <div className="mx-auto flex min-h-14 max-w-[1500px] items-center justify-between gap-4">
+        <a href="#source-desk" className="flex min-w-0 items-center gap-3">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
+            <Accessibility className="h-5 w-5" aria-hidden="true" />
+            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-lg font-semibold tracking-normal text-zinc-950">AccessiNote</span>
+            <span className="block truncate text-xs font-medium text-zinc-600">Local lecture accessibility MVP</span>
+          </span>
+        </a>
 
-        <div className="flex flex-wrap gap-2 text-sm">
-          <span className="inline-flex min-h-10 items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 font-medium text-zinc-200">
-            <HardDrive className="h-4 w-4 text-emerald-300" aria-hidden="true" />
-            Local processing
-          </span>
-          <span className="inline-flex min-h-10 items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 font-medium text-zinc-200">
-            <ShieldCheck className="h-4 w-4 text-emerald-300" aria-hidden="true" />
-            Review required
-          </span>
+        <nav className="hidden items-center gap-7 text-sm font-semibold text-zinc-700 lg:flex" aria-label="Primary">
+          {navItems.map((item) => (
+            <a key={item.label} href={item.href} className="transition hover:text-zinc-950">
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-2">
           <div
-            className="inline-flex min-h-10 items-center gap-2 rounded-md border border-emerald-800 bg-emerald-950 px-3 py-2 font-semibold text-emerald-50"
+            className="hidden min-h-10 items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-800 sm:inline-flex"
             aria-live="polite"
           >
-            <span
+            <Activity
               className={
                 apiStatus === "ok"
-                  ? "h-2.5 w-2.5 rounded-full bg-emerald-400"
+                  ? "h-4 w-4 text-emerald-700"
                   : apiStatus === "offline"
-                    ? "h-2.5 w-2.5 rounded-full bg-rose-400"
-                    : "h-2.5 w-2.5 rounded-full bg-amber-500"
+                    ? "h-4 w-4 text-rose-700"
+                    : "h-4 w-4 text-amber-700"
               }
+              aria-hidden="true"
             />
             {statusLabel}
           </div>
+          <a
+            href="#source-desk"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 active:translate-y-px active:bg-blue-800"
+          >
+            <HardDrive className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Start local</span>
+            <ArrowDown className="h-4 w-4 sm:hidden" aria-hidden="true" />
+          </a>
         </div>
       </div>
     </header>

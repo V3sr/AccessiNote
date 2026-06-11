@@ -6,13 +6,17 @@
   color-scheme: light;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #f4f6f8;
+  background: #f7f9fb;
   color: #09090b;
   font-feature-settings:
     "cv02" 1,

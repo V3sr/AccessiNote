@@ -10,6 +10,7 @@ import {
   PlusCircle,
   ScanText,
   Upload,
+  UploadCloud,
   Video,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -37,6 +38,13 @@ const sourceTabs: Array<{
   { id: "transcript", label: "Transcript", icon: FileText },
   { id: "image", label: "Image", icon: ImageIcon },
   { id: "video", label: "Video", icon: Video },
+];
+
+const supportedSources = [
+  { label: "MP4, MOV, WebM", detail: "Video files", icon: Video },
+  { label: "TXT, captions", detail: "Transcripts", icon: FileText },
+  { label: "PNG, JPG, WebP", detail: "Slides and notes", icon: ImageIcon },
+  { label: "Sample lecture", detail: "Demo timeline", icon: Layers },
 ];
 
 export function UploadPanel({
@@ -82,19 +90,39 @@ export function UploadPanel({
   }
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white shadow-soft">
-      <div className="border-b border-zinc-200 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-950">Source Desk</h2>
-            <p className="mt-1 text-sm leading-5 text-zinc-600">Choose the local material to turn into evidence.</p>
+    <section id="source-desk" className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
+      <div className="p-4 sm:p-5">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
+          <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-5 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-emerald-700 shadow-soft ring-1 ring-zinc-200">
+              <UploadCloud className="h-7 w-7" aria-hidden="true" />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold tracking-normal text-zinc-950">Upload lecture materials</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-600">
+              Select a local source below to build a timestamped evidence timeline.
+            </p>
+            <div className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
+              <ScanText className="h-3.5 w-3.5" aria-hidden="true" />
+              OCR {ocrReady ? "ready" : "offline"}
+            </div>
           </div>
-          <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
-            OCR {ocrReady ? "ready" : "offline"}
-          </span>
+
+          <div className="grid gap-2">
+            {supportedSources.map(({ label, detail, icon: Icon }) => (
+              <div key={label} className="flex min-w-0 items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-zinc-50 text-zinc-700 ring-1 ring-zinc-200">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-semibold text-zinc-950">{label}</span>
+                  <span className="block truncate text-xs text-zinc-600">{detail}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {sourceTabs.map(({ id, label, icon: Icon }) => {
             const selected = activeTab === id;
             return (
@@ -102,7 +130,7 @@ export function UploadPanel({
                 key={id}
                 type="button"
                 onClick={() => setActiveTab(id)}
-                className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm font-semibold transition active:translate-y-px ${
+                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm font-semibold transition active:translate-y-px ${
                   selected
                     ? "border-emerald-700 bg-emerald-50 text-emerald-950"
                     : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
@@ -116,7 +144,7 @@ export function UploadPanel({
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="border-t border-zinc-200 p-4 sm:p-5">
         {activeTab === "sample" && (
           <div>
             <h3 className="text-sm font-semibold text-zinc-950">Synthetic lecture</h3>
@@ -128,10 +156,10 @@ export function UploadPanel({
               type="button"
               onClick={onLoadSample}
               disabled={isBusy}
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-emerald-950"
+              className={primaryButtonClass}
             >
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              Load Sample Lecture
+              Load sample lecture
             </button>
           </div>
         )}
@@ -150,17 +178,13 @@ export function UploadPanel({
               id="transcript"
               value={transcript}
               onChange={(event) => setTranscript(event.target.value)}
-              rows={10}
+              rows={8}
               placeholder="Paste permitted lecture transcript text here..."
               className={textareaClass}
             />
-            <button
-              type="submit"
-              disabled={isBusy || transcript.trim().length === 0}
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-emerald-950"
-            >
+            <button type="submit" disabled={isBusy || transcript.trim().length === 0} className={primaryButtonClass}>
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
-              Create Timeline
+              Create timeline
             </button>
           </form>
         )}
@@ -193,13 +217,9 @@ export function UploadPanel({
               placeholder="Optional: add slide context, course topic, or what to verify."
               className={textareaClass}
             />
-            <button
-              type="submit"
-              disabled={isBusy || !imageFile || !ocrReady}
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-emerald-950"
-            >
+            <button type="submit" disabled={isBusy || !imageFile || !ocrReady} className={primaryButtonClass}>
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
-              Scan Image
+              Scan image
             </button>
           </form>
         )}
@@ -250,10 +270,10 @@ export function UploadPanel({
             <button
               type="submit"
               disabled={isBusy || !videoFile || !capabilities?.ffmpeg_available}
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-emerald-950"
+              className={primaryButtonClass}
             >
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Upload and Scan
+              Upload and scan
             </button>
           </form>
         )}
@@ -311,6 +331,9 @@ function formatEngineName(engine: string): string {
   }
   return engine;
 }
+
+const primaryButtonClass =
+  "mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-emerald-50 disabled:text-emerald-900";
 
 const inputClass =
   "mt-2 min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";

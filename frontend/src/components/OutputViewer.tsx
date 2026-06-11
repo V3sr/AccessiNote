@@ -33,14 +33,17 @@ export function OutputViewer({ output }: OutputViewerProps) {
 
   if (!output) {
     return (
-      <section className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
-        Generate an output to preview rewritten markdown, source references, warnings, and export controls.
+      <section className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
+        <p className="font-semibold text-zinc-950">Generated output preview</p>
+        <p className="mt-1 max-w-2xl">
+          Generate an output to preview rewritten markdown, source references, warnings, and export controls.
+        </p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white shadow-soft">
+    <section className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-emerald-800">Generated output</p>
@@ -85,7 +88,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
           </h3>
           <div className="mt-3 space-y-3">
             {output.sources.map((source) => (
-              <div key={source.chunk_id} className="rounded-md bg-zinc-50 p-3 text-sm leading-5 text-zinc-700">
+              <div key={source.chunk_id} className="rounded-xl bg-zinc-50 p-3 text-sm leading-5 text-zinc-700">
                 <p className="font-semibold text-zinc-950">
                   {source.chunk_id} - {source.start}-{source.end}
                 </p>

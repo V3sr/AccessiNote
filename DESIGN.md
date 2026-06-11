@@ -2,14 +2,14 @@
 
 ## Style Summary
 
-AccessiNote is a restrained product workbench with a compact app shell and evidence-first workspace. It should look calm, precise, and source-aware rather than promotional. The interface uses a dark top bar, a tabbed source desk, explicit scan readiness, and readable density so repeated lecture review feels efficient.
+AccessiNote is a restrained product workbench with a light product-intake hero and evidence-first workspace. It should look calm, precise, and source-aware rather than promotional. The first viewport pairs a clear local source desk with a direct accessibility promise, then moves into a three-column review workbench for lecture overview, output generation, and learning insights.
 
 ## Color
 
-- Shell: near-black zinc top bar for product identity and app status.
-- Background: cool neutral work surface with white primary panels.
+- Shell: white navigation with cool neutral borders for product identity and app status.
+- Background: cool neutral work surface with a very light green-to-blue intake band.
 - Primary action: emerald for source intake, OCR readiness, selected states, and successful local status.
-- Secondary colors are reserved for true semantic states only, not source-type decoration.
+- Secondary blue is reserved for workbench entry, source coverage, and informational status.
 - Ink: near-black zinc for headings, dark zinc for body, and saturated semantic colors for warnings/errors.
 - Warning: amber background with dark amber text for safety and review notices.
 
@@ -25,21 +25,25 @@ Color should remain restrained. Use accent colors for action, current state, and
 
 ## Layout
 
-- App shell: header, safety band, then a two-column workbench on desktop.
-- Left column: source desk, primary generate action, then output controls.
-- Main column: timeline first, generated output second.
+- App shell: header, intake hero, safety band, then a three-column workbench on desktop.
+- Hero: left promise and workflow benefits; right local upload/source desk.
+- Workbench left column: lecture overview and source/OCR status.
+- Workbench center column: output format selector, generate action, and generated output.
+- Workbench right column: learning insights and privacy/safety reminders.
+- Detailed evidence timeline follows the main workbench so users can audit every chunk.
 - Mobile: single-column flow with controls before results.
 - Use 8px radius for product panels and controls unless a pill affordance is intentional.
 
 ## Components
 
-- Header: compact brand mark, product name, tagline, and API status.
-- Safety banner: persistent, readable, and visually distinct.
-- Source desk: tabbed intake for sample, transcript, image/slide OCR, and video.
+- Header: light navigation with AccessiNote brand mark, real section links, API status, and local-start CTA.
+- Safety banner: persistent, readable, and visually distinct without dominating the page.
+- Source desk: upload-focused intake card with supported source types and tabs for sample, transcript, image/slide OCR, and video.
 - Scan pre-flight: compact capability rows for frame extraction and OCR engine readiness.
 - Timeline chunks: repeated evidence records with timestamp, concepts, transcript, OCR confidence, visual evidence, and optional keyframes.
 - Mode selector: compact output builder with clear icon, label, and short description.
 - Output viewer: markdown preview plus source references and export actions.
+- Learning insights: source coverage ring, key concept count, review time estimate, and generated format count.
 
 ## Interaction
 

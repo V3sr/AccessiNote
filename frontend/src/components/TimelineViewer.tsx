@@ -11,7 +11,7 @@ interface TimelineViewerProps {
 export function TimelineViewer({ lecture }: TimelineViewerProps) {
   if (!lecture) {
     return (
-      <section className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
+      <section className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 h-5 w-5 text-emerald-700" aria-hidden="true" />
           <div>
@@ -31,7 +31,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
     lecture.chunks.reduce((total, chunk) => total + chunk.source_confidence, 0) / Math.max(1, lecture.chunks.length);
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white shadow-soft">
+    <section className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold text-emerald-800">Evidence timeline</p>
@@ -62,7 +62,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
   const ocrDetected = chunk.ocr_confidence > 0 || hasReadableOcrEvidence(chunk.ocr);
 
   return (
-    <article className="rounded-md border border-zinc-200 bg-white p-4">
+    <article className="rounded-xl border border-zinc-200 bg-white p-4">
       <div className={`grid gap-4 ${hasFrame ? "md:grid-cols-[220px_minmax(0,1fr)]" : ""}`}>
         {hasFrame && (
           <div className="space-y-2">
@@ -165,7 +165,7 @@ function EvidencePanel({
 }) {
   return (
     <div
-      className={`rounded-md px-3 py-3 ${
+      className={`rounded-xl px-3 py-3 ${
         tone === "strong"
           ? "border border-emerald-200 bg-emerald-50 text-emerald-950"
           : "border border-zinc-200 bg-zinc-50 text-zinc-800"

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  BookOpen,
-  Brain,
-  ClipboardCheck,
-  FileSearch,
-  Glasses,
-  Languages,
-} from "lucide-react";
+import { BookOpen, Brain, ClipboardCheck, FileSearch, Glasses, Languages } from "lucide-react";
 
 import type { OutputMode } from "@/lib/types";
 
@@ -43,7 +36,7 @@ const modes: Array<{
   },
   {
     mode: "exam_prep_pack",
-    label: "Exam Prep Pack",
+    label: "Exam Prep",
     description: "Flashcards, practice questions, and mistakes.",
     icon: FileSearch,
   },
@@ -62,37 +55,34 @@ const modes: Array<{
 ];
 
 export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelectorProps) {
+  const selected = modes.find((mode) => mode.mode === selectedMode) ?? modes[0];
+
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white shadow-soft">
-      <div className="border-b border-zinc-200 p-4">
-        <h2 className="text-base font-semibold text-zinc-950">Output Builder</h2>
-        <p className="mt-1 text-sm leading-5 text-zinc-600">Choose how the evidence should be rewritten.</p>
+    <section className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
+      <div className="flex flex-col gap-2 border-b border-zinc-200 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-950">Output formats</h2>
+          <p className="mt-1 text-sm leading-5 text-zinc-600">Pick the accessible format to generate next.</p>
+        </div>
+        <p className="text-xs font-semibold text-emerald-800">{selected.description}</p>
       </div>
-      <div className="grid gap-2 p-4">
-        {modes.map(({ mode, label, description, icon: Icon }) => {
-          const selected = mode === selectedMode;
+      <div className="flex flex-wrap gap-2 p-3">
+        {modes.map(({ mode, label, icon: Icon }) => {
+          const isSelected = mode === selectedMode;
           return (
             <button
               key={mode}
               type="button"
               onClick={() => onSelectMode(mode)}
               disabled={disabled}
-              className={`flex min-h-20 w-full items-start gap-3 rounded-md border p-3 text-left transition active:translate-y-px ${
-                selected
+              className={`inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition active:translate-y-px ${
+                isSelected
                   ? "border-emerald-700 bg-emerald-50 text-emerald-950"
-                  : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300 hover:bg-zinc-50"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
               } disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500`}
             >
-              <Icon
-                className={`mt-0.5 h-5 w-5 shrink-0 ${selected ? "text-emerald-700" : "text-zinc-500"}`}
-                aria-hidden="true"
-              />
-              <span>
-                <span className="block text-sm font-semibold">{label}</span>
-                <span className={`mt-1 block text-xs leading-5 ${selected ? "text-emerald-900" : "text-zinc-600"}`}>
-                  {description}
-                </span>
-              </span>
+              <Icon className={`h-4 w-4 ${isSelected ? "text-emerald-700" : "text-zinc-500"}`} aria-hidden="true" />
+              {label}
             </button>
           );
         })}
