@@ -33,6 +33,15 @@ export interface LectureTimeline {
   chunks: TimelineChunk[];
 }
 
+export interface LectureSummary {
+  lecture_id: string;
+  title: string;
+  source_type: string;
+  chunk_count: number;
+  ocr_chunk_count: number;
+  updated_at: string;
+}
+
 export interface CreateLectureResponse {
   lecture_id: string;
   status: string;

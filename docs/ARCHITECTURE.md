@@ -12,6 +12,7 @@ The backend exposes:
 
 - `GET /health`
 - `GET /api/lectures/sample`
+- `GET /api/lectures`
 - `POST /api/lectures`
 - `GET /api/lectures/{lecture_id}`
 - `POST /api/lectures/{lecture_id}/generate`
@@ -22,7 +23,9 @@ The backend exposes:
 Generation is deterministic and local. Video upload uses local tooling only:
 
 - System `ffmpeg` or the Python `imageio-ffmpeg` fallback extracts up to 10 keyframes at 30-second intervals.
-- Tesseract OCR scans extracted keyframes when available.
-- If either tool is missing, the backend returns a timeline with explicit warnings.
+- RapidOCR scans extracted keyframes locally when available; Tesseract OCR can be used as a fallback.
+- Optional `.txt`, `.srt`, or `.vtt` caption files are cleaned and merged into the video timeline.
+- If video frames cannot be extracted, the backend returns a fallback timeline with explicit warnings.
+- Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
 
 No Azure services, auth, database, or external API calls are used in the MVP.

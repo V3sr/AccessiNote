@@ -3,6 +3,7 @@ import type {
   CreateLectureResponse,
   GenerateResponse,
   ImageUploadResponse,
+  LectureSummary,
   LectureTimeline,
   OutputMode,
   VideoUploadResponse,
@@ -24,7 +25,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || `Request failed with ${response.status}`);
+    throw new Error(readErrorMessage(errorText, response.status));
   }
 
   return response.json() as Promise<T>;
@@ -40,6 +41,10 @@ export function getCapabilities(): Promise<CapabilityResponse> {
 
 export function loadSampleLecture(): Promise<LectureTimeline> {
   return request<LectureTimeline>("/api/lectures/sample");
+}
+
+export function listLectures(): Promise<LectureSummary[]> {
+  return request<LectureSummary[]>("/api/lectures");
 }
 
 export function createLectureFromTranscript(
@@ -74,11 +79,15 @@ export function uploadVideoLecture(
   title: string,
   videoFile: File,
   transcript: string,
+  transcriptFile?: File | null,
 ): Promise<VideoUploadResponse> {
   const formData = new FormData();
   formData.append("title", title);
   formData.append("video", videoFile);
   formData.append("transcript", transcript);
+  if (transcriptFile) {
+    formData.append("transcript_file", transcriptFile);
+  }
 
   return request<VideoUploadResponse>("/api/videos/upload", {
     method: "POST",
@@ -107,4 +116,29 @@ export function assetUrl(path: string): string {
     return path;
   }
   return `${API_BASE_URL}${path}`;
+}
+
+function readErrorMessage(errorText: string, status: number): string {
+  if (!errorText) {
+    return `Request failed with ${status}`;
+  }
+  try {
+    const parsed = JSON.parse(errorText) as { detail?: unknown };
+    if (typeof parsed.detail === "string") {
+      return parsed.detail;
+    }
+    if (Array.isArray(parsed.detail)) {
+      return parsed.detail
+        .map((item) => {
+          if (item && typeof item === "object" && "msg" in item) {
+            return String((item as { msg: unknown }).msg);
+          }
+          return String(item);
+        })
+        .join(" ");
+    }
+  } catch {
+    return errorText;
+  }
+  return errorText;
 }

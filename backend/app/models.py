@@ -42,6 +42,15 @@ class LectureTimeline(BaseModel):
     chunks: list[TimelineChunk]
 
 
+class LectureSummary(BaseModel):
+    lecture_id: str
+    title: str
+    source_type: str
+    chunk_count: int
+    ocr_chunk_count: int
+    updated_at: str
+
+
 class CreateLectureRequest(BaseModel):
     title: str = "Untitled Lecture"
     source_type: str = "transcript"

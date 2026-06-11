@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
-from .models import LectureTimeline
+from .models import LectureSummary, LectureTimeline
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -22,6 +23,29 @@ def load_saved_timeline(lecture_id: str) -> LectureTimeline | None:
     if not path.exists():
         return None
     return load_timeline_from_path(path)
+
+
+def list_saved_timelines(limit: int = 20) -> list[LectureSummary]:
+    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    summaries: list[LectureSummary] = []
+    for path in sorted(OUTPUTS_DIR.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        try:
+            timeline = load_timeline_from_path(path)
+        except (json.JSONDecodeError, OSError, TypeError, ValueError):
+            continue
+        summaries.append(
+            LectureSummary(
+                lecture_id=timeline.lecture_id,
+                title=timeline.title,
+                source_type=timeline.source.type,
+                chunk_count=len(timeline.chunks),
+                ocr_chunk_count=sum(1 for chunk in timeline.chunks if has_readable_ocr(chunk.ocr)),
+                updated_at=datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat(),
+            )
+        )
+        if len(summaries) >= limit:
+            break
+    return summaries
 
 
 def save_timeline(timeline: LectureTimeline) -> None:
@@ -44,3 +68,11 @@ def model_to_dict(timeline: LectureTimeline) -> dict:
     if hasattr(timeline, "model_dump"):
         return timeline.model_dump()
     return timeline.dict()
+
+
+def has_readable_ocr(items: list[str]) -> bool:
+    for item in items:
+        text = item.strip().lower()
+        if text and not text.startswith("no ocr") and "no readable text" not in text:
+            return True
+    return False

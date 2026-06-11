@@ -25,7 +25,7 @@ import type { CapabilityResponse } from "@/lib/types";
 interface UploadPanelProps {
   onLoadSample: () => Promise<void>;
   onCreateLecture: (title: string, transcript: string) => Promise<void>;
-  onUploadVideo: (title: string, videoFile: File, transcript: string) => Promise<void>;
+  onUploadVideo: (title: string, videoFile: File, transcript: string, transcriptFile?: File | null) => Promise<void>;
   onUploadImage: (title: string, imageFile: File, notes: string) => Promise<void>;
   capabilities: CapabilityResponse | null;
   isBusy: boolean;
@@ -68,6 +68,7 @@ export function UploadPanel({
   const [videoTitle, setVideoTitle] = useState("Uploaded Video Lecture");
   const [videoTranscript, setVideoTranscript] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoTranscriptFile, setVideoTranscriptFile] = useState<File | null>(null);
 
   const ocrReady = Boolean(capabilities?.ocr_engines.length);
   const primaryOcr = capabilities?.ocr_engines.map(formatEngineName).join(", ") || "Not ready";
@@ -82,7 +83,7 @@ export function UploadPanel({
     if (!videoFile) {
       return;
     }
-    await onUploadVideo(videoTitle, videoFile, videoTranscript);
+    await onUploadVideo(videoTitle, videoFile, videoTranscript, videoTranscriptFile);
   }
 
   async function submitImage(event: FormEvent<HTMLFormElement>) {
@@ -206,6 +207,7 @@ export function UploadPanel({
               onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
               className={fileInputClass}
             />
+            <SelectedFile file={imageFile} />
             <FieldLabel htmlFor="image-notes">Optional notes</FieldLabel>
             <textarea
               id="image-notes"
@@ -215,9 +217,9 @@ export function UploadPanel({
               placeholder="Optional: add slide context, course topic, or what to verify."
               className={textareaClass}
             />
-            <Button type="submit" disabled={isBusy || !imageFile || !ocrReady} className={primaryButtonClass}>
+            <Button type="submit" disabled={isBusy || !imageFile} className={primaryButtonClass}>
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
-              Scan image
+              {ocrReady ? "Scan image" : "Upload image with review note"}
             </Button>
           </form>
         )}
@@ -256,7 +258,17 @@ export function UploadPanel({
               onChange={(event) => setVideoFile(event.target.files?.[0] ?? null)}
               className={fileInputClass}
             />
-            <FieldLabel htmlFor="video-transcript">Optional transcript or notes</FieldLabel>
+            <SelectedFile file={videoFile} />
+            <FieldLabel htmlFor="video-transcript-file">Optional captions/transcript file</FieldLabel>
+            <input
+              id="video-transcript-file"
+              type="file"
+              accept="text/plain,.txt,.srt,.vtt"
+              onChange={(event) => setVideoTranscriptFile(event.target.files?.[0] ?? null)}
+              className={fileInputClass}
+            />
+            <SelectedFile file={videoTranscriptFile} />
+            <FieldLabel htmlFor="video-transcript">Optional transcript or notes text</FieldLabel>
             <textarea
               id="video-transcript"
               value={videoTranscript}
@@ -267,11 +279,11 @@ export function UploadPanel({
             />
             <Button
               type="submit"
-              disabled={isBusy || !videoFile || !capabilities?.ffmpeg_available}
+              disabled={isBusy || !videoFile}
               className={primaryButtonClass}
             >
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Upload and scan
+              {capabilities?.ffmpeg_available ? "Upload and scan" : "Upload with fallback timeline"}
             </Button>
           </form>
         )}
@@ -318,6 +330,27 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNod
       {children}
     </label>
   );
+}
+
+function SelectedFile({ file }: { file: File | null }) {
+  if (!file) {
+    return null;
+  }
+  return (
+    <p className="mt-2 rounded-md bg-zinc-50 px-3 py-2 text-xs leading-5 text-zinc-700">
+      Selected: <span className="font-semibold text-zinc-950">{file.name}</span> ({formatBytes(file.size)})
+    </p>
+  );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatEngineName(engine: string): string {

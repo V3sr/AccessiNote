@@ -16,3 +16,6 @@ advice. Review generated notes before using them for study, teaching, or accessi
 Video upload is local, but users still need permission to process the recording. Review extracted
 frames and OCR text before relying on generated notes, especially when slides contain equations,
 small text, names, or sensitive material.
+
+Uploaded files and generated timelines are stored in ignored local folders under `data/uploads` and
+`data/outputs`. Clear those folders manually when you no longer need local test material.

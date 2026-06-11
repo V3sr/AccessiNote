@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -15,11 +17,19 @@ from .models import (
     GenerateRequest,
     GenerateResponse,
     ImageUploadResponse,
+    LectureSummary,
     LectureTimeline,
     VideoUploadResponse,
 )
 from .retrieval import create_timeline_from_transcript
-from .storage import OUTPUTS_DIR, UPLOADS_DIR, load_sample_timeline, load_saved_timeline, save_timeline
+from .storage import (
+    OUTPUTS_DIR,
+    UPLOADS_DIR,
+    list_saved_timelines,
+    load_sample_timeline,
+    load_saved_timeline,
+    save_timeline,
+)
 from .video_processor import (
     build_capability_notes,
     ffmpeg_available,
@@ -72,6 +82,11 @@ def get_sample_lecture() -> LectureTimeline:
     return load_sample_timeline()
 
 
+@app.get("/api/lectures", response_model=list[LectureSummary])
+def list_lectures(limit: int = 20) -> list[LectureSummary]:
+    return list_saved_timelines(limit=max(1, min(limit, 100)))
+
+
 @app.post("/api/lectures", response_model=CreateLectureResponse)
 def create_lecture(request: CreateLectureRequest) -> CreateLectureResponse:
     if request.source_type != "transcript":
@@ -106,25 +121,29 @@ async def upload_video(
     title: str = Form("Uploaded Video Lecture"),
     transcript: str = Form(""),
     video: UploadFile = File(...),
+    transcript_file: UploadFile | None = File(None),
 ) -> VideoUploadResponse:
     if not video.filename:
         raise HTTPException(status_code=400, detail="Video file is required.")
 
-    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    safe_name = safe_filename(video.filename)
-    upload_path = UPLOADS_DIR / safe_name
-    if upload_path.suffix.lower() not in VIDEO_SUFFIXES:
-        raise HTTPException(status_code=400, detail="Unsupported video file type.")
+    upload_path = await save_upload_file(
+        upload=video,
+        allowed_suffixes=VIDEO_SUFFIXES,
+        default_stem="uploaded_video",
+        max_bytes=MAX_VIDEO_UPLOAD_BYTES,
+        kind="video",
+    )
 
-    with upload_path.open("wb") as buffer:
-        while chunk := await video.read(1024 * 1024):
-            buffer.write(chunk)
+    transcript_text = transcript.strip()
+    if transcript_file and transcript_file.filename:
+        transcript_file_text = await read_text_upload(transcript_file)
+        transcript_text = "\n\n".join(part for part in [transcript_text, transcript_file_text] if part)
 
     result = process_video_to_timeline(
         title=title,
         video_path=upload_path,
         outputs_dir=OUTPUTS_DIR,
-        transcript_hint=transcript,
+        transcript_hint=transcript_text,
     )
     save_timeline(result.timeline)
     return VideoUploadResponse(
@@ -145,15 +164,13 @@ async def upload_image(
     if not image.filename:
         raise HTTPException(status_code=400, detail="Image file is required.")
 
-    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    safe_name = safe_filename(image.filename)
-    upload_path = UPLOADS_DIR / safe_name
-    if upload_path.suffix.lower() not in IMAGE_SUFFIXES:
-        raise HTTPException(status_code=400, detail="Unsupported image file type.")
-
-    with upload_path.open("wb") as buffer:
-        while chunk := await image.read(1024 * 1024):
-            buffer.write(chunk)
+    upload_path = await save_upload_file(
+        upload=image,
+        allowed_suffixes=IMAGE_SUFFIXES,
+        default_stem="uploaded_image",
+        max_bytes=MAX_IMAGE_UPLOAD_BYTES,
+        kind="image",
+    )
 
     result = process_image_to_timeline(
         title=title,
@@ -180,13 +197,71 @@ def get_lecture_frame(lecture_id: str, filename: str) -> FileResponse:
     return FileResponse(frame_path)
 
 
-def safe_filename(filename: str) -> str:
+async def save_upload_file(
+    upload: UploadFile,
+    allowed_suffixes: set[str],
+    default_stem: str,
+    max_bytes: int,
+    kind: str,
+) -> Path:
+    if not upload.filename:
+        raise HTTPException(status_code=400, detail=f"{kind.capitalize()} file is required.")
+
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    safe_name = safe_filename(upload.filename, allowed_suffixes, default_stem)
+    upload_path = UPLOADS_DIR / safe_name
+    bytes_written = 0
+    with upload_path.open("wb") as buffer:
+        while chunk := await upload.read(1024 * 1024):
+            bytes_written += len(chunk)
+            if bytes_written > max_bytes:
+                buffer.close()
+                upload_path.unlink(missing_ok=True)
+                max_mb = max_bytes // (1024 * 1024)
+                raise HTTPException(status_code=413, detail=f"{kind.capitalize()} file is too large. Maximum is {max_mb} MB.")
+            buffer.write(chunk)
+    if bytes_written == 0:
+        upload_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail=f"{kind.capitalize()} file is empty.")
+    return upload_path
+
+
+async def read_text_upload(upload: UploadFile) -> str:
+    suffix = Path(upload.filename or "").suffix.lower()
+    if suffix not in TRANSCRIPT_SUFFIXES:
+        raise HTTPException(status_code=400, detail="Caption/transcript file must be TXT, SRT, or VTT.")
+    content = await upload.read(MAX_TRANSCRIPT_UPLOAD_BYTES + 1)
+    if len(content) > MAX_TRANSCRIPT_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Caption/transcript file is too large. Maximum is 2 MB.")
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = content.decode("utf-8", errors="replace")
+    return clean_caption_text(text)
+
+
+def clean_caption_text(text: str) -> str:
+    lines = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.upper() == "WEBVTT" or line.isdigit():
+            continue
+        if "-->" in line:
+            continue
+        line = re.sub(r"<[^>]+>", "", line)
+        line = re.sub(r"\{[^}]+\}", "", line)
+        if line:
+            lines.append(line)
+    return " ".join(lines).strip()
+
+
+def safe_filename(filename: str, allowed_suffixes: set[str], default_stem: str) -> str:
     source = Path(filename).name
-    stem = safe_path_part(Path(source).stem) or "uploaded_video"
+    stem = safe_path_part(Path(source).stem) or default_stem
     suffix = Path(source).suffix.lower()
-    if suffix not in VIDEO_SUFFIXES | IMAGE_SUFFIXES:
-        suffix = ".bin"
-    return f"{stem}{suffix}"
+    if suffix not in allowed_suffixes:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type: {suffix or 'none'}.")
+    return f"{stem}_{uuid.uuid4().hex[:8]}{suffix}"
 
 
 def safe_path_part(value: str) -> str:
@@ -195,3 +270,7 @@ def safe_path_part(value: str) -> str:
 
 VIDEO_SUFFIXES = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff"}
+TRANSCRIPT_SUFFIXES = {".txt", ".srt", ".vtt"}
+MAX_VIDEO_UPLOAD_BYTES = 750 * 1024 * 1024
+MAX_IMAGE_UPLOAD_BYTES = 35 * 1024 * 1024
+MAX_TRANSCRIPT_UPLOAD_BYTES = 2 * 1024 * 1024

@@ -32,11 +32,12 @@ import {
   getCapabilities,
   getHealth,
   getLecture,
+  listLectures,
   loadSampleLecture,
   uploadImageLecture,
   uploadVideoLecture,
 } from "@/lib/api";
-import type { CapabilityResponse, GenerateResponse, LectureTimeline, OutputMode } from "@/lib/types";
+import type { CapabilityResponse, GenerateResponse, LectureSummary, LectureTimeline, OutputMode } from "@/lib/types";
 
 const modeLabels: Record<OutputMode, string> = {
   structured_notes: "Structured Notes",
@@ -53,6 +54,7 @@ export default function Home() {
   const [capabilities, setCapabilities] = useState<CapabilityResponse | null>(null);
   const [selectedMode, setSelectedMode] = useState<OutputMode>("adhd_study_pack");
   const [output, setOutput] = useState<GenerateResponse | null>(null);
+  const [recentLectures, setRecentLectures] = useState<LectureSummary[]>([]);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -72,7 +74,17 @@ export default function Home() {
     getCapabilities()
       .then(setCapabilities)
       .catch(() => setCapabilities(null));
+    refreshRecentLectures();
   }, []);
+
+  async function refreshRecentLectures() {
+    try {
+      const lectures = await listLectures();
+      setRecentLectures(lectures);
+    } catch {
+      setRecentLectures([]);
+    }
+  }
 
   async function runAction(action: () => Promise<void>) {
     setIsBusy(true);
@@ -103,15 +115,17 @@ export default function Home() {
       const nextLecture = await getLecture(created.lecture_id);
       setLecture(nextLecture);
       setOutput(null);
+      await refreshRecentLectures();
     });
   }
 
-  async function handleUploadVideo(title: string, videoFile: File, transcript: string) {
+  async function handleUploadVideo(title: string, videoFile: File, transcript: string, transcriptFile?: File | null) {
     await runAction(async () => {
-      const uploaded = await uploadVideoLecture(title, videoFile, transcript);
+      const uploaded = await uploadVideoLecture(title, videoFile, transcript, transcriptFile);
       const nextLecture = await getLecture(uploaded.lecture_id);
       setLecture(nextLecture);
       setOutput(null);
+      await refreshRecentLectures();
       const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
       setNotice(
         `Video timeline created with ${uploaded.frame_count} extracted frame(s). OCR text found in ${uploaded.ocr_frame_count} frame(s). Engine: ${uploaded.ocr_engine}.${warningText}`,
@@ -125,10 +139,19 @@ export default function Home() {
       const nextLecture = await getLecture(uploaded.lecture_id);
       setLecture(nextLecture);
       setOutput(null);
+      await refreshRecentLectures();
       const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
       setNotice(
         `Image timeline created with ${uploaded.ocr_text_count} OCR text line(s). Engine: ${uploaded.ocr_engine}.${warningText}`,
       );
+    });
+  }
+
+  async function handleLoadSavedLecture(lectureId: string) {
+    await runAction(async () => {
+      const nextLecture = await getLecture(lectureId);
+      setLecture(nextLecture);
+      setOutput(null);
     });
   }
 
@@ -242,6 +265,7 @@ export default function Home() {
         <div className="grid min-w-0 gap-5 xl:grid-cols-[320px_minmax(0,1fr)_320px] xl:items-start">
           <aside className="min-w-0 space-y-5">
             <LectureOverview lecture={lecture} />
+            <RecentTimelines lectures={recentLectures} onLoad={handleLoadSavedLecture} disabled={isBusy} />
             <WorkbenchStat
               icon={<UploadCloud className="h-4 w-4" aria-hidden="true" />}
               label="Source"
@@ -365,6 +389,52 @@ function LectureOverview({ lecture }: { lecture: LectureTimeline | null }) {
           </div>
         ))}
       </div>
+    </Card>
+  );
+}
+
+function RecentTimelines({
+  lectures,
+  onLoad,
+  disabled,
+}: {
+  lectures: LectureSummary[];
+  onLoad: (lectureId: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-zinc-950">Recent local timelines</h2>
+        <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
+          {lectures.length}
+        </Badge>
+      </div>
+
+      {lectures.length === 0 ? (
+        <p className="mt-3 text-sm leading-6 text-zinc-600">
+          Created transcripts and media scans will appear here for this local workspace.
+        </p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {lectures.slice(0, 5).map((item) => (
+            <button
+              key={item.lecture_id}
+              type="button"
+              onClick={() => onLoad(item.lecture_id)}
+              disabled={disabled}
+              className="w-full rounded-xl border border-zinc-200 bg-white p-3 text-left transition hover:bg-zinc-50 active:translate-y-px disabled:cursor-not-allowed disabled:bg-zinc-50"
+            >
+              <span className="block truncate text-sm font-semibold text-zinc-950">{item.title}</span>
+              <span className="mt-1 flex flex-wrap gap-2 text-xs font-medium text-zinc-600">
+                <span>{item.source_type}</span>
+                <span>{item.chunk_count} chunks</span>
+                <span>{item.ocr_chunk_count} OCR</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
