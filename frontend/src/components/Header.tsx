@@ -1,5 +1,8 @@
 import { Accessibility, Activity, ArrowDown, HardDrive } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
 interface HeaderProps {
   apiStatus: "checking" | "ok" | "offline";
 }
@@ -39,8 +42,9 @@ export function Header({ apiStatus }: HeaderProps) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <div
-            className="hidden min-h-10 items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-800 sm:inline-flex"
+          <Badge
+            variant="outline"
+            className="hidden min-h-10 items-center gap-2 rounded-full border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-800 sm:inline-flex"
             aria-live="polite"
           >
             <Activity
@@ -54,15 +58,17 @@ export function Header({ apiStatus }: HeaderProps) {
               aria-hidden="true"
             />
             {statusLabel}
-          </div>
-          <a
-            href="#source-desk"
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 active:translate-y-px active:bg-blue-800"
+          </Badge>
+          <Button
+            asChild
+            className="min-h-10 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 active:translate-y-px active:bg-blue-800"
           >
-            <HardDrive className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Start local</span>
-            <ArrowDown className="h-4 w-4 sm:hidden" aria-hidden="true" />
-          </a>
+            <a href="#source-desk">
+              <HardDrive className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Start local</span>
+              <ArrowDown className="h-4 w-4 sm:hidden" aria-hidden="true" />
+            </a>
+          </Button>
         </div>
       </div>
     </header>

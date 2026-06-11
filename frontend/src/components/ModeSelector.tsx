@@ -2,6 +2,8 @@
 
 import { BookOpen, Brain, ClipboardCheck, FileSearch, Glasses, Languages } from "lucide-react";
 
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { OutputMode } from "@/lib/types";
 
 interface ModeSelectorProps {
@@ -58,7 +60,7 @@ export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelec
   const selected = modes.find((mode) => mode.mode === selectedMode) ?? modes[0];
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
+    <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-2 border-b border-zinc-200 p-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-base font-semibold text-zinc-950">Output formats</h2>
@@ -66,27 +68,21 @@ export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelec
         </div>
         <p className="text-xs font-semibold text-emerald-800">{selected.description}</p>
       </div>
-      <div className="flex flex-wrap gap-2 p-3">
-        {modes.map(({ mode, label, icon: Icon }) => {
-          const isSelected = mode === selectedMode;
-          return (
-            <button
+      <Tabs value={selectedMode} onValueChange={(value) => onSelectMode(value as OutputMode)}>
+        <TabsList className="flex h-auto flex-wrap justify-start gap-2 bg-transparent p-3">
+          {modes.map(({ mode, label, icon: Icon }) => (
+            <TabsTrigger
               key={mode}
-              type="button"
-              onClick={() => onSelectMode(mode)}
+              value={mode}
               disabled={disabled}
-              className={`inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition active:translate-y-px ${
-                isSelected
-                  ? "border-emerald-700 bg-emerald-50 text-emerald-950"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
-              } disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500`}
+              className="min-h-11 gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-[#27272a] shadow-none transition hover:border-zinc-300 hover:bg-zinc-50 active:translate-y-px data-[state=active]:border-emerald-700 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-950 data-[state=active]:shadow-none disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-[#52525b]"
             >
-              <Icon className={`h-4 w-4 ${isSelected ? "text-emerald-700" : "text-zinc-500"}`} aria-hidden="true" />
+              <Icon className="h-4 w-4 text-current" aria-hidden="true" />
               {label}
-            </button>
-          );
-        })}
-      </div>
-    </section>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+    </Card>
   );
 }

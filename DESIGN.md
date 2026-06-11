@@ -44,6 +44,7 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Mode selector: compact output builder with clear icon, label, and short description.
 - Output viewer: markdown preview plus source references and export actions.
 - Learning insights: source coverage ring, key concept count, review time estimate, and generated format count.
+- Component foundation: shadcn/ui-owned primitives are used for buttons, cards, badges, alerts, separators, and tabs. Keep AccessiNote-specific visual decisions in local class names instead of drifting back to generic shadcn defaults.
 
 ## Interaction
 

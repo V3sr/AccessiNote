@@ -16,6 +16,10 @@ import {
 import type { ReactNode } from "react";
 import { FormEvent, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CapabilityResponse } from "@/lib/types";
 
 interface UploadPanelProps {
@@ -90,7 +94,7 @@ export function UploadPanel({
   }
 
   return (
-    <section id="source-desk" className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
+    <Card id="source-desk" className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="p-4 sm:p-5">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
           <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-5 text-center">
@@ -101,10 +105,10 @@ export function UploadPanel({
             <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-600">
               Select a local source below to build a timestamped evidence timeline.
             </p>
-            <div className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
+            <Badge className="mt-4 inline-flex min-h-9 gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100 hover:bg-emerald-50">
               <ScanText className="h-3.5 w-3.5" aria-hidden="true" />
               OCR {ocrReady ? "ready" : "offline"}
-            </div>
+            </Badge>
           </div>
 
           <div className="grid gap-2">
@@ -122,26 +126,20 @@ export function UploadPanel({
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {sourceTabs.map(({ id, label, icon: Icon }) => {
-            const selected = activeTab === id;
-            return (
-              <button
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as SourceTab)}>
+          <TabsList className="mt-4 grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4">
+            {sourceTabs.map(({ id, label, icon: Icon }) => (
+              <TabsTrigger
                 key={id}
-                type="button"
-                onClick={() => setActiveTab(id)}
-                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm font-semibold transition active:translate-y-px ${
-                  selected
-                    ? "border-emerald-700 bg-emerald-50 text-emerald-950"
-                    : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                }`}
+                value={id}
+                className="min-h-11 gap-2 rounded-md border border-zinc-200 bg-white px-2 py-2 text-sm font-semibold text-[#27272a] shadow-none transition hover:bg-zinc-50 active:translate-y-px data-[state=active]:border-emerald-700 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-950 data-[state=active]:shadow-none"
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />
                 {label}
-              </button>
-            );
-          })}
-        </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       <div className="border-t border-zinc-200 p-4 sm:p-5">
@@ -152,7 +150,7 @@ export function UploadPanel({
               Load a deterministic linear algebra lecture with transcript, OCR text, concepts, and visual
               descriptions.
             </p>
-            <button
+            <Button
               type="button"
               onClick={onLoadSample}
               disabled={isBusy}
@@ -160,7 +158,7 @@ export function UploadPanel({
             >
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
               Load sample lecture
-            </button>
+            </Button>
           </div>
         )}
 
@@ -182,10 +180,10 @@ export function UploadPanel({
               placeholder="Paste permitted lecture transcript text here..."
               className={textareaClass}
             />
-            <button type="submit" disabled={isBusy || transcript.trim().length === 0} className={primaryButtonClass}>
+            <Button type="submit" disabled={isBusy || transcript.trim().length === 0} className={primaryButtonClass}>
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
               Create timeline
-            </button>
+            </Button>
           </form>
         )}
 
@@ -217,10 +215,10 @@ export function UploadPanel({
               placeholder="Optional: add slide context, course topic, or what to verify."
               className={textareaClass}
             />
-            <button type="submit" disabled={isBusy || !imageFile || !ocrReady} className={primaryButtonClass}>
+            <Button type="submit" disabled={isBusy || !imageFile || !ocrReady} className={primaryButtonClass}>
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
               Scan image
-            </button>
+            </Button>
           </form>
         )}
 
@@ -267,18 +265,18 @@ export function UploadPanel({
               placeholder="Optional: paste captions or notes to pair with scanned video frames."
               className={textareaClass}
             />
-            <button
+            <Button
               type="submit"
               disabled={isBusy || !videoFile || !capabilities?.ffmpeg_available}
               className={primaryButtonClass}
             >
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               Upload and scan
-            </button>
+            </Button>
           </form>
         )}
       </div>
-    </section>
+    </Card>
   );
 }
 

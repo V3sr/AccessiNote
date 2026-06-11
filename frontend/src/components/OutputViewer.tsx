@@ -4,6 +4,8 @@ import { Clipboard, Download, FileDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { GenerateResponse } from "@/lib/types";
 
 interface OutputViewerProps {
@@ -33,39 +35,40 @@ export function OutputViewer({ output }: OutputViewerProps) {
 
   if (!output) {
     return (
-      <section className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
+      <Card className="rounded-2xl border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700 shadow-none">
         <p className="font-semibold text-zinc-950">Generated output preview</p>
         <p className="mt-1 max-w-2xl">
           Generate an output to preview rewritten markdown, source references, warnings, and export controls.
         </p>
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
+    <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-emerald-800">Generated output</p>
           <h2 className="text-lg font-semibold tracking-normal text-zinc-950">{output.title}</h2>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
             onClick={copyMarkdown}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 active:translate-y-px active:bg-zinc-200"
+            variant="outline"
+            className="min-h-11 border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 active:translate-y-px active:bg-zinc-200"
           >
             <Clipboard className="h-4 w-4" aria-hidden="true" />
             Copy
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={downloadMarkdown}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 active:translate-y-px active:bg-zinc-700"
+            className="min-h-11 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800 active:translate-y-px active:bg-zinc-700"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             Download
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -98,6 +101,6 @@ export function OutputViewer({ output }: OutputViewerProps) {
           </div>
         </aside>
       </div>
-    </section>
+    </Card>
   );
 }

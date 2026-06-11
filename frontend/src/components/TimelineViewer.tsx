@@ -2,6 +2,8 @@ import { Clock, Eye, FileText, Gauge, ImageIcon, ScanText } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { assetUrl } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import type { LectureTimeline, TimelineChunk } from "@/lib/types";
 
 interface TimelineViewerProps {
@@ -11,7 +13,7 @@ interface TimelineViewerProps {
 export function TimelineViewer({ lecture }: TimelineViewerProps) {
   if (!lecture) {
     return (
-      <section className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
+      <Card className="rounded-2xl border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700 shadow-none">
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 h-5 w-5 text-emerald-700" aria-hidden="true" />
           <div>
@@ -22,7 +24,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
             </p>
           </div>
         </div>
-      </section>
+      </Card>
     );
   }
 
@@ -31,7 +33,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
     lecture.chunks.reduce((total, chunk) => total + chunk.source_confidence, 0) / Math.max(1, lecture.chunks.length);
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white shadow-soft">
+    <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold text-emerald-800">Evidence timeline</p>
@@ -53,7 +55,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
           <TimelineChunkCard key={chunk.chunk_id} chunk={chunk} />
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -80,28 +82,28 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
                 <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
                 Keyframe
               </span>
-              <span
+              <Badge
                 className={`rounded-md px-2 py-1 font-semibold ${
                   ocrDetected ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-950"
                 }`}
               >
                 OCR {chunk.ocr_confidence > 0 ? percent(chunk.ocr_confidence) : ocrDetected ? "text" : "none"}
-              </span>
+              </Badge>
             </div>
           </div>
         )}
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-800">
+            <Badge variant="secondary" className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-800">
               <Clock className="h-3.5 w-3.5" aria-hidden="true" />
               {chunk.start}-{chunk.end}
-            </span>
-            <span className="rounded-md bg-zinc-950 px-2 py-1 text-xs font-semibold text-white">{chunk.chunk_id}</span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
+            </Badge>
+            <Badge className="rounded-md bg-zinc-950 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-950">{chunk.chunk_id}</Badge>
+            <Badge className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100 hover:bg-emerald-50">
               <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
               {percent(chunk.source_confidence)} source
-            </span>
+            </Badge>
           </div>
 
           <p className="mt-3 text-sm leading-6 text-zinc-800">{chunk.transcript}</p>
