@@ -16,6 +16,7 @@ import {
   getHealth,
   getLecture,
   loadSampleLecture,
+  uploadImageLecture,
   uploadVideoLecture,
 } from "@/lib/api";
 import type { CapabilityResponse, GenerateResponse, LectureTimeline, OutputMode } from "@/lib/types";
@@ -85,6 +86,19 @@ export default function Home() {
     });
   }
 
+  async function handleUploadImage(title: string, imageFile: File, notes: string) {
+    await runAction(async () => {
+      const uploaded = await uploadImageLecture(title, imageFile, notes);
+      const nextLecture = await getLecture(uploaded.lecture_id);
+      setLecture(nextLecture);
+      setOutput(null);
+      const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
+      setNotice(
+        `Image timeline created with ${uploaded.ocr_text_count} OCR text line(s). Engine: ${uploaded.ocr_engine}.${warningText}`,
+      );
+    });
+  }
+
   async function handleGenerate() {
     if (!lecture) {
       setError("Load or create a lecture before generating an output.");
@@ -108,6 +122,7 @@ export default function Home() {
             onLoadSample={handleLoadSample}
             onCreateLecture={handleCreateLecture}
             onUploadVideo={handleUploadVideo}
+            onUploadImage={handleUploadImage}
             capabilities={capabilities}
             isBusy={isBusy}
           />

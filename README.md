@@ -33,6 +33,7 @@ Open `http://localhost:3000`.
 
 - Load a synthetic sample lecture timeline.
 - Paste a custom transcript and create an approximate timeline.
+- Upload a slide, screenshot, or board image and scan it with local OCR.
 - Upload a permitted video and create a local timeline.
 - Extract video keyframes when `ffmpeg` is installed.
 - OCR extracted frames with bundled local RapidOCR, or Tesseract OCR when installed.
@@ -43,10 +44,11 @@ Open `http://localhost:3000`.
 
 ## Local Video/OCR
 
-Video upload works without cloud services. The backend uses a Python-packaged ffmpeg fallback for
-keyframe extraction when system `ffmpeg` is not on PATH. If no ffmpeg executable is available,
-AccessiNote saves the video and creates a placeholder timeline explaining that frames could not be
-extracted.
+Image and video upload work without cloud services. Still-image uploads are treated as one visual
+timeline chunk and scanned directly with local OCR. Video uploads use a Python-packaged ffmpeg
+fallback for keyframe extraction when system `ffmpeg` is not on PATH. If no ffmpeg executable is
+available, AccessiNote saves the video and creates a placeholder timeline explaining that frames
+could not be extracted.
 
 RapidOCR runs locally through ONNX Runtime and is installed with the backend requirements. Tesseract
 is optional and can be used as a fallback local OCR engine:

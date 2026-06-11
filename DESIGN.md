@@ -36,7 +36,7 @@ Color should remain restrained. Use accent colors for action, current state, and
 
 - Header: compact brand mark, product name, tagline, and API status.
 - Safety banner: persistent, readable, and visually distinct.
-- Input panels: task-specific sections for sample, transcript, and video.
+- Input panels: task-specific sections for sample, transcript, image/slide OCR, and video.
 - Video pre-flight: compact capability rows for frame extraction and OCR engine readiness.
 - Timeline chunks: repeated evidence cards with timestamp, concepts, transcript, OCR confidence, visual evidence, and optional keyframes.
 - Mode selector: button-list with clear icon, label, and short description.

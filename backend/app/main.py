@@ -7,12 +7,14 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from .generator import generate_output
+from .image_processor import process_image_to_timeline
 from .models import (
     CapabilityResponse,
     CreateLectureRequest,
     CreateLectureResponse,
     GenerateRequest,
     GenerateResponse,
+    ImageUploadResponse,
     LectureTimeline,
     VideoUploadResponse,
 )
@@ -111,6 +113,9 @@ async def upload_video(
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     safe_name = safe_filename(video.filename)
     upload_path = UPLOADS_DIR / safe_name
+    if upload_path.suffix.lower() not in VIDEO_SUFFIXES:
+        raise HTTPException(status_code=400, detail="Unsupported video file type.")
+
     with upload_path.open("wb") as buffer:
         while chunk := await video.read(1024 * 1024):
             buffer.write(chunk)
@@ -131,6 +136,40 @@ async def upload_video(
     )
 
 
+@app.post("/api/images/upload", response_model=ImageUploadResponse)
+async def upload_image(
+    title: str = Form("Uploaded Slide Image"),
+    notes: str = Form(""),
+    image: UploadFile = File(...),
+) -> ImageUploadResponse:
+    if not image.filename:
+        raise HTTPException(status_code=400, detail="Image file is required.")
+
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    safe_name = safe_filename(image.filename)
+    upload_path = UPLOADS_DIR / safe_name
+    if upload_path.suffix.lower() not in IMAGE_SUFFIXES:
+        raise HTTPException(status_code=400, detail="Unsupported image file type.")
+
+    with upload_path.open("wb") as buffer:
+        while chunk := await image.read(1024 * 1024):
+            buffer.write(chunk)
+
+    result = process_image_to_timeline(
+        title=title,
+        image_path=upload_path,
+        outputs_dir=OUTPUTS_DIR,
+        notes_hint=notes,
+    )
+    save_timeline(result.timeline)
+    return ImageUploadResponse(
+        lecture_id=result.timeline.lecture_id,
+        ocr_text_count=result.ocr_text_count,
+        ocr_engine=result.ocr_engine,
+        warnings=result.warnings,
+    )
+
+
 @app.get("/api/lectures/{lecture_id}/frames/{filename}")
 def get_lecture_frame(lecture_id: str, filename: str) -> FileResponse:
     safe_id = safe_path_part(lecture_id)
@@ -145,10 +184,14 @@ def safe_filename(filename: str) -> str:
     source = Path(filename).name
     stem = safe_path_part(Path(source).stem) or "uploaded_video"
     suffix = Path(source).suffix.lower()
-    if suffix not in {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}:
+    if suffix not in VIDEO_SUFFIXES | IMAGE_SUFFIXES:
         suffix = ".bin"
     return f"{stem}{suffix}"
 
 
 def safe_path_part(value: str) -> str:
     return "".join(char for char in value if char.isalnum() or char in {"_", "-", "."})
+
+
+VIDEO_SUFFIXES = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff"}

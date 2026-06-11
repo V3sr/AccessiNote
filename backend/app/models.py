@@ -78,6 +78,7 @@ class CapabilityResponse(BaseModel):
     rapidocr_available: bool
     tesseract_available: bool
     video_upload_enabled: bool = True
+    image_upload_enabled: bool = True
     ocr_engines: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
@@ -87,5 +88,13 @@ class VideoUploadResponse(BaseModel):
     status: str = "created"
     frame_count: int = 0
     ocr_frame_count: int = 0
+    ocr_engine: str = "none"
+    warnings: list[str] = Field(default_factory=list)
+
+
+class ImageUploadResponse(BaseModel):
+    lecture_id: str
+    status: str = "created"
+    ocr_text_count: int = 0
     ocr_engine: str = "none"
     warnings: list[str] = Field(default_factory=list)

@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   FileText,
+  ImageIcon,
   Loader2,
   Play,
   PlusCircle,
@@ -19,6 +20,7 @@ interface UploadPanelProps {
   onLoadSample: () => Promise<void>;
   onCreateLecture: (title: string, transcript: string) => Promise<void>;
   onUploadVideo: (title: string, videoFile: File, transcript: string) => Promise<void>;
+  onUploadImage: (title: string, imageFile: File, notes: string) => Promise<void>;
   capabilities: CapabilityResponse | null;
   isBusy: boolean;
 }
@@ -27,11 +29,15 @@ export function UploadPanel({
   onLoadSample,
   onCreateLecture,
   onUploadVideo,
+  onUploadImage,
   capabilities,
   isBusy,
 }: UploadPanelProps) {
   const [title, setTitle] = useState("My Local Transcript");
   const [transcript, setTranscript] = useState("");
+  const [imageTitle, setImageTitle] = useState("Uploaded Slide Image");
+  const [imageNotes, setImageNotes] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState("Uploaded Video Lecture");
   const [videoTranscript, setVideoTranscript] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -50,6 +56,14 @@ export function UploadPanel({
       return;
     }
     await onUploadVideo(videoTitle, videoFile, videoTranscript);
+  }
+
+  async function submitImage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!imageFile) {
+      return;
+    }
+    await onUploadImage(imageTitle, imageFile, imageNotes);
   }
 
   return (
@@ -108,6 +122,66 @@ export function UploadPanel({
         >
           {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
           Create Timeline
+        </button>
+      </form>
+
+      <form
+        onSubmit={submitImage}
+        className="min-w-0 max-w-full rounded-lg border border-emerald-200 bg-white p-4 shadow-soft"
+      >
+        <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
+          <ImageIcon className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+          Upload Image/Slide
+        </h2>
+
+        <div className="mt-3 grid gap-2 text-xs leading-5">
+          <CapabilityRow
+            label="OCR scan"
+            value={capabilities ? primaryOcr : "Checking"}
+            ready={ocrReady}
+          />
+        </div>
+
+        <label className="mt-4 block text-sm font-medium text-zinc-800" htmlFor="image-title">
+          Image title
+        </label>
+        <input
+          id="image-title"
+          value={imageTitle}
+          onChange={(event) => setImageTitle(event.target.value)}
+          className="mt-2 min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+        />
+
+        <label className="mt-4 block text-sm font-medium text-zinc-800" htmlFor="image-file">
+          Image file
+        </label>
+        <input
+          id="image-file"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff"
+          onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+          className="mt-2 min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-950 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white"
+        />
+
+        <label className="mt-4 block text-sm font-medium text-zinc-800" htmlFor="image-notes">
+          Optional notes
+        </label>
+        <textarea
+          id="image-notes"
+          value={imageNotes}
+          onChange={(event) => setImageNotes(event.target.value)}
+          rows={4}
+          placeholder="Optional: add slide context, course topic, or what to verify."
+          className="mt-2 w-full resize-y rounded-md border border-zinc-300 px-3 py-2 text-sm leading-6 text-zinc-950 outline-none transition placeholder:text-zinc-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+        />
+
+        <button
+          type="submit"
+          disabled={isBusy || !imageFile || !ocrReady}
+          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-emerald-50 disabled:text-emerald-950"
+        >
+          {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
+          Scan Image
         </button>
       </form>
 

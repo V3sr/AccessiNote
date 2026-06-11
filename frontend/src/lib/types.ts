@@ -59,6 +59,7 @@ export interface CapabilityResponse {
   rapidocr_available: boolean;
   tesseract_available: boolean;
   video_upload_enabled: boolean;
+  image_upload_enabled: boolean;
   ocr_engines: string[];
   notes: string[];
 }
@@ -68,6 +69,14 @@ export interface VideoUploadResponse {
   status: string;
   frame_count: number;
   ocr_frame_count: number;
+  ocr_engine: string;
+  warnings: string[];
+}
+
+export interface ImageUploadResponse {
+  lecture_id: string;
+  status: string;
+  ocr_text_count: number;
   ocr_engine: string;
   warnings: string[];
 }

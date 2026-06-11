@@ -2,6 +2,7 @@ import type {
   CapabilityResponse,
   CreateLectureResponse,
   GenerateResponse,
+  ImageUploadResponse,
   LectureTimeline,
   OutputMode,
   VideoUploadResponse,
@@ -80,6 +81,22 @@ export function uploadVideoLecture(
   formData.append("transcript", transcript);
 
   return request<VideoUploadResponse>("/api/videos/upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function uploadImageLecture(
+  title: string,
+  imageFile: File,
+  notes: string,
+): Promise<ImageUploadResponse> {
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("image", imageFile);
+  formData.append("notes", notes);
+
+  return request<ImageUploadResponse>("/api/images/upload", {
     method: "POST",
     body: formData,
   });
