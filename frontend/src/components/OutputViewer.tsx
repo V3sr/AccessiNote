@@ -33,9 +33,8 @@ export function OutputViewer({ output }: OutputViewerProps) {
 
   if (!output) {
     return (
-      <section className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-600">
-        Generate an output to preview polished markdown, source references, warnings, and export
-        controls.
+      <section className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
+        Generate an output to preview rewritten markdown, source references, warnings, and export controls.
       </section>
     );
   }
@@ -44,14 +43,14 @@ export function OutputViewer({ output }: OutputViewerProps) {
     <section className="rounded-lg border border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Generated Output</p>
+          <p className="text-sm font-semibold text-emerald-800">Generated output</p>
           <h2 className="text-lg font-semibold tracking-normal text-zinc-950">{output.title}</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={copyMarkdown}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 active:bg-zinc-200"
+            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 active:translate-y-px active:bg-zinc-200"
           >
             <Clipboard className="h-4 w-4" aria-hidden="true" />
             Copy
@@ -59,7 +58,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
           <button
             type="button"
             onClick={downloadMarkdown}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 active:bg-zinc-700"
+            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 active:translate-y-px active:bg-zinc-700"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             Download
@@ -81,14 +80,14 @@ export function OutputViewer({ output }: OutputViewerProps) {
         </article>
         <aside className="border-t border-zinc-200 p-4 lg:border-l lg:border-t-0">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
-            <FileDown className="h-4 w-4 text-zinc-500" aria-hidden="true" />
+            <FileDown className="h-4 w-4 text-emerald-700" aria-hidden="true" />
             Source References
           </h3>
           <div className="mt-3 space-y-3">
             {output.sources.map((source) => (
               <div key={source.chunk_id} className="rounded-md bg-zinc-50 p-3 text-sm leading-5 text-zinc-700">
                 <p className="font-semibold text-zinc-950">
-                  {source.chunk_id} · {source.start}-{source.end}
+                  {source.chunk_id} - {source.start}-{source.end}
                 </p>
                 <p className="mt-1">{source.reason}</p>
               </div>

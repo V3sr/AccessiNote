@@ -63,9 +63,12 @@ const modes: Array<{
 
 export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelectorProps) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
-      <h2 className="text-base font-semibold text-zinc-950">Output Mode</h2>
-      <div className="mt-4 grid gap-2">
+    <section className="rounded-lg border border-zinc-200 bg-white shadow-soft">
+      <div className="border-b border-zinc-200 p-4">
+        <h2 className="text-base font-semibold text-zinc-950">Output Builder</h2>
+        <p className="mt-1 text-sm leading-5 text-zinc-600">Choose how the evidence should be rewritten.</p>
+      </div>
+      <div className="grid gap-2 p-4">
         {modes.map(({ mode, label, description, icon: Icon }) => {
           const selected = mode === selectedMode;
           return (
@@ -74,7 +77,7 @@ export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelec
               type="button"
               onClick={() => onSelectMode(mode)}
               disabled={disabled}
-              className={`flex min-h-20 w-full items-start gap-3 rounded-md border p-3 text-left transition ${
+              className={`flex min-h-20 w-full items-start gap-3 rounded-md border p-3 text-left transition active:translate-y-px ${
                 selected
                   ? "border-emerald-700 bg-emerald-50 text-emerald-950"
                   : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300 hover:bg-zinc-50"
@@ -86,7 +89,9 @@ export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelec
               />
               <span>
                 <span className="block text-sm font-semibold">{label}</span>
-                <span className="mt-1 block text-xs leading-5 text-zinc-600">{description}</span>
+                <span className={`mt-1 block text-xs leading-5 ${selected ? "text-emerald-900" : "text-zinc-600"}`}>
+                  {description}
+                </span>
               </span>
             </button>
           );

@@ -13,12 +13,12 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
     return (
       <section className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700">
         <div className="flex items-start gap-3">
-          <FileText className="mt-0.5 h-5 w-5 text-zinc-500" aria-hidden="true" />
+          <FileText className="mt-0.5 h-5 w-5 text-emerald-700" aria-hidden="true" />
           <div>
-            <h2 className="font-semibold text-zinc-950">No timeline loaded</h2>
+            <h2 className="font-semibold text-zinc-950">No evidence timeline yet</h2>
             <p className="mt-1 max-w-2xl">
-              Load a sample lecture, paste a transcript, or upload a permitted video to inspect timestamped
-              transcript, OCR, and visual evidence here.
+              Load a sample lecture, paste a transcript, or upload permitted media to inspect transcript,
+              OCR, visual review notes, and source confidence.
             </p>
           </div>
         </div>
@@ -31,11 +31,11 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
     lecture.chunks.reduce((total, chunk) => total + chunk.source_confidence, 0) / Math.max(1, lecture.chunks.length);
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-col gap-3 border-b border-zinc-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
+    <section className="rounded-lg border border-zinc-200 bg-white shadow-soft">
+      <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Timeline</p>
-          <h2 className="text-xl font-semibold tracking-normal text-zinc-950">{lecture.title}</h2>
+          <p className="text-sm font-semibold text-emerald-800">Evidence timeline</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-normal text-zinc-950">{lecture.title}</h2>
           <p className="mt-1 text-sm text-zinc-600">{lecture.source.attribution || lecture.source.type}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
@@ -48,7 +48,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
         </div>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 p-4">
         {lecture.chunks.map((chunk) => (
           <TimelineChunkCard key={chunk.chunk_id} chunk={chunk} />
         ))}
@@ -62,7 +62,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
   const ocrDetected = chunk.ocr_confidence > 0 || hasReadableOcrEvidence(chunk.ocr);
 
   return (
-    <article className="rounded-lg border border-zinc-200 bg-white p-4 shadow-soft">
+    <article className="rounded-md border border-zinc-200 bg-white p-4">
       <div className={`grid gap-4 ${hasFrame ? "md:grid-cols-[220px_minmax(0,1fr)]" : ""}`}>
         {hasFrame && (
           <div className="space-y-2">
@@ -81,7 +81,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
                 Keyframe
               </span>
               <span
-                className={`rounded-full px-2 py-1 font-semibold ${
+                className={`rounded-md px-2 py-1 font-semibold ${
                   ocrDetected ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-950"
                 }`}
               >
@@ -97,10 +97,8 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               <Clock className="h-3.5 w-3.5" aria-hidden="true" />
               {chunk.start}-{chunk.end}
             </span>
-            <span className="rounded-md bg-zinc-950 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-              {chunk.chunk_id}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-900 ring-1 ring-sky-100">
+            <span className="rounded-md bg-zinc-950 px-2 py-1 text-xs font-semibold text-white">{chunk.chunk_id}</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
               <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
               {percent(chunk.source_confidence)} source
             </span>
@@ -111,10 +109,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
           {chunk.concepts.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {chunk.concepts.map((concept) => (
-                <span
-                  key={concept}
-                  className="rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-900 ring-1 ring-sky-100"
-                >
+                <span key={concept} className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-800">
                   {concept}
                 </span>
               ))}
@@ -125,7 +120,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <EvidencePanel
-          icon={<ScanText className="h-4 w-4 text-violet-700" aria-hidden="true" />}
+          icon={<ScanText className="h-4 w-4 text-emerald-700" aria-hidden="true" />}
           title="OCR Text"
           tone={ocrDetected ? "strong" : "quiet"}
         >
@@ -150,7 +145,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
 
 function SummaryPill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="inline-flex min-h-8 items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-zinc-800 ring-1 ring-zinc-200">
+    <span className="inline-flex min-h-8 items-center gap-1.5 rounded-md bg-zinc-50 px-2.5 py-1 text-zinc-800 ring-1 ring-zinc-200">
       {icon}
       {label}
     </span>
@@ -172,7 +167,7 @@ function EvidencePanel({
     <div
       className={`rounded-md px-3 py-3 ${
         tone === "strong"
-          ? "border border-violet-200 bg-violet-50 text-violet-950"
+          ? "border border-emerald-200 bg-emerald-50 text-emerald-950"
           : "border border-zinc-200 bg-zinc-50 text-zinc-800"
       }`}
     >
