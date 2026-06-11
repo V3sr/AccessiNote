@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from .models import GenerateResponse, LectureTimeline, OutputMode, SourceReference, TimelineChunk
+from .models import CaptionSegment, GenerateResponse, LectureTimeline, OutputMode, SourceReference, TimelineChunk
 
 
 SAFETY_WARNING = (
@@ -16,6 +16,7 @@ MODE_TITLES: dict[str, str] = {
     "exam_prep_pack": "Exam Prep Pack",
     "plain_language": "Plain-Language Explanation",
     "notetaker_quality_report": "Notetaker Quality Report",
+    "captions_vtt": "WebVTT Captions",
 }
 
 DEFINITIONS: dict[str, str] = {
@@ -47,6 +48,7 @@ def generate_output(timeline: LectureTimeline, mode: OutputMode) -> GenerateResp
         "exam_prep_pack": build_exam_prep_pack,
         "plain_language": build_plain_language,
         "notetaker_quality_report": build_notetaker_quality_report,
+        "captions_vtt": build_webvtt_captions,
     }
     content = builders[mode](timeline)
     return GenerateResponse(
@@ -287,6 +289,32 @@ def build_notetaker_quality_report(timeline: LectureTimeline) -> str:
     return "\n".join(lines)
 
 
+def build_webvtt_captions(timeline: LectureTimeline) -> str:
+    segments = timeline.caption_segments or [
+        CaptionSegment(start=chunk.start, end=chunk.end, text=chunk.transcript, source="timeline chunk")
+        for chunk in timeline.chunks
+    ]
+    lines = [
+        "WEBVTT",
+        "",
+        f"NOTE Generated locally by AccessiNote from {timeline.title}",
+        "",
+    ]
+    for index, segment in enumerate(segments, start=1):
+        caption_text = normalize_caption_text(segment.text)
+        if not caption_text:
+            continue
+        lines.extend(
+            [
+                str(index),
+                f"{to_vtt_timestamp(segment.start)} --> {to_vtt_timestamp(segment.end)}",
+                caption_text,
+                "",
+            ]
+        )
+    return "\n".join(lines).strip() + "\n"
+
+
 def source_references(timeline: LectureTimeline) -> list[SourceReference]:
     return [
         SourceReference(
@@ -369,3 +397,19 @@ def simplify_sentence(text: str) -> str:
 
 def title_case(text: str) -> str:
     return " ".join(word.capitalize() for word in text.split())
+
+
+def to_vtt_timestamp(value: str) -> str:
+    parts = value.split(":")
+    if len(parts) == 2:
+        hours = 0
+        minutes, seconds = parts
+    else:
+        hours, minutes, seconds = parts[-3:]
+    seconds_value = int(float(seconds.replace(",", ".")))
+    return f"{int(hours):02}:{int(minutes):02}:{seconds_value:02}.000"
+
+
+def normalize_caption_text(text: str) -> str:
+    lines = [line.strip() for line in text.replace("\r", "\n").split("\n")]
+    return "\n".join(line for line in lines if line)

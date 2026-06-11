@@ -46,6 +46,7 @@ const modeLabels: Record<OutputMode, string> = {
   exam_prep_pack: "Exam Prep Pack",
   plain_language: "Plain Language",
   notetaker_quality_report: "Quality Report",
+  captions_vtt: "WebVTT Captions",
 };
 
 export default function Home() {
@@ -128,7 +129,7 @@ export default function Home() {
       await refreshRecentLectures();
       const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
       setNotice(
-        `Video timeline created with ${uploaded.frame_count} extracted frame(s). OCR text found in ${uploaded.ocr_frame_count} frame(s). Engine: ${uploaded.ocr_engine}.${warningText}`,
+        `Video timeline created from ${uploaded.candidate_frame_count} selected timestamp(s), ${uploaded.frame_count} extracted frame(s), and ${uploaded.transcript_segment_count} transcript segment(s). OCR text found in ${uploaded.ocr_frame_count} frame(s). OCR: ${uploaded.ocr_engine}. Captions: ${uploaded.transcription_engine}.${warningText}`,
       );
     });
   }

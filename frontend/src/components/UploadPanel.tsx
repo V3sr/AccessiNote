@@ -72,6 +72,7 @@ export function UploadPanel({
 
   const ocrReady = Boolean(capabilities?.ocr_engines.length);
   const primaryOcr = capabilities?.ocr_engines.map(formatEngineName).join(", ") || "Not ready";
+  const captionReady = Boolean(capabilities?.local_transcription_available);
 
   async function submitTranscript(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -233,6 +234,11 @@ export function UploadPanel({
                 ready={Boolean(capabilities?.ffmpeg_available)}
               />
               <CapabilityRow label="OCR scan" value={capabilities ? primaryOcr : "Checking"} ready={ocrReady} />
+              <CapabilityRow
+                label="Caption generation"
+                value={capabilities ? (captionReady ? "Ready" : "Upload captions") : "Checking"}
+                ready={captionReady}
+              />
             </div>
 
             {capabilities?.notes.length ? (
@@ -305,7 +311,7 @@ function CapabilityRow({
   return (
     <div className="flex min-h-10 min-w-0 flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs leading-5">
       <span className="flex min-w-0 items-center gap-2 font-semibold text-zinc-800">
-        {label === "OCR scan" ? (
+        {label === "OCR scan" || label === "Caption generation" ? (
           <ScanText className="h-4 w-4 text-emerald-700" aria-hidden="true" />
         ) : (
           <Video className="h-4 w-4 text-zinc-600" aria-hidden="true" />

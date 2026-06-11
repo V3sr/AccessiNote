@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Brain, ClipboardCheck, FileSearch, Glasses, Languages } from "lucide-react";
+import { BookOpen, Brain, Captions, ClipboardCheck, FileSearch, Glasses, Languages } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,6 +53,12 @@ const modes: Array<{
     label: "Quality Report",
     description: "Heuristic scores and accessibility improvements.",
     icon: ClipboardCheck,
+  },
+  {
+    mode: "captions_vtt",
+    label: "Captions",
+    description: "Timed WebVTT captions from the local caption track.",
+    icon: Captions,
   },
 ];
 

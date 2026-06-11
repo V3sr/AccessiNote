@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import uuid
 from pathlib import Path
 
@@ -32,6 +31,7 @@ from .storage import (
 )
 from .video_processor import (
     build_capability_notes,
+    faster_whisper_available,
     ffmpeg_available,
     process_video_to_timeline,
     rapidocr_available,
@@ -72,6 +72,8 @@ def get_capabilities() -> CapabilityResponse:
         ffmpeg_available=ffmpeg_available(),
         rapidocr_available=rapidocr_available(),
         tesseract_available=tesseract_available(),
+        local_transcription_available=faster_whisper_available(),
+        transcription_engine="faster-whisper" if faster_whisper_available() else "none",
         ocr_engines=ocr_engines,
         notes=build_capability_notes(),
     )
@@ -149,8 +151,11 @@ async def upload_video(
     return VideoUploadResponse(
         lecture_id=result.timeline.lecture_id,
         frame_count=result.frame_count,
+        candidate_frame_count=result.candidate_frame_count,
         ocr_frame_count=result.ocr_frame_count,
         ocr_engine=result.ocr_engine,
+        transcript_segment_count=result.transcript_segment_count,
+        transcription_engine=result.transcription_engine,
         warnings=result.warnings,
     )
 
@@ -237,22 +242,7 @@ async def read_text_upload(upload: UploadFile) -> str:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError:
         text = content.decode("utf-8", errors="replace")
-    return clean_caption_text(text)
-
-
-def clean_caption_text(text: str) -> str:
-    lines = []
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line or line.upper() == "WEBVTT" or line.isdigit():
-            continue
-        if "-->" in line:
-            continue
-        line = re.sub(r"<[^>]+>", "", line)
-        line = re.sub(r"\{[^}]+\}", "", line)
-        if line:
-            lines.append(line)
-    return " ".join(lines).strip()
+    return text
 
 
 def safe_filename(filename: str, allowed_suffixes: set[str], default_stem: str) -> str:

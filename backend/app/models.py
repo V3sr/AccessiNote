@@ -12,6 +12,7 @@ OutputMode = Literal[
     "exam_prep_pack",
     "plain_language",
     "notetaker_quality_report",
+    "captions_vtt",
 ]
 
 
@@ -35,11 +36,19 @@ class TimelineChunk(BaseModel):
     keyframe_path: str = ""
 
 
+class CaptionSegment(BaseModel):
+    start: str
+    end: str
+    text: str
+    source: str = ""
+
+
 class LectureTimeline(BaseModel):
     lecture_id: str
     title: str
     source: SourceInfo
     chunks: list[TimelineChunk]
+    caption_segments: list[CaptionSegment] = Field(default_factory=list)
 
 
 class LectureSummary(BaseModel):
@@ -86,6 +95,8 @@ class CapabilityResponse(BaseModel):
     ffmpeg_available: bool
     rapidocr_available: bool
     tesseract_available: bool
+    local_transcription_available: bool = False
+    transcription_engine: str = "none"
     video_upload_enabled: bool = True
     image_upload_enabled: bool = True
     ocr_engines: list[str] = Field(default_factory=list)
@@ -96,8 +107,11 @@ class VideoUploadResponse(BaseModel):
     lecture_id: str
     status: str = "created"
     frame_count: int = 0
+    candidate_frame_count: int = 0
     ocr_frame_count: int = 0
     ocr_engine: str = "none"
+    transcript_segment_count: int = 0
+    transcription_engine: str = "none"
     warnings: list[str] = Field(default_factory=list)
 
 

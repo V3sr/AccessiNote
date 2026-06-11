@@ -7,3 +7,4 @@ aiofiles>=24,<25
 imageio-ffmpeg>=0.5,<1
 onnxruntime>=1.18,<2
 rapidocr>=3.7,<4
+faster-whisper>=1.2,<2

@@ -24,11 +24,14 @@ export function OutputViewer({ output }: OutputViewerProps) {
     if (!output) {
       return;
     }
-    const blob = new Blob([output.content_markdown], { type: "text/markdown;charset=utf-8" });
+    const isCaptionOutput = output.mode === "captions_vtt";
+    const blob = new Blob([output.content_markdown], {
+      type: isCaptionOutput ? "text/vtt;charset=utf-8" : "text/markdown;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${output.lecture_id}-${output.mode}.md`;
+    link.download = `${output.lecture_id}-${output.mode}.${isCaptionOutput ? "vtt" : "md"}`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -43,6 +46,8 @@ export function OutputViewer({ output }: OutputViewerProps) {
       </Card>
     );
   }
+
+  const isCaptionOutput = output.mode === "captions_vtt";
 
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
@@ -82,7 +87,13 @@ export function OutputViewer({ output }: OutputViewerProps) {
 
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
         <article className="prose prose-zinc max-w-none p-4 prose-headings:tracking-normal prose-h1:text-2xl prose-h2:text-lg prose-li:my-1">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{output.content_markdown}</ReactMarkdown>
+          {isCaptionOutput ? (
+            <pre className="whitespace-pre-wrap rounded-md bg-zinc-950 p-4 text-sm leading-6 text-zinc-50">
+              {output.content_markdown}
+            </pre>
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{output.content_markdown}</ReactMarkdown>
+          )}
         </article>
         <aside className="border-t border-zinc-200 p-4 lg:border-l lg:border-t-0">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-950">

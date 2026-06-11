@@ -4,7 +4,8 @@ export type OutputMode =
   | "screen_reader_notes"
   | "exam_prep_pack"
   | "plain_language"
-  | "notetaker_quality_report";
+  | "notetaker_quality_report"
+  | "captions_vtt";
 
 export interface SourceInfo {
   type: string;
@@ -26,11 +27,19 @@ export interface TimelineChunk {
   keyframe_path: string;
 }
 
+export interface CaptionSegment {
+  start: string;
+  end: string;
+  text: string;
+  source: string;
+}
+
 export interface LectureTimeline {
   lecture_id: string;
   title: string;
   source: SourceInfo;
   chunks: TimelineChunk[];
+  caption_segments: CaptionSegment[];
 }
 
 export interface LectureSummary {
@@ -67,6 +76,8 @@ export interface CapabilityResponse {
   ffmpeg_available: boolean;
   rapidocr_available: boolean;
   tesseract_available: boolean;
+  local_transcription_available: boolean;
+  transcription_engine: string;
   video_upload_enabled: boolean;
   image_upload_enabled: boolean;
   ocr_engines: string[];
@@ -77,8 +88,11 @@ export interface VideoUploadResponse {
   lecture_id: string;
   status: string;
   frame_count: number;
+  candidate_frame_count: number;
   ocr_frame_count: number;
   ocr_engine: string;
+  transcript_segment_count: number;
+  transcription_engine: string;
   warnings: string[];
 }
 

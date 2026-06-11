@@ -36,13 +36,15 @@ Open `http://localhost:3000`.
 - Upload a slide, screenshot, or board image and scan it with local OCR.
 - Upload a permitted video and create a local timeline.
 - Attach optional `.txt`, `.srt`, or `.vtt` transcript/caption files to video uploads.
-- Extract video keyframes when `ffmpeg` is installed.
+- Generate local captions from video audio with faster-whisper when no transcript/caption file is attached.
+- Select video frames from early coverage, transcript keywords, transcript coverage points, and periodic visual coverage.
 - OCR extracted frames with bundled local RapidOCR, or Tesseract OCR when installed.
+- Preserve a timed caption track and export WebVTT captions.
 - Show frame-level OCR confidence and scan coverage.
 - Reopen recent locally generated timelines from `data/outputs`.
 - Select an output mode.
-- Generate deterministic markdown with timestamps and source references.
-- Copy or download the generated markdown.
+- Generate deterministic markdown or WebVTT captions with timestamps and source references.
+- Copy or download the generated output.
 
 ## Local Video/OCR
 
@@ -51,9 +53,17 @@ timeline chunk and scanned directly with local OCR when an OCR engine is availab
 available, AccessiNote still saves the image and creates a reviewable timeline with a clear note.
 
 Video uploads use a Python-packaged ffmpeg fallback for keyframe extraction when system `ffmpeg` is
-not on PATH. Optional `.txt`, `.srt`, or `.vtt` caption files are cleaned and used as transcript
-evidence. If frames cannot be extracted, AccessiNote still creates a fallback timeline from the
-caption/transcript evidence when present.
+not on PATH. Optional `.txt`, `.srt`, or `.vtt` caption files are parsed and used as timed transcript
+evidence. If no timed transcript is provided, AccessiNote can generate local captions from the video
+audio with faster-whisper. The default model is `tiny.en`; set `ACCESSINOTE_WHISPER_MODEL` to choose
+another faster-whisper model. First use may download the selected model before all processing stays
+local.
+
+Frame scanning no longer uses a fixed 30-second stride. AccessiNote starts at `0s`, samples dense
+early coverage, then selects timestamps from transcript keywords, transcript coverage points, and a
+periodic visual backbone. The default scan budget is 72 selected timestamps per upload; set
+`ACCESSINOTE_MAX_VIDEO_FRAMES` to tune it locally. If frames cannot be extracted, AccessiNote still
+creates a fallback timeline from caption/transcript evidence when present.
 
 RapidOCR runs locally through ONNX Runtime and is installed with the backend requirements. Tesseract
 is optional and can be used as a fallback local OCR engine:
