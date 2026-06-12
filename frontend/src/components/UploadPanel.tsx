@@ -147,6 +147,10 @@ export function UploadPanel({
       </div>
 
       <div className="border-t border-zinc-200 p-4 sm:p-5">
+        {processingJob && processingJob.status !== "complete" && (
+          <ProcessingProgress job={processingJob} />
+        )}
+
         {activeTab === "sample" && (
           <div>
             <h3 className="text-sm font-semibold text-zinc-950">Synthetic lecture</h3>
@@ -250,10 +254,6 @@ export function UploadPanel({
                 ))}
               </div>
             ) : null}
-
-            {processingJob && processingJob.status !== "complete" && (
-              <ProcessingProgress job={processingJob} />
-            )}
 
             <FieldLabel htmlFor="video-title">Video title</FieldLabel>
             <input

@@ -36,7 +36,6 @@ import {
   listLectures,
   loadSampleLecture,
   startMediaJob,
-  uploadImageLecture,
 } from "@/lib/api";
 import type {
   CapabilityResponse,
@@ -156,14 +155,22 @@ export default function Home() {
 
   async function handleUploadImage(title: string, imageFile: File, notes: string) {
     await runAction(async () => {
-      const uploaded = await uploadImageLecture(title, imageFile, notes);
-      const nextLecture = await getLecture(uploaded.lecture_id);
+      const createdJob = await startMediaJob("image", title, imageFile, notes);
+      setProcessingJob(createdJob);
+      const completedJob = await waitForProcessingJob(createdJob.job_id, setProcessingJob);
+      if (completedJob.status === "failed") {
+        throw new Error(completedJob.error || "Image processing failed.");
+      }
+      if (!completedJob.lecture_id) {
+        throw new Error("Image processing finished without a lecture timeline.");
+      }
+      const nextLecture = await getLecture(completedJob.lecture_id);
       setLecture(nextLecture);
       setOutput(null);
       await refreshRecentLectures();
-      const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
+      const warningText = completedJob.warnings.length > 0 ? ` ${completedJob.warnings.join(" ")}` : "";
       setNotice(
-        `Image timeline created with ${uploaded.ocr_text_count} OCR text line(s). Engine: ${uploaded.ocr_engine}.${warningText}`,
+        `Image timeline created with ${completedJob.metrics.ocr_frame_count} OCR-positive frame(s). Engine: ${completedJob.metrics.ocr_engine}.${warningText}`,
       );
     });
   }
