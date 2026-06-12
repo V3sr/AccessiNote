@@ -9,7 +9,7 @@ export type OutputMode =
   | "timeline_json"
   | "transcript_txt";
 
-export type JobStatus = "queued" | "running" | "complete" | "failed";
+export type JobStatus = "queued" | "running" | "complete" | "failed" | "canceled";
 
 export interface SourceInfo {
   type: string;
@@ -145,6 +145,7 @@ export interface ImageUploadResponse {
 
 export interface ProcessingJob {
   job_id: string;
+  kind: string;
   status: JobStatus;
   stage: string;
   progress: number;
@@ -152,5 +153,7 @@ export interface ProcessingJob {
   warnings: string[];
   metrics: EvidenceMetrics;
   error: string;
+  cancel_requested: boolean;
+  created_at: string;
   updated_at: string;
 }

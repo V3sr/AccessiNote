@@ -27,12 +27,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
+  cancelProcessingJob,
   createLectureFromTranscript,
   generateOutput,
   getCapabilities,
   getHealth,
   getLecture,
   getProcessingJob,
+  listProcessingJobs,
   listLectures,
   loadSampleLecture,
   startMediaJob,
@@ -86,6 +88,8 @@ export default function Home() {
       .then(setCapabilities)
       .catch(() => setCapabilities(null));
     refreshRecentLectures();
+    void resumeActiveProcessingJob();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function refreshRecentLectures() {
@@ -105,10 +109,63 @@ export default function Home() {
       await action();
       setApiStatus("ok");
     } catch (caughtError) {
-      setApiStatus("offline");
       setError(caughtError instanceof Error ? caughtError.message : "Something went wrong.");
     } finally {
       setIsBusy(false);
+    }
+  }
+
+  async function resumeActiveProcessingJob() {
+    try {
+      const activeJobs = await listProcessingJobs(true);
+      const activeJob = activeJobs[0];
+      if (!activeJob) {
+        return;
+      }
+      setApiStatus("ok");
+      setProcessingJob(activeJob);
+      setNotice(`Resumed ${formatJobKind(activeJob.kind)} job at ${activeJob.stage}.`);
+      setIsBusy(true);
+      try {
+        await continueProcessingJob(activeJob);
+      } finally {
+        setIsBusy(false);
+      }
+    } catch {
+      // Best-effort resume; the health check owns the visible API state.
+    }
+  }
+
+  async function continueProcessingJob(startJob: ProcessingJob) {
+    setProcessingJob(startJob);
+    const completedJob = await waitForProcessingJob(startJob.job_id, setProcessingJob);
+    if (completedJob.status === "canceled") {
+      setNotice(`${formatJobKind(completedJob.kind)} processing canceled.`);
+      return;
+    }
+    if (completedJob.status === "failed") {
+      throw new Error(completedJob.error || `${formatJobKind(completedJob.kind)} processing failed.`);
+    }
+    if (!completedJob.lecture_id) {
+      throw new Error(`${formatJobKind(completedJob.kind)} processing finished without a lecture timeline.`);
+    }
+
+    const nextLecture = await getLecture(completedJob.lecture_id);
+    setLecture(nextLecture);
+    setOutput(null);
+    await refreshRecentLectures();
+    setNotice(describeCompletedJob(completedJob));
+  }
+
+  async function handleCancelProcessingJob(jobId: string) {
+    setError(null);
+    try {
+      const canceledJob = await cancelProcessingJob(jobId);
+      setProcessingJob(canceledJob);
+      setNotice("Processing canceled.");
+      setIsBusy(false);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Could not cancel processing.");
     }
   }
 
@@ -133,45 +190,14 @@ export default function Home() {
   async function handleUploadVideo(title: string, videoFile: File, transcript: string, transcriptFile?: File | null) {
     await runAction(async () => {
       const createdJob = await startMediaJob("video", title, videoFile, transcript, transcriptFile);
-      setProcessingJob(createdJob);
-      const completedJob = await waitForProcessingJob(createdJob.job_id, setProcessingJob);
-      if (completedJob.status === "failed") {
-        throw new Error(completedJob.error || "Video processing failed.");
-      }
-      if (!completedJob.lecture_id) {
-        throw new Error("Video processing finished without a lecture timeline.");
-      }
-      const nextLecture = await getLecture(completedJob.lecture_id);
-      setLecture(nextLecture);
-      setOutput(null);
-      await refreshRecentLectures();
-      const warningText = completedJob.warnings.length > 0 ? ` ${completedJob.warnings.join(" ")}` : "";
-      const metrics = completedJob.metrics;
-      setNotice(
-        `Video timeline created from ${metrics.candidate_frame_count} candidate timestamp(s), ${metrics.selected_frame_count} selected timestamp(s), ${metrics.extracted_frame_count} extracted frame(s), and ${metrics.transcript_segment_count} transcript segment(s). OCR text found in ${metrics.ocr_frame_count} frame(s). OCR: ${metrics.ocr_engine}. Captions: ${metrics.transcription_engine}.${warningText}`,
-      );
+      await continueProcessingJob(createdJob);
     });
   }
 
   async function handleUploadImage(title: string, imageFile: File, notes: string) {
     await runAction(async () => {
       const createdJob = await startMediaJob("image", title, imageFile, notes);
-      setProcessingJob(createdJob);
-      const completedJob = await waitForProcessingJob(createdJob.job_id, setProcessingJob);
-      if (completedJob.status === "failed") {
-        throw new Error(completedJob.error || "Image processing failed.");
-      }
-      if (!completedJob.lecture_id) {
-        throw new Error("Image processing finished without a lecture timeline.");
-      }
-      const nextLecture = await getLecture(completedJob.lecture_id);
-      setLecture(nextLecture);
-      setOutput(null);
-      await refreshRecentLectures();
-      const warningText = completedJob.warnings.length > 0 ? ` ${completedJob.warnings.join(" ")}` : "";
-      setNotice(
-        `Image timeline created with ${completedJob.metrics.ocr_frame_count} OCR-positive frame(s). Engine: ${completedJob.metrics.ocr_engine}.${warningText}`,
-      );
+      await continueProcessingJob(createdJob);
     });
   }
 
@@ -263,6 +289,7 @@ export default function Home() {
             capabilities={capabilities}
             isBusy={isBusy}
             processingJob={processingJob}
+            onCancelProcessingJob={handleCancelProcessingJob}
           />
         </div>
       </section>
@@ -681,6 +708,22 @@ function formatShortEngine(value: string): string {
     return "Uploaded";
   }
   return value;
+}
+
+function formatJobKind(kind: string): string {
+  if (kind === "image") {
+    return "Image";
+  }
+  return "Video";
+}
+
+function describeCompletedJob(job: ProcessingJob): string {
+  const warningText = job.warnings.length > 0 ? ` ${job.warnings.join(" ")}` : "";
+  const metrics = job.metrics;
+  if (job.kind === "image") {
+    return `Image timeline created with ${metrics.ocr_frame_count} OCR-positive frame(s). Engine: ${metrics.ocr_engine}.${warningText}`;
+  }
+  return `Video timeline created from ${metrics.candidate_frame_count} candidate timestamp(s), ${metrics.selected_frame_count} selected timestamp(s), ${metrics.extracted_frame_count} extracted frame(s), and ${metrics.transcript_segment_count} transcript segment(s). OCR text found in ${metrics.ocr_frame_count} frame(s). OCR: ${metrics.ocr_engine}. Captions: ${metrics.transcription_engine}.${warningText}`;
 }
 
 function hasReadableOcrEvidence(items: string[]): boolean {

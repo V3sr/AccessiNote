@@ -12,6 +12,7 @@ import {
   Upload,
   UploadCloud,
   Video,
+  XCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { FormEvent, useState } from "react";
@@ -30,6 +31,7 @@ interface UploadPanelProps {
   capabilities: CapabilityResponse | null;
   isBusy: boolean;
   processingJob?: ProcessingJob | null;
+  onCancelProcessingJob?: (jobId: string) => void;
 }
 
 type SourceTab = "sample" | "transcript" | "image" | "video";
@@ -60,6 +62,7 @@ export function UploadPanel({
   capabilities,
   isBusy,
   processingJob,
+  onCancelProcessingJob,
 }: UploadPanelProps) {
   const [activeTab, setActiveTab] = useState<SourceTab>("sample");
   const [title, setTitle] = useState("My Local Transcript");
@@ -148,7 +151,7 @@ export function UploadPanel({
 
       <div className="border-t border-zinc-200 p-4 sm:p-5">
         {processingJob && processingJob.status !== "complete" && (
-          <ProcessingProgress job={processingJob} />
+          <ProcessingProgress job={processingJob} onCancel={onCancelProcessingJob} />
         )}
 
         {activeTab === "sample" && (
@@ -304,20 +307,41 @@ export function UploadPanel({
   );
 }
 
-function ProcessingProgress({ job }: { job: ProcessingJob }) {
-  const statusLabel = job.status === "failed" ? "Failed" : job.status === "queued" ? "Queued" : "Processing";
+function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: (jobId: string) => void }) {
+  const canCancel = job.status === "queued" || job.status === "running";
+  const statusLabel =
+    job.status === "failed"
+      ? "Failed"
+      : job.status === "canceled"
+        ? "Canceled"
+        : job.status === "queued"
+          ? "Queued"
+          : "Processing";
   return (
     <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-950">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2 font-semibold">
-          {job.status === "failed" ? (
+          {job.status === "failed" || job.status === "canceled" ? (
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />
           ) : (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           )}
           {statusLabel}: {job.stage}
         </p>
-        <span className="text-xs font-semibold">{job.progress}%</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold">{job.progress}%</span>
+          {canCancel && onCancel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onCancel(job.job_id)}
+              className="min-h-8 rounded-md border-sky-300 bg-white px-2 py-1 text-xs font-semibold text-sky-950 hover:bg-sky-100"
+            >
+              <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              Cancel
+            </Button>
+          ) : null}
+        </div>
       </div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-sky-100">
         <div

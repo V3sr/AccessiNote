@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import os
 import re
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -22,6 +24,7 @@ DEFAULT_FRAME_SPAN_SECONDS = 12
 WHISPER_MODEL_ENV = "ACCESSINOTE_WHISPER_MODEL"
 MAX_VIDEO_FRAMES_ENV = "ACCESSINOTE_MAX_VIDEO_FRAMES"
 SCENE_THRESHOLD_ENV = "ACCESSINOTE_SCENE_THRESHOLD"
+TRANSCRIPTION_TIMEOUT_ENV = "ACCESSINOTE_TRANSCRIPTION_TIMEOUT_SECONDS"
 CAPTION_TIMING_RE = re.compile(
     r"(?P<start>(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[,.]\d{1,3})?)\s*-->\s*"
     r"(?P<end>(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[,.]\d{1,3})?)"
@@ -153,6 +156,15 @@ def whisper_model_name() -> str:
     return os.getenv(WHISPER_MODEL_ENV, "tiny.en").strip() or "tiny.en"
 
 
+def transcription_timeout_seconds() -> int:
+    raw_value = os.getenv(TRANSCRIPTION_TIMEOUT_ENV, "180").strip()
+    try:
+        value = int(raw_value)
+    except ValueError:
+        value = 180
+    return max(1, min(value, 1800))
+
+
 def max_selected_frames() -> int:
     raw_value = os.getenv(MAX_VIDEO_FRAMES_ENV, str(DEFAULT_MAX_SELECTED_FRAMES)).strip()
     try:
@@ -236,8 +248,8 @@ def process_video_to_timeline(
         )
 
     if not transcript_result.segments:
-        report("transcribing audio", 22)
-        generated_transcript = transcribe_video_to_segments(video_path, frames_dir, ffmpeg_path)
+        report("extracting audio", 18)
+        generated_transcript = transcribe_video_to_segments(video_path, frames_dir, ffmpeg_path, report)
         warnings.extend(generated_transcript.warnings)
         transcript_result = generated_transcript
         completed_stages.append("transcribing audio")
@@ -763,7 +775,12 @@ def strip_caption_markup(value: str) -> str:
     return without_styles.strip()
 
 
-def transcribe_video_to_segments(video_path: Path, frames_dir: Path, ffmpeg_path: str) -> TranscriptResult:
+def transcribe_video_to_segments(
+    video_path: Path,
+    frames_dir: Path,
+    ffmpeg_path: str,
+    stage_callback: StageCallback | None = None,
+) -> TranscriptResult:
     if not faster_whisper_available():
         return TranscriptResult(
             segments=[],
@@ -772,6 +789,8 @@ def transcribe_video_to_segments(video_path: Path, frames_dir: Path, ffmpeg_path
         )
 
     audio_path = frames_dir / "transcription_audio.wav"
+    if stage_callback:
+        stage_callback("extracting audio", 18)
     if not extract_audio_for_transcription(video_path, audio_path, ffmpeg_path):
         return TranscriptResult(
             segments=[],
@@ -779,16 +798,21 @@ def transcribe_video_to_segments(video_path: Path, frames_dir: Path, ffmpeg_path
             engine="faster-whisper",
         )
 
+    output_path = frames_dir / "transcription_segments.json"
     try:
-        model = get_whisper_model()
-        raw_segments, _info = model.transcribe(str(audio_path), beam_size=1, vad_filter=True)
+        if stage_callback:
+            stage_callback("loading caption model", 20)
+        run_whisper_subprocess(audio_path, output_path)
+        if stage_callback:
+            stage_callback("segmenting captions", 36)
+        raw_segments = json.loads(output_path.read_text(encoding="utf-8"))
         segments = []
         for raw_segment in raw_segments:
-            text = normalize_whitespace(getattr(raw_segment, "text", ""))
+            text = normalize_whitespace(str(raw_segment.get("text", "")))
             if not text:
                 continue
-            start_seconds = max(0, int(getattr(raw_segment, "start", 0)))
-            end_seconds = max(start_seconds + 1, int(getattr(raw_segment, "end", start_seconds + 1)))
+            start_seconds = max(0, int(float(raw_segment.get("start", 0))))
+            end_seconds = max(start_seconds + 1, int(float(raw_segment.get("end", start_seconds + 1))))
             segments.append(
                 TranscriptSegment(
                     start_seconds=start_seconds,
@@ -798,7 +822,18 @@ def transcribe_video_to_segments(video_path: Path, frames_dir: Path, ffmpeg_path
                     source="local faster-whisper",
                 )
             )
+    except subprocess.TimeoutExpired:
+        return TranscriptResult(
+            segments=[],
+            warnings=[
+                "Local caption generation timed out. AccessiNote continued with visual frame scanning and OCR; "
+                "upload captions or increase ACCESSINOTE_TRANSCRIPTION_TIMEOUT_SECONDS for full captions."
+            ],
+            engine="faster-whisper timeout",
+        )
     except Exception as error:
+        if error.__class__.__name__ in {"JobCanceled", "JobStopped"}:
+            raise
         return TranscriptResult(
             segments=[],
             warnings=[f"Local caption generation failed: {error}"],
@@ -806,6 +841,7 @@ def transcribe_video_to_segments(video_path: Path, frames_dir: Path, ffmpeg_path
         )
     finally:
         audio_path.unlink(missing_ok=True)
+        output_path.unlink(missing_ok=True)
 
     if not segments:
         return TranscriptResult(
@@ -814,6 +850,35 @@ def transcribe_video_to_segments(video_path: Path, frames_dir: Path, ffmpeg_path
             engine="faster-whisper",
         )
     return TranscriptResult(segments=segments, warnings=[], engine="faster-whisper")
+
+
+def run_whisper_subprocess(audio_path: Path, output_path: Path) -> None:
+    helper_code = r"""
+import json
+import sys
+from pathlib import Path
+
+from faster_whisper import WhisperModel
+
+audio_path = sys.argv[1]
+model_name = sys.argv[2]
+output_path = Path(sys.argv[3])
+
+model = WhisperModel(model_name, device="cpu", compute_type="int8")
+segments, _info = model.transcribe(audio_path, beam_size=1, vad_filter=True)
+payload = [
+    {"start": float(segment.start), "end": float(segment.end), "text": segment.text}
+    for segment in segments
+]
+output_path.write_text(json.dumps(payload), encoding="utf-8")
+"""
+    subprocess.run(
+        [sys.executable, "-c", helper_code, str(audio_path), whisper_model_name(), str(output_path)],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=transcription_timeout_seconds(),
+    )
 
 
 def caption_segments_for_timeline(segments: list[TranscriptSegment]) -> list[CaptionSegment]:

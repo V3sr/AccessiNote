@@ -122,6 +122,17 @@ export function getProcessingJob(jobId: string): Promise<ProcessingJob> {
   return request<ProcessingJob>(`/api/jobs/${encodeURIComponent(jobId)}`);
 }
 
+export function listProcessingJobs(active = false): Promise<ProcessingJob[]> {
+  const query = active ? "?active=true" : "";
+  return request<ProcessingJob[]>(`/api/jobs${query}`);
+}
+
+export function cancelProcessingJob(jobId: string): Promise<ProcessingJob> {
+  return request<ProcessingJob>(`/api/jobs/${encodeURIComponent(jobId)}/cancel`, {
+    method: "POST",
+  });
+}
+
 export function uploadImageLecture(
   title: string,
   imageFile: File,

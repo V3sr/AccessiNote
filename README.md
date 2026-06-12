@@ -70,9 +70,17 @@ AccessiNote still creates a fallback timeline from caption/transcript evidence w
 Video processing exposes local job progress through:
 
 - `POST /api/jobs/media`
+- `GET /api/jobs?active=true`
 - `GET /api/jobs/{job_id}`
+- `POST /api/jobs/{job_id}/cancel`
 
 The older synchronous upload endpoints still work for compatibility.
+
+If local faster-whisper transcription stalls or takes too long for a demo machine, AccessiNote
+continues with visual frame scanning after `ACCESSINOTE_TRANSCRIPTION_TIMEOUT_SECONDS` seconds
+(default: 180). Jobs that stop reporting progress are marked failed after
+`ACCESSINOTE_JOB_STALE_SECONDS` seconds (default: 900), and the frontend will resume active jobs
+after a page reload.
 
 RapidOCR runs locally through ONNX Runtime and is installed with the backend requirements. Tesseract
 is optional and can be used as a fallback local OCR engine:

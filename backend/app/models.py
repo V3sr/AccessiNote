@@ -17,7 +17,7 @@ OutputMode = Literal[
     "transcript_txt",
 ]
 
-JobStatus = Literal["queued", "running", "complete", "failed"]
+JobStatus = Literal["queued", "running", "complete", "failed", "canceled"]
 
 
 class SourceInfo(BaseModel):
@@ -164,6 +164,7 @@ class ImageUploadResponse(BaseModel):
 
 class ProcessingJob(BaseModel):
     job_id: str
+    kind: str = "video"
     status: JobStatus = "queued"
     stage: str = "queued"
     progress: int = 0
@@ -171,4 +172,6 @@ class ProcessingJob(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     metrics: EvidenceMetrics = Field(default_factory=EvidenceMetrics)
     error: str = ""
+    cancel_requested: bool = False
+    created_at: str = ""
     updated_at: str = ""
