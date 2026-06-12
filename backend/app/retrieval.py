@@ -15,18 +15,31 @@ STOPWORDS = {
     "also",
     "because",
     "being",
+    "basically",
+    "course",
     "could",
+    "decisions",
     "every",
+    "everyone",
     "first",
     "from",
+    "going",
+    "great",
     "have",
     "into",
+    "little",
+    "let's",
     "just",
     "like",
+    "maybe",
     "more",
     "most",
+    "okay",
     "other",
     "over",
+    "really",
+    "right",
+    "robert",
     "same",
     "some",
     "than",
@@ -38,8 +51,12 @@ STOPWORDS = {
     "they",
     "this",
     "those",
+    "thoughts",
     "through",
+    "today",
     "using",
+    "want",
+    "what",
     "when",
     "where",
     "which",
@@ -50,6 +67,8 @@ STOPWORDS = {
     "student",
     "students",
     "instructor",
+    "yeah",
+    "youre",
 }
 
 
@@ -137,9 +156,9 @@ def split_transcript(transcript: str, target_words: int = 85) -> list[str]:
 
 def extract_concepts(text: str, limit: int = 5) -> list[str]:
     words = [
-        word.lower()
+        word.lower().replace("’", "'")
         for word in re.findall(r"[A-Za-z][A-Za-z'-]{3,}", text)
-        if word.lower() not in STOPWORDS
+        if word.lower().replace("’", "'") not in STOPWORDS
     ]
     counts = Counter(words)
     concepts = [word for word, _ in counts.most_common(limit)]
@@ -151,4 +170,3 @@ def format_timestamp(total_seconds: int) -> str:
     minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
     return f"{hours:02}:{minutes:02}:{seconds:02}"
-
