@@ -10,8 +10,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
+from typing import Callable
 
-from .models import CaptionSegment, LectureTimeline, SourceInfo, TimelineChunk
+from .models import CaptionSegment, EvidenceMetrics, FrameEvidence, LectureTimeline, ProcessingMetadata, SourceInfo, TimelineChunk
 from .retrieval import extract_concepts, format_timestamp, normalize_whitespace, split_transcript
 
 
@@ -20,10 +21,13 @@ DEFAULT_MAX_SELECTED_FRAMES = 72
 DEFAULT_FRAME_SPAN_SECONDS = 12
 WHISPER_MODEL_ENV = "ACCESSINOTE_WHISPER_MODEL"
 MAX_VIDEO_FRAMES_ENV = "ACCESSINOTE_MAX_VIDEO_FRAMES"
+SCENE_THRESHOLD_ENV = "ACCESSINOTE_SCENE_THRESHOLD"
 CAPTION_TIMING_RE = re.compile(
     r"(?P<start>(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[,.]\d{1,3})?)\s*-->\s*"
     r"(?P<end>(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[,.]\d{1,3})?)"
 )
+StageCallback = Callable[[str, int], None]
+PIPELINE_VERSION = "local-v2"
 
 
 @dataclass
@@ -36,6 +40,7 @@ class VideoProcessingResult:
     ocr_engine: str
     transcript_segment_count: int
     transcription_engine: str
+    metrics: EvidenceMetrics
 
 
 @dataclass
@@ -96,8 +101,9 @@ def build_capability_notes() -> list[str]:
     if ffmpeg_available():
         notes.append(
             f"Video scans select up to {max_selected_frames()} timestamp(s) from early coverage, "
-            "transcript keywords, and periodic visual coverage."
+            "scene changes, transcript keywords, and periodic visual coverage."
         )
+        notes.append("OCR scans original and enhanced frame variants to improve low-contrast text detection.")
     if not notes:
         notes.append("Local video keyframe extraction and OCR are available.")
     return notes
@@ -183,15 +189,24 @@ def process_video_to_timeline(
     video_path: Path,
     outputs_dir: Path,
     transcript_hint: str = "",
+    stage_callback: StageCallback | None = None,
 ) -> VideoProcessingResult:
+    def report(stage: str, progress: int) -> None:
+        if stage_callback:
+            stage_callback(stage, progress)
+
+    report("upload received", 5)
     clean_title = title.strip() or video_path.stem or "Uploaded Video Lecture"
     lecture_id = make_lecture_id(clean_title, video_path)
     frames_dir = outputs_dir / f"{lecture_id}_frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
     warnings: list[str] = []
+    completed_stages = ["upload received"]
+    report("parsing transcript", 10)
     transcript_result = transcript_segments_from_text(transcript_hint)
     warnings.extend(transcript_result.warnings)
+    completed_stages.append("parsing transcript")
 
     ffmpeg_path = find_ffmpeg()
     if not ffmpeg_path:
@@ -217,16 +232,26 @@ def process_video_to_timeline(
             ocr_engine="none",
             transcript_segment_count=len(transcript_result.segments),
             transcription_engine=transcript_result.engine,
+            metrics=timeline.processing_metadata.metrics,
         )
 
     if not transcript_result.segments:
+        report("transcribing audio", 22)
         generated_transcript = transcribe_video_to_segments(video_path, frames_dir, ffmpeg_path)
         warnings.extend(generated_transcript.warnings)
         transcript_result = generated_transcript
+        completed_stages.append("transcribing audio")
 
+    report("finding visual changes", 42)
     duration_seconds = parse_video_duration(video_path, ffmpeg_path)
-    selections = select_frame_seconds(duration_seconds, transcript_result.segments)
+    scene_selections = detect_scene_change_selections(video_path, ffmpeg_path, duration_seconds)
+    candidate_selections = select_frame_seconds(duration_seconds, transcript_result.segments, scene_selections)
+    selections = final_frame_selections(candidate_selections)
+    completed_stages.append("finding visual changes")
+
+    report("extracting frames", 52)
     frames = extract_keyframes(video_path, frames_dir, ffmpeg_path, selections)
+    completed_stages.append("extracting frames")
     if not frames:
         warnings.append("ffmpeg ran, but no keyframes were extracted from the uploaded video.")
         timeline = placeholder_timeline(
@@ -242,11 +267,12 @@ def process_video_to_timeline(
             timeline=timeline,
             warnings=warnings,
             frame_count=0,
-            candidate_frame_count=len(selections),
+            candidate_frame_count=len(candidate_selections),
             ocr_frame_count=0,
             ocr_engine="none",
             transcript_segment_count=len(transcript_result.segments),
             transcription_engine=transcript_result.engine,
+            metrics=timeline.processing_metadata.metrics,
         )
 
     has_rapidocr = rapidocr_available()
@@ -254,7 +280,9 @@ def process_video_to_timeline(
     if not has_rapidocr and not tesseract_path:
         warnings.append("No local OCR engine is available. Keyframes were extracted without OCR text.")
 
+    report("running OCR", 68)
     chunks = []
+    frame_evidence = []
     used_engines: set[str] = set()
     ocr_frame_count = 0
     for index, frame in enumerate(frames, start=1):
@@ -265,6 +293,7 @@ def process_video_to_timeline(
         if ocr_result.lines:
             ocr_frame_count += 1
 
+        report("aligning evidence", min(88, 70 + int(index / max(1, len(frames)) * 18)))
         transcript_text = transcript_for_frame(transcript_result.segments, start_seconds, index, len(frames))
         transcript = transcript_text or (
             "Video keyframe extracted locally. No audio transcription provider is configured, "
@@ -272,8 +301,10 @@ def process_video_to_timeline(
         )
         ocr_items = ocr_result.lines or [ocr_status_message(ocr_result.engine)]
         concepts = stable_concepts(frame.keywords or [], transcript, ocr_result.lines)
-        source_confidence = source_confidence_for(transcript_text, ocr_result)
+        evidence_flags = evidence_flags_for(transcript_text, ocr_result, frame.reason)
+        source_confidence = source_confidence_for(transcript_text, ocr_result, frame.reason)
         end_seconds = chunk_end_seconds(start_seconds, frames, index, transcript_result.segments)
+        keyframe_path = f"/api/lectures/{lecture_id}/frames/{frame.path.name}"
         chunks.append(
             TimelineChunk(
                 chunk_id=f"c{index}",
@@ -287,9 +318,33 @@ def process_video_to_timeline(
                 ),
                 concepts=concepts,
                 source_confidence=source_confidence,
-                keyframe_path=f"/api/lectures/{lecture_id}/frames/{frame.path.name}",
+                keyframe_path=keyframe_path,
+                evidence_flags=evidence_flags,
             )
         )
+        frame_evidence.append(
+            FrameEvidence(
+                timestamp=format_timestamp(start_seconds),
+                reason=frame.reason,
+                keywords=frame.keywords or [],
+                ocr_text_count=len(ocr_result.lines),
+                ocr_confidence=ocr_result.confidence,
+                source_confidence=source_confidence,
+                keyframe_path=keyframe_path,
+            )
+        )
+    completed_stages.extend(["running OCR", "aligning evidence", "assembling timeline"])
+
+    primary_ocr_engine = primary_engine_name(used_engines, has_rapidocr, tesseract_path)
+    metrics = build_evidence_metrics(
+        candidate_count=len(candidate_selections),
+        selected_count=len(selections),
+        extracted_count=len(frames),
+        ocr_frame_count=ocr_frame_count,
+        transcript_result=transcript_result,
+        chunks=chunks,
+        ocr_engine=primary_ocr_engine,
+    )
 
     timeline = LectureTimeline(
         lecture_id=lecture_id,
@@ -302,16 +357,26 @@ def process_video_to_timeline(
         ),
         chunks=chunks,
         caption_segments=caption_segments_for_timeline(transcript_result.segments),
+        processing_metadata=ProcessingMetadata(
+            pipeline_version=PIPELINE_VERSION,
+            stages=completed_stages,
+            warnings=warnings,
+            metrics=metrics,
+            frame_evidence=frame_evidence,
+            providers=provider_metadata(primary_ocr_engine, transcript_result.engine),
+        ),
     )
+    report("ready for review", 100)
     return VideoProcessingResult(
         timeline=timeline,
         warnings=warnings,
         frame_count=len(frames),
-        candidate_frame_count=len(selections),
+        candidate_frame_count=len(candidate_selections),
         ocr_frame_count=ocr_frame_count,
-        ocr_engine=primary_engine_name(used_engines, has_rapidocr, tesseract_path),
+        ocr_engine=primary_ocr_engine,
         transcript_segment_count=len(transcript_result.segments),
         transcription_engine=transcript_result.engine,
+        metrics=metrics,
     )
 
 
@@ -372,8 +437,12 @@ def parse_video_duration(video_path: Path, ffmpeg_path: str) -> int | None:
     return max(1, int(duration))
 
 
-def select_frame_seconds(duration_seconds: int | None, segments: list[TranscriptSegment]) -> list[FrameSelection]:
-    frame_budget = max_selected_frames()
+def select_frame_seconds(
+    duration_seconds: int | None,
+    segments: list[TranscriptSegment],
+    scene_selections: list[FrameSelection] | None = None,
+) -> list[FrameSelection]:
+    candidate_budget = max(max_selected_frames() * 3, max_selected_frames() + 24)
     selections: dict[int, FrameSelection] = {}
 
     def add(seconds: int, reason: str, keywords: list[str] | None = None) -> None:
@@ -397,9 +466,12 @@ def select_frame_seconds(duration_seconds: int | None, segments: list[Transcript
     for seconds in EARLY_SAMPLE_SECONDS:
         add(seconds, "early coverage")
 
+    for selection in scene_selections or []:
+        add(selection.start_seconds, selection.reason, selection.keywords)
+
     if segments:
         scored = sorted(score_segments(segments), key=lambda item: item[0], reverse=True)
-        top_segments = scored[: max(6, frame_budget // 3)]
+        top_segments = scored[: max(12, candidate_budget // 3)]
         for _, segment in top_segments:
             keywords = segment.concepts[:4]
             add(segment.start_seconds, "transcript keyword point", keywords)
@@ -408,42 +480,120 @@ def select_frame_seconds(duration_seconds: int | None, segments: list[Transcript
 
         coverage_segments = evenly_spaced_segments(
             sorted(segments, key=lambda item: item.start_seconds),
-            count=max(6, frame_budget // 4),
+            count=max(8, candidate_budget // 4),
         )
         for segment in coverage_segments:
             add(segment.start_seconds, "transcript coverage point", segment.concepts[:4])
 
         if duration_seconds:
             # Keep a light backbone through the whole video so visual-only slides are not entirely missed.
-            interval = adaptive_interval(duration_seconds, target_count=max(10, frame_budget // 3))
+            interval = adaptive_interval(duration_seconds, target_count=max(12, candidate_budget // 3))
             for seconds in range(0, duration_seconds + 1, interval):
                 add(seconds, "periodic coverage")
     else:
-        fallback_duration = duration_seconds or 15 * frame_budget
-        interval = adaptive_interval(fallback_duration, target_count=frame_budget)
+        fallback_duration = duration_seconds or 15 * candidate_budget
+        interval = adaptive_interval(fallback_duration, target_count=candidate_budget)
         for seconds in range(0, fallback_duration + 1, interval):
             add(seconds, "periodic coverage")
 
     ordered = sorted(selections.values(), key=lambda item: item.start_seconds)
-    if len(ordered) <= frame_budget:
+    if len(ordered) <= candidate_budget:
         return ordered
 
-    early_budget = min(12, max(4, frame_budget // 5))
+    early_budget = min(18, max(6, candidate_budget // 7))
     early = [item for item in ordered if item.reason.startswith("early coverage")][:early_budget]
     transcript_priority = [
         item
         for item in ordered
         if "keyword" in item.reason or "midpoint" in item.reason or "transcript coverage" in item.reason
     ]
-    periodic = [item for item in ordered if item not in early and item not in transcript_priority]
+    visual_priority = [item for item in ordered if "visual change" in item.reason]
+    periodic = [item for item in ordered if item not in early and item not in transcript_priority and item not in visual_priority]
     chosen = dedupe_selections(early)
-    remaining = frame_budget - len(chosen)
+    remaining = candidate_budget - len(chosen)
+    visual_count = min(len(visual_priority), math.ceil(remaining * 0.35))
+    chosen = dedupe_selections(chosen + evenly_spaced(visual_priority, visual_count))
+    remaining = candidate_budget - len(chosen)
     transcript_count = min(len(transcript_priority), math.ceil(remaining * 0.75))
     chosen = dedupe_selections(chosen + evenly_spaced(transcript_priority, transcript_count))
+    remaining = candidate_budget - len(chosen)
+    if remaining > 0:
+        chosen = dedupe_selections(chosen + evenly_spaced(periodic, remaining))
+    return sorted(chosen[:candidate_budget], key=lambda item: item.start_seconds)
+
+
+def final_frame_selections(candidate_selections: list[FrameSelection]) -> list[FrameSelection]:
+    frame_budget = max_selected_frames()
+    if len(candidate_selections) <= frame_budget:
+        return candidate_selections
+
+    early = [item for item in candidate_selections if item.reason.startswith("early coverage")][:12]
+    visual = [item for item in candidate_selections if "visual change" in item.reason]
+    transcript = [
+        item
+        for item in candidate_selections
+        if "keyword" in item.reason or "midpoint" in item.reason or "transcript coverage" in item.reason
+    ]
+    periodic = [item for item in candidate_selections if item not in early and item not in visual and item not in transcript]
+
+    chosen = dedupe_selections(early)
+    remaining = frame_budget - len(chosen)
+    visual_count = min(len(visual), max(0, math.ceil(remaining * 0.35)))
+    chosen = dedupe_selections(chosen + evenly_spaced(visual, visual_count))
+    remaining = frame_budget - len(chosen)
+    transcript_count = min(len(transcript), max(0, math.ceil(remaining * 0.75)))
+    chosen = dedupe_selections(chosen + evenly_spaced(transcript, transcript_count))
     remaining = frame_budget - len(chosen)
     if remaining > 0:
         chosen = dedupe_selections(chosen + evenly_spaced(periodic, remaining))
     return sorted(chosen[:frame_budget], key=lambda item: item.start_seconds)
+
+
+def detect_scene_change_selections(
+    video_path: Path,
+    ffmpeg_path: str,
+    duration_seconds: int | None,
+) -> list[FrameSelection]:
+    threshold = scene_threshold()
+    command = [
+        ffmpeg_path,
+        "-hide_banner",
+        "-i",
+        str(video_path),
+        "-vf",
+        f"select='gt(scene,{threshold})',showinfo",
+        "-an",
+        "-f",
+        "null",
+        "-",
+    ]
+    try:
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=120)
+    except (subprocess.TimeoutExpired, OSError):
+        return []
+    output = f"{completed.stderr}\n{completed.stdout}"
+    raw_seconds = []
+    for match in re.finditer(r"pts_time:(\d+(?:\.\d+)?)", output):
+        seconds = int(float(match.group(1)))
+        if duration_seconds is None or 0 <= seconds <= duration_seconds:
+            raw_seconds.append(seconds)
+    deduped: list[int] = []
+    for seconds in sorted(set(raw_seconds)):
+        if not deduped or seconds - deduped[-1] >= 3:
+            deduped.append(seconds)
+    return [
+        FrameSelection(start_seconds=seconds, reason="visual change candidate", keywords=[])
+        for seconds in deduped[: max_selected_frames()]
+    ]
+
+
+def scene_threshold() -> float:
+    raw_value = os.getenv(SCENE_THRESHOLD_ENV, "0.22").strip()
+    try:
+        value = float(raw_value)
+    except ValueError:
+        value = 0.22
+    return max(0.08, min(value, 0.6))
 
 
 def adaptive_interval(duration_seconds: int, target_count: int) -> int:
@@ -711,18 +861,74 @@ def get_whisper_model():
 
 
 def run_local_ocr(frame_path: Path, tesseract_path: str | None, prefer_rapidocr: bool) -> OcrResult:
+    variants = [frame_path] + create_ocr_variants(frame_path)
+    rapid_results: list[OcrResult] = []
     if prefer_rapidocr:
-        rapid_result = run_rapidocr(frame_path)
-        if rapid_result.lines:
-            return rapid_result
-        if rapid_result.engine == "rapidocr" and not tesseract_path:
+        for variant_path in variants:
+            rapid_results.append(run_rapidocr(variant_path))
+        rapid_result = merge_ocr_results(rapid_results, fallback_engine="rapidocr")
+        if rapid_result.lines or not tesseract_path:
             return rapid_result
 
-    tesseract_result = run_tesseract(frame_path, tesseract_path)
+    tesseract_results = [run_tesseract(variant_path, tesseract_path) for variant_path in variants[:2]]
+    tesseract_result = merge_ocr_results(tesseract_results, fallback_engine="tesseract" if tesseract_path else "none")
     if tesseract_result.lines:
         return tesseract_result
 
     return OcrResult(lines=[], confidence=0.0, engine="rapidocr" if prefer_rapidocr else "none")
+
+
+def create_ocr_variants(frame_path: Path) -> list[Path]:
+    ffmpeg_path = find_ffmpeg()
+    if not ffmpeg_path:
+        return []
+    variant_dir = frame_path.parent / "_ocr_variants"
+    variant_dir.mkdir(exist_ok=True)
+    variant_specs = [
+        ("upscale", "scale='min(1920,iw*2)':-1:flags=lanczos,unsharp=5:5:0.8"),
+        ("contrast", "eq=contrast=1.35:brightness=0.03:saturation=0.7,unsharp=5:5:0.6"),
+        ("gray", "format=gray,eq=contrast=1.55:brightness=0.04,unsharp=5:5:0.7"),
+    ]
+    variants = []
+    for name, video_filter in variant_specs:
+        variant_path = variant_dir / f"{frame_path.stem}_{name}.jpg"
+        command = [
+            ffmpeg_path,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(frame_path),
+            "-vf",
+            video_filter,
+            "-q:v",
+            "2",
+            str(variant_path),
+        ]
+        try:
+            subprocess.run(command, check=True, capture_output=True, text=True, timeout=20)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+            continue
+        if variant_path.exists() and variant_path.stat().st_size > 0:
+            variants.append(variant_path)
+    return variants
+
+
+def merge_ocr_results(results: list[OcrResult], fallback_engine: str) -> OcrResult:
+    lines: list[str] = []
+    scores = []
+    engine = fallback_engine
+    for result in results:
+        if result.engine != "none":
+            engine = result.engine
+        for line in result.lines:
+            if line not in lines:
+                lines.append(line)
+        if result.confidence > 0:
+            scores.append(result.confidence)
+    confidence = sum(scores) / len(scores) if scores else 0.0
+    return OcrResult(lines=lines[:12], confidence=round(confidence, 3), engine=engine)
 
 
 def run_rapidocr(frame_path: Path) -> OcrResult:
@@ -792,13 +998,73 @@ def visual_description_for_frame(
     )
 
 
-def source_confidence_for(transcript_text: str, ocr_result: OcrResult) -> float:
+def source_confidence_for(transcript_text: str, ocr_result: OcrResult, selection_reason: str = "") -> float:
     confidence = 0.5
     if transcript_text:
-        confidence += 0.18
+        confidence += 0.2
     if ocr_result.lines:
         confidence += min(0.22, ocr_result.confidence * 0.22)
+    if "visual change" in selection_reason:
+        confidence += 0.05
+    if "keyword" in selection_reason or "transcript coverage" in selection_reason:
+        confidence += 0.05
     return round(min(confidence, 0.92), 2)
+
+
+def evidence_flags_for(transcript_text: str, ocr_result: OcrResult, selection_reason: str) -> list[str]:
+    flags = []
+    if transcript_text:
+        flags.append("audio/transcript aligned")
+    else:
+        flags.append("missing transcript")
+    if ocr_result.lines:
+        flags.append("ocr text found")
+    else:
+        flags.append("no readable OCR")
+    if "visual change" in selection_reason:
+        flags.append("visual change")
+    if "keyword" in selection_reason or "transcript coverage" in selection_reason:
+        flags.append("keyword-timed")
+    return flags
+
+
+def build_evidence_metrics(
+    candidate_count: int,
+    selected_count: int,
+    extracted_count: int,
+    ocr_frame_count: int,
+    transcript_result: TranscriptResult,
+    chunks: list[TimelineChunk],
+    ocr_engine: str,
+) -> EvidenceMetrics:
+    average_confidence = (
+        sum(chunk.source_confidence for chunk in chunks) / len(chunks)
+        if chunks
+        else 0.0
+    )
+    weak_chunk_count = sum(1 for chunk in chunks if chunk.source_confidence < 0.68 or "missing transcript" in chunk.evidence_flags)
+    return EvidenceMetrics(
+        candidate_frame_count=candidate_count,
+        selected_frame_count=selected_count,
+        extracted_frame_count=extracted_count,
+        ocr_frame_count=ocr_frame_count,
+        transcript_segment_count=len(transcript_result.segments),
+        weak_chunk_count=weak_chunk_count,
+        average_source_confidence=round(average_confidence, 3),
+        ocr_engine=ocr_engine,
+        transcription_engine=transcript_result.engine,
+        caption_source=transcript_result.engine,
+    )
+
+
+def provider_metadata(ocr_engine: str, transcription_engine: str) -> dict[str, str]:
+    return {
+        "pipeline": PIPELINE_VERSION,
+        "frame_extraction": "ffmpeg",
+        "ocr": ocr_engine,
+        "transcription": transcription_engine,
+        "generation": "local deterministic",
+    }
 
 
 def primary_engine_name(used_engines: set[str], has_rapidocr: bool, tesseract_path: str | None) -> str:
@@ -841,8 +1107,16 @@ def placeholder_timeline(
                 concepts=segment.concepts or extract_concepts(segment.text),
                 source_confidence=confidence,
                 keyframe_path="",
+                evidence_flags=["fallback timeline", "missing frame evidence"],
             )
         )
+
+    metrics = EvidenceMetrics(
+        transcript_segment_count=len(transcript_segments),
+        weak_chunk_count=len(chunks),
+        average_source_confidence=confidence,
+        caption_source=transcript_segments[0].source if transcript_segments else "none",
+    )
 
     return LectureTimeline(
         lecture_id=lecture_id,
@@ -855,6 +1129,13 @@ def placeholder_timeline(
         ),
         chunks=chunks,
         caption_segments=caption_segments_for_timeline(transcript_segments),
+        processing_metadata=ProcessingMetadata(
+            pipeline_version=PIPELINE_VERSION,
+            stages=["fallback timeline"],
+            warnings=[visual_message],
+            metrics=metrics,
+            providers=provider_metadata("none", metrics.caption_source),
+        ),
     )
 
 

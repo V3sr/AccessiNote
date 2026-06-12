@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Brain, Captions, ClipboardCheck, FileSearch, Glasses, Languages } from "lucide-react";
+import { BookOpen, Brain, Captions, ClipboardCheck, FileJson, FileSearch, FileText, Glasses, Languages } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -59,6 +59,18 @@ const modes: Array<{
     label: "Captions",
     description: "Timed WebVTT captions from the local caption track.",
     icon: Captions,
+  },
+  {
+    mode: "timeline_json",
+    label: "Evidence JSON",
+    description: "Raw timeline, scan metrics, and source evidence.",
+    icon: FileJson,
+  },
+  {
+    mode: "transcript_txt",
+    label: "Transcript",
+    description: "Plain text transcript with timestamps.",
+    icon: FileText,
   },
 ];
 

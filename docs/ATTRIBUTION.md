@@ -8,3 +8,15 @@ Users are responsible for ensuring they have permission to process that material
 
 Video timelines are generated locally from user-uploaded files. Keyframes and OCR text, when
 available, are derived from that uploaded material.
+
+Local processing uses these open-source/runtime components when installed through the backend
+requirements:
+
+- FastAPI and Pydantic for the local API and typed data models.
+- imageio-ffmpeg or system ffmpeg for frame extraction, scene-change detection, and audio extraction.
+- faster-whisper for local speech-to-text caption generation.
+- RapidOCR and ONNX Runtime for local OCR.
+- Tesseract OCR as an optional user-installed fallback OCR engine.
+
+AccessiNote does not ship real lecture content. Demo material should remain synthetic or
+user-provided with permission.

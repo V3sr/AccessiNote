@@ -29,6 +29,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
   }
 
   const ocrChunks = lecture.chunks.filter((chunk) => hasReadableOcrEvidence(chunk.ocr)).length;
+  const weakChunks = lecture.processing_metadata.metrics.weak_chunk_count;
   const averageSourceConfidence =
     lecture.chunks.reduce((total, chunk) => total + chunk.source_confidence, 0) / Math.max(1, lecture.chunks.length);
 
@@ -43,10 +44,14 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
           <SummaryPill icon={<Clock className="h-3.5 w-3.5" />} label={`${lecture.chunks.length} chunks`} />
           <SummaryPill icon={<ScanText className="h-3.5 w-3.5" />} label={`${ocrChunks} with OCR`} />
+          <SummaryPill icon={<FileText className="h-3.5 w-3.5" />} label={`${lecture.caption_segments.length} captions`} />
           <SummaryPill
             icon={<Gauge className="h-3.5 w-3.5" />}
             label={`${percent(averageSourceConfidence)} avg source`}
           />
+          {weakChunks > 0 && (
+            <SummaryPill icon={<Eye className="h-3.5 w-3.5" />} label={`${weakChunks} weak`} />
+          )}
         </div>
       </div>
 
@@ -113,6 +118,16 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               {chunk.concepts.map((concept) => (
                 <span key={concept} className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-800">
                   {concept}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {chunk.evidence_flags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {chunk.evidence_flags.map((flag) => (
+                <span key={flag} className="rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-900 ring-1 ring-sky-100">
+                  {flag}
                 </span>
               ))}
             </div>

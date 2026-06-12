@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CapabilityResponse } from "@/lib/types";
+import type { CapabilityResponse, ProcessingJob } from "@/lib/types";
 
 interface UploadPanelProps {
   onLoadSample: () => Promise<void>;
@@ -29,6 +29,7 @@ interface UploadPanelProps {
   onUploadImage: (title: string, imageFile: File, notes: string) => Promise<void>;
   capabilities: CapabilityResponse | null;
   isBusy: boolean;
+  processingJob?: ProcessingJob | null;
 }
 
 type SourceTab = "sample" | "transcript" | "image" | "video";
@@ -58,6 +59,7 @@ export function UploadPanel({
   onUploadImage,
   capabilities,
   isBusy,
+  processingJob,
 }: UploadPanelProps) {
   const [activeTab, setActiveTab] = useState<SourceTab>("sample");
   const [title, setTitle] = useState("My Local Transcript");
@@ -249,6 +251,10 @@ export function UploadPanel({
               </div>
             ) : null}
 
+            {processingJob && processingJob.status !== "complete" && (
+              <ProcessingProgress job={processingJob} />
+            )}
+
             <FieldLabel htmlFor="video-title">Video title</FieldLabel>
             <input
               id="video-title"
@@ -295,6 +301,32 @@ export function UploadPanel({
         )}
       </div>
     </Card>
+  );
+}
+
+function ProcessingProgress({ job }: { job: ProcessingJob }) {
+  const statusLabel = job.status === "failed" ? "Failed" : job.status === "queued" ? "Queued" : "Processing";
+  return (
+    <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-950">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-center gap-2 font-semibold">
+          {job.status === "failed" ? (
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          )}
+          {statusLabel}: {job.stage}
+        </p>
+        <span className="text-xs font-semibold">{job.progress}%</span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-sky-100">
+        <div
+          className="h-full rounded-full bg-sky-700 transition-[width]"
+          style={{ width: `${Math.max(5, Math.min(100, job.progress))}%` }}
+        />
+      </div>
+      {job.error && <p className="mt-2 text-xs leading-5 text-rose-900">{job.error}</p>}
+    </div>
   );
 }
 

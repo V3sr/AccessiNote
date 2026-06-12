@@ -13,7 +13,11 @@ OutputMode = Literal[
     "plain_language",
     "notetaker_quality_report",
     "captions_vtt",
+    "timeline_json",
+    "transcript_txt",
 ]
+
+JobStatus = Literal["queued", "running", "complete", "failed"]
 
 
 class SourceInfo(BaseModel):
@@ -34,6 +38,7 @@ class TimelineChunk(BaseModel):
     concepts: list[str] = Field(default_factory=list)
     source_confidence: float = 0.75
     keyframe_path: str = ""
+    evidence_flags: list[str] = Field(default_factory=list)
 
 
 class CaptionSegment(BaseModel):
@@ -43,12 +48,45 @@ class CaptionSegment(BaseModel):
     source: str = ""
 
 
+class EvidenceMetrics(BaseModel):
+    candidate_frame_count: int = 0
+    selected_frame_count: int = 0
+    extracted_frame_count: int = 0
+    ocr_frame_count: int = 0
+    transcript_segment_count: int = 0
+    weak_chunk_count: int = 0
+    average_source_confidence: float = 0.0
+    ocr_engine: str = "none"
+    transcription_engine: str = "none"
+    caption_source: str = "none"
+
+
+class FrameEvidence(BaseModel):
+    timestamp: str
+    reason: str
+    keywords: list[str] = Field(default_factory=list)
+    ocr_text_count: int = 0
+    ocr_confidence: float = 0.0
+    source_confidence: float = 0.0
+    keyframe_path: str = ""
+
+
+class ProcessingMetadata(BaseModel):
+    pipeline_version: str = "local-v1"
+    stages: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    metrics: EvidenceMetrics = Field(default_factory=EvidenceMetrics)
+    frame_evidence: list[FrameEvidence] = Field(default_factory=list)
+    providers: dict[str, str] = Field(default_factory=dict)
+
+
 class LectureTimeline(BaseModel):
     lecture_id: str
     title: str
     source: SourceInfo
     chunks: list[TimelineChunk]
     caption_segments: list[CaptionSegment] = Field(default_factory=list)
+    processing_metadata: ProcessingMetadata = Field(default_factory=ProcessingMetadata)
 
 
 class LectureSummary(BaseModel):
@@ -112,6 +150,7 @@ class VideoUploadResponse(BaseModel):
     ocr_engine: str = "none"
     transcript_segment_count: int = 0
     transcription_engine: str = "none"
+    metrics: EvidenceMetrics = Field(default_factory=EvidenceMetrics)
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -121,3 +160,15 @@ class ImageUploadResponse(BaseModel):
     ocr_text_count: int = 0
     ocr_engine: str = "none"
     warnings: list[str] = Field(default_factory=list)
+
+
+class ProcessingJob(BaseModel):
+    job_id: str
+    status: JobStatus = "queued"
+    stage: str = "queued"
+    progress: int = 0
+    lecture_id: str = ""
+    warnings: list[str] = Field(default_factory=list)
+    metrics: EvidenceMetrics = Field(default_factory=EvidenceMetrics)
+    error: str = ""
+    updated_at: str = ""

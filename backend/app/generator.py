@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import json
 
 from .models import CaptionSegment, GenerateResponse, LectureTimeline, OutputMode, SourceReference, TimelineChunk
 
@@ -17,6 +18,8 @@ MODE_TITLES: dict[str, str] = {
     "plain_language": "Plain-Language Explanation",
     "notetaker_quality_report": "Notetaker Quality Report",
     "captions_vtt": "WebVTT Captions",
+    "timeline_json": "Evidence Timeline JSON",
+    "transcript_txt": "Plain Transcript",
 }
 
 DEFINITIONS: dict[str, str] = {
@@ -49,6 +52,8 @@ def generate_output(timeline: LectureTimeline, mode: OutputMode) -> GenerateResp
         "plain_language": build_plain_language,
         "notetaker_quality_report": build_notetaker_quality_report,
         "captions_vtt": build_webvtt_captions,
+        "timeline_json": build_timeline_json,
+        "transcript_txt": build_plain_transcript,
     }
     content = builders[mode](timeline)
     return GenerateResponse(
@@ -315,6 +320,25 @@ def build_webvtt_captions(timeline: LectureTimeline) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def build_timeline_json(timeline: LectureTimeline) -> str:
+    if hasattr(timeline, "model_dump"):
+        payload = timeline.model_dump()
+    else:
+        payload = timeline.dict()
+    return json.dumps(payload, indent=2)
+
+
+def build_plain_transcript(timeline: LectureTimeline) -> str:
+    lines = [f"{timeline.title}", ""]
+    if timeline.caption_segments:
+        for segment in timeline.caption_segments:
+            lines.append(f"[{segment.start}-{segment.end}] {segment.text}")
+    else:
+        for chunk in timeline.chunks:
+            lines.append(f"[{time_range(chunk)}] {chunk.transcript}")
+    return "\n".join(lines).strip() + "\n"
+
+
 def source_references(timeline: LectureTimeline) -> list[SourceReference]:
     return [
         SourceReference(
@@ -328,11 +352,16 @@ def source_references(timeline: LectureTimeline) -> list[SourceReference]:
 
 
 def source_coverage_section(timeline: LectureTimeline) -> list[str]:
+    metrics = timeline.processing_metadata.metrics
     lines = [
         "",
         "## Source Coverage",
         f"- Lecture source type: **{timeline.source.type}**.",
         f"- Generated from **{len(timeline.chunks)} of {len(timeline.chunks)}** available timeline chunks.",
+        f"- Visual scan: **{metrics.extracted_frame_count}** extracted frame(s) from **{metrics.candidate_frame_count}** candidate timestamp(s).",
+        f"- OCR coverage: **{metrics.ocr_frame_count}** frame(s) with readable text using **{metrics.ocr_engine}**.",
+        f"- Caption/transcript source: **{metrics.caption_source}** with **{metrics.transcript_segment_count}** segment(s).",
+        f"- Weak evidence chunks flagged: **{metrics.weak_chunk_count}**.",
     ]
     for chunk in timeline.chunks:
         lines.append(

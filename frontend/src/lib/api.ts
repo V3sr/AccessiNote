@@ -6,6 +6,7 @@ import type {
   LectureSummary,
   LectureTimeline,
   OutputMode,
+  ProcessingJob,
   VideoUploadResponse,
 } from "./types";
 
@@ -93,6 +94,32 @@ export function uploadVideoLecture(
     method: "POST",
     body: formData,
   });
+}
+
+export function startMediaJob(
+  kind: "video" | "image",
+  title: string,
+  mediaFile: File,
+  transcript: string,
+  transcriptFile?: File | null,
+): Promise<ProcessingJob> {
+  const formData = new FormData();
+  formData.append("kind", kind);
+  formData.append("title", title);
+  formData.append("transcript", transcript);
+  formData.append(kind, mediaFile);
+  if (transcriptFile) {
+    formData.append("transcript_file", transcriptFile);
+  }
+
+  return request<ProcessingJob>("/api/jobs/media", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function getProcessingJob(jobId: string): Promise<ProcessingJob> {
+  return request<ProcessingJob>(`/api/jobs/${encodeURIComponent(jobId)}`);
 }
 
 export function uploadImageLecture(

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .models import LectureTimeline, SourceInfo, TimelineChunk
+from .models import EvidenceMetrics, FrameEvidence, LectureTimeline, ProcessingMetadata, SourceInfo, TimelineChunk
 from .retrieval import extract_concepts, format_timestamp, normalize_whitespace
 from .video_processor import find_tesseract, ocr_status_message, rapidocr_available, run_local_ocr
 
@@ -50,6 +50,24 @@ def process_image_to_timeline(
     source_confidence = 0.74 if ocr_result.lines else 0.48
     if notes_text and ocr_result.lines:
         source_confidence = 0.88
+    evidence_flags = []
+    if notes_text:
+        evidence_flags.append("user notes attached")
+    else:
+        evidence_flags.append("missing transcript")
+    evidence_flags.append("ocr text found" if ocr_result.lines else "no readable OCR")
+    keyframe_path = f"/api/lectures/{lecture_id}/frames/{frame_path.name}"
+    metrics = EvidenceMetrics(
+        candidate_frame_count=1,
+        selected_frame_count=1,
+        extracted_frame_count=1,
+        ocr_frame_count=1 if ocr_result.lines else 0,
+        transcript_segment_count=1 if notes_text else 0,
+        weak_chunk_count=0 if source_confidence >= 0.68 else 1,
+        average_source_confidence=source_confidence,
+        ocr_engine=ocr_result.engine if ocr_result.engine != "none" else "none",
+        caption_source="image notes" if notes_text else "none",
+    )
 
     timeline = LectureTimeline(
         lecture_id=lecture_id,
@@ -71,9 +89,31 @@ def process_image_to_timeline(
                 visual_description=visual_description_for_image(ocr_result.engine, bool(ocr_result.lines)),
                 concepts=concepts,
                 source_confidence=source_confidence,
-                keyframe_path=f"/api/lectures/{lecture_id}/frames/{frame_path.name}",
+                keyframe_path=keyframe_path,
+                evidence_flags=evidence_flags,
             )
         ],
+        processing_metadata=ProcessingMetadata(
+            pipeline_version="local-v2-image",
+            stages=["upload received", "running OCR", "assembling timeline", "ready for review"],
+            warnings=warnings,
+            metrics=metrics,
+            frame_evidence=[
+                FrameEvidence(
+                    timestamp=format_timestamp(0),
+                    reason="uploaded still image",
+                    ocr_text_count=len(ocr_result.lines),
+                    ocr_confidence=ocr_result.confidence,
+                    source_confidence=source_confidence,
+                    keyframe_path=keyframe_path,
+                )
+            ],
+            providers={
+                "pipeline": "local-v2-image",
+                "ocr": metrics.ocr_engine,
+                "generation": "local deterministic",
+            },
+        ),
     )
     return ImageProcessingResult(
         timeline=timeline,

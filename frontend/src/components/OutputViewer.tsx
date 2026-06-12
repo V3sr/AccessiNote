@@ -24,14 +24,14 @@ export function OutputViewer({ output }: OutputViewerProps) {
     if (!output) {
       return;
     }
-    const isCaptionOutput = output.mode === "captions_vtt";
+    const fileType = outputFileType(output.mode);
     const blob = new Blob([output.content_markdown], {
-      type: isCaptionOutput ? "text/vtt;charset=utf-8" : "text/markdown;charset=utf-8",
+      type: fileType.mime,
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${output.lecture_id}-${output.mode}.${isCaptionOutput ? "vtt" : "md"}`;
+    link.download = `${output.lecture_id}-${output.mode}.${fileType.extension}`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -47,7 +47,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
     );
   }
 
-  const isCaptionOutput = output.mode === "captions_vtt";
+  const isPlainPreview = output.mode === "captions_vtt" || output.mode === "timeline_json" || output.mode === "transcript_txt";
 
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
@@ -87,7 +87,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
 
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
         <article className="prose prose-zinc max-w-none p-4 prose-headings:tracking-normal prose-h1:text-2xl prose-h2:text-lg prose-li:my-1">
-          {isCaptionOutput ? (
+          {isPlainPreview ? (
             <pre className="whitespace-pre-wrap rounded-md bg-zinc-950 p-4 text-sm leading-6 text-zinc-50">
               {output.content_markdown}
             </pre>
@@ -114,4 +114,17 @@ export function OutputViewer({ output }: OutputViewerProps) {
       </div>
     </Card>
   );
+}
+
+function outputFileType(mode: GenerateResponse["mode"]): { extension: string; mime: string } {
+  if (mode === "captions_vtt") {
+    return { extension: "vtt", mime: "text/vtt;charset=utf-8" };
+  }
+  if (mode === "timeline_json") {
+    return { extension: "json", mime: "application/json;charset=utf-8" };
+  }
+  if (mode === "transcript_txt") {
+    return { extension: "txt", mime: "text/plain;charset=utf-8" };
+  }
+  return { extension: "md", mime: "text/markdown;charset=utf-8" };
 }

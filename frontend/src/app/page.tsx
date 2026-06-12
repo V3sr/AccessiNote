@@ -32,12 +32,20 @@ import {
   getCapabilities,
   getHealth,
   getLecture,
+  getProcessingJob,
   listLectures,
   loadSampleLecture,
+  startMediaJob,
   uploadImageLecture,
-  uploadVideoLecture,
 } from "@/lib/api";
-import type { CapabilityResponse, GenerateResponse, LectureSummary, LectureTimeline, OutputMode } from "@/lib/types";
+import type {
+  CapabilityResponse,
+  GenerateResponse,
+  LectureSummary,
+  LectureTimeline,
+  OutputMode,
+  ProcessingJob,
+} from "@/lib/types";
 
 const modeLabels: Record<OutputMode, string> = {
   structured_notes: "Structured Notes",
@@ -47,6 +55,8 @@ const modeLabels: Record<OutputMode, string> = {
   plain_language: "Plain Language",
   notetaker_quality_report: "Quality Report",
   captions_vtt: "WebVTT Captions",
+  timeline_json: "Evidence JSON",
+  transcript_txt: "Plain Transcript",
 };
 
 export default function Home() {
@@ -56,6 +66,7 @@ export default function Home() {
   const [selectedMode, setSelectedMode] = useState<OutputMode>("adhd_study_pack");
   const [output, setOutput] = useState<GenerateResponse | null>(null);
   const [recentLectures, setRecentLectures] = useState<LectureSummary[]>([]);
+  const [processingJob, setProcessingJob] = useState<ProcessingJob | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -122,14 +133,23 @@ export default function Home() {
 
   async function handleUploadVideo(title: string, videoFile: File, transcript: string, transcriptFile?: File | null) {
     await runAction(async () => {
-      const uploaded = await uploadVideoLecture(title, videoFile, transcript, transcriptFile);
-      const nextLecture = await getLecture(uploaded.lecture_id);
+      const createdJob = await startMediaJob("video", title, videoFile, transcript, transcriptFile);
+      setProcessingJob(createdJob);
+      const completedJob = await waitForProcessingJob(createdJob.job_id, setProcessingJob);
+      if (completedJob.status === "failed") {
+        throw new Error(completedJob.error || "Video processing failed.");
+      }
+      if (!completedJob.lecture_id) {
+        throw new Error("Video processing finished without a lecture timeline.");
+      }
+      const nextLecture = await getLecture(completedJob.lecture_id);
       setLecture(nextLecture);
       setOutput(null);
       await refreshRecentLectures();
-      const warningText = uploaded.warnings.length > 0 ? ` ${uploaded.warnings.join(" ")}` : "";
+      const warningText = completedJob.warnings.length > 0 ? ` ${completedJob.warnings.join(" ")}` : "";
+      const metrics = completedJob.metrics;
       setNotice(
-        `Video timeline created from ${uploaded.candidate_frame_count} selected timestamp(s), ${uploaded.frame_count} extracted frame(s), and ${uploaded.transcript_segment_count} transcript segment(s). OCR text found in ${uploaded.ocr_frame_count} frame(s). OCR: ${uploaded.ocr_engine}. Captions: ${uploaded.transcription_engine}.${warningText}`,
+        `Video timeline created from ${metrics.candidate_frame_count} candidate timestamp(s), ${metrics.selected_frame_count} selected timestamp(s), ${metrics.extracted_frame_count} extracted frame(s), and ${metrics.transcript_segment_count} transcript segment(s). OCR text found in ${metrics.ocr_frame_count} frame(s). OCR: ${metrics.ocr_engine}. Captions: ${metrics.transcription_engine}.${warningText}`,
       );
     });
   }
@@ -235,6 +255,7 @@ export default function Home() {
             onUploadImage={handleUploadImage}
             capabilities={capabilities}
             isBusy={isBusy}
+            processingJob={processingJob}
           />
         </div>
       </section>
@@ -289,7 +310,7 @@ export default function Home() {
                 <div>
                   <p className="text-sm font-semibold text-zinc-950">{modeLabels[selectedMode]}</p>
                   <p className="mt-1 text-sm leading-5 text-zinc-600">
-                    Generate markdown from reviewed timeline evidence.
+                    Generate an accessible export from reviewed timeline evidence.
                   </p>
                 </div>
                 <Button
@@ -319,6 +340,7 @@ export default function Home() {
           </div>
 
           <aside className="min-w-0 space-y-5">
+            <ScanReportPanel lecture={lecture} job={processingJob} />
             <InsightsPanel
               coverage={coverage}
               concepts={lecture ? countConcepts(lecture) : 0}
@@ -339,6 +361,24 @@ export default function Home() {
       </section>
     </main>
   );
+}
+
+async function waitForProcessingJob(
+  jobId: string,
+  onUpdate: (job: ProcessingJob) => void,
+): Promise<ProcessingJob> {
+  let latest = await getProcessingJob(jobId);
+  onUpdate(latest);
+  while (latest.status === "queued" || latest.status === "running") {
+    await delay(900);
+    latest = await getProcessingJob(jobId);
+    onUpdate(latest);
+  }
+  return latest;
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
 function HeroBenefit({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
@@ -463,6 +503,55 @@ function WorkbenchStat({
   );
 }
 
+function ScanReportPanel({ lecture, job }: { lecture: LectureTimeline | null; job: ProcessingJob | null }) {
+  const metadata = lecture?.processing_metadata;
+  const metrics = metadata?.metrics ?? job?.metrics;
+  const stage = job?.status === "running" || job?.status === "queued" ? job.stage : metadata?.stages.at(-1);
+
+  return (
+    <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-zinc-950">Scan report</h2>
+        <Badge className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-900 ring-1 ring-sky-100 hover:bg-sky-50">
+          {stage || "Waiting"}
+        </Badge>
+      </div>
+
+      {metrics ? (
+        <div className="mt-4 grid gap-3">
+          <ReportMetric label="Candidate frames" value={String(metrics.candidate_frame_count)} />
+          <ReportMetric label="Selected frames" value={String(metrics.selected_frame_count)} />
+          <ReportMetric label="OCR frames" value={String(metrics.ocr_frame_count)} />
+          <ReportMetric label="Transcript segments" value={String(metrics.transcript_segment_count)} />
+          <ReportMetric label="Weak chunks" value={String(metrics.weak_chunk_count)} />
+          <ReportMetric label="Caption source" value={formatShortEngine(metrics.caption_source)} />
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-zinc-600">
+          Upload a video to see frame selection, OCR coverage, caption source, and confidence diagnostics.
+        </p>
+      )}
+
+      {metadata?.warnings.length ? (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950">
+          {metadata.warnings.slice(0, 2).map((warning) => (
+            <p key={warning}>{warning}</p>
+          ))}
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+function ReportMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md bg-zinc-50 px-3 py-2 text-sm">
+      <span className="text-zinc-600">{label}</span>
+      <span className="truncate text-right font-semibold text-zinc-950">{value}</span>
+    </div>
+  );
+}
+
 function InsightsPanel({
   coverage,
   concepts,
@@ -572,6 +661,19 @@ function countConcepts(lecture: LectureTimeline): number {
 
 function percentNumber(value: number): number {
   return Math.round(Math.max(0, Math.min(1, value)) * 100);
+}
+
+function formatShortEngine(value: string): string {
+  if (!value || value === "none") {
+    return "None";
+  }
+  if (value === "faster-whisper") {
+    return "Whisper";
+  }
+  if (value === "uploaded captions") {
+    return "Uploaded";
+  }
+  return value;
 }
 
 function hasReadableOcrEvidence(items: string[]): boolean {

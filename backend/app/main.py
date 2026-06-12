@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,6 +19,7 @@ from .models import (
     ImageUploadResponse,
     LectureSummary,
     LectureTimeline,
+    ProcessingJob,
     VideoUploadResponse,
 )
 from .retrieval import create_timeline_from_transcript
@@ -40,6 +42,7 @@ from .video_processor import (
 
 
 app = FastAPI(title="AccessiNote Local MVP", version="0.1.0")
+MEDIA_JOBS: dict[str, ProcessingJob] = {}
 
 app.add_middleware(
     CORSMiddleware,
@@ -156,8 +159,69 @@ async def upload_video(
         ocr_engine=result.ocr_engine,
         transcript_segment_count=result.transcript_segment_count,
         transcription_engine=result.transcription_engine,
+        metrics=result.metrics,
         warnings=result.warnings,
     )
+
+
+@app.post("/api/jobs/media", response_model=ProcessingJob)
+async def create_media_job(
+    background_tasks: BackgroundTasks,
+    kind: str = Form("video"),
+    title: str = Form("Uploaded Lecture Material"),
+    transcript: str = Form(""),
+    video: UploadFile | None = File(None),
+    image: UploadFile | None = File(None),
+    transcript_file: UploadFile | None = File(None),
+) -> ProcessingJob:
+    normalized_kind = kind.strip().lower()
+    if normalized_kind not in {"video", "image"}:
+        raise HTTPException(status_code=400, detail="Media job kind must be video or image.")
+
+    if normalized_kind == "video":
+        if video is None or not video.filename:
+            raise HTTPException(status_code=400, detail="Video file is required.")
+        upload_path = await save_upload_file(
+            upload=video,
+            allowed_suffixes=VIDEO_SUFFIXES,
+            default_stem="uploaded_video",
+            max_bytes=MAX_VIDEO_UPLOAD_BYTES,
+            kind="video",
+        )
+    else:
+        if image is None or not image.filename:
+            raise HTTPException(status_code=400, detail="Image file is required.")
+        upload_path = await save_upload_file(
+            upload=image,
+            allowed_suffixes=IMAGE_SUFFIXES,
+            default_stem="uploaded_image",
+            max_bytes=MAX_IMAGE_UPLOAD_BYTES,
+            kind="image",
+        )
+
+    transcript_text = transcript.strip()
+    if transcript_file and transcript_file.filename:
+        transcript_file_text = await read_text_upload(transcript_file)
+        transcript_text = "\n\n".join(part for part in [transcript_text, transcript_file_text] if part)
+
+    job = ProcessingJob(
+        job_id=f"job_{uuid.uuid4().hex[:10]}",
+        status="queued",
+        stage="upload received",
+        progress=5,
+        updated_at=current_timestamp(),
+    )
+    MEDIA_JOBS[job.job_id] = job
+    background_tasks.add_task(run_media_job, job.job_id, normalized_kind, title, upload_path, transcript_text)
+    return job
+
+
+@app.get("/api/jobs/{job_id}", response_model=ProcessingJob)
+def get_media_job(job_id: str) -> ProcessingJob:
+    job = MEDIA_JOBS.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Processing job not found.")
+    return job
 
 
 @app.post("/api/images/upload", response_model=ImageUploadResponse)
@@ -200,6 +264,86 @@ def get_lecture_frame(lecture_id: str, filename: str) -> FileResponse:
     if not frame_path.exists() or not frame_path.is_file():
         raise HTTPException(status_code=404, detail="Frame not found.")
     return FileResponse(frame_path)
+
+
+def run_media_job(job_id: str, kind: str, title: str, upload_path: Path, transcript_text: str) -> None:
+    update_job(job_id, status="running", stage="starting", progress=8)
+    try:
+        if kind == "video":
+            result = process_video_to_timeline(
+                title=title,
+                video_path=upload_path,
+                outputs_dir=OUTPUTS_DIR,
+                transcript_hint=transcript_text,
+                stage_callback=lambda stage, progress: update_job(job_id, status="running", stage=stage, progress=progress),
+            )
+            save_timeline(result.timeline)
+            update_job(
+                job_id,
+                status="complete",
+                stage="ready for review",
+                progress=100,
+                lecture_id=result.timeline.lecture_id,
+                warnings=result.warnings,
+                metrics=result.metrics,
+            )
+            return
+
+        update_job(job_id, status="running", stage="running OCR", progress=55)
+        image_result = process_image_to_timeline(
+            title=title,
+            image_path=upload_path,
+            outputs_dir=OUTPUTS_DIR,
+            notes_hint=transcript_text,
+        )
+        save_timeline(image_result.timeline)
+        update_job(
+            job_id,
+            status="complete",
+            stage="ready for review",
+            progress=100,
+            lecture_id=image_result.timeline.lecture_id,
+            warnings=image_result.warnings,
+            metrics=image_result.timeline.processing_metadata.metrics,
+        )
+    except Exception as error:
+        update_job(job_id, status="failed", stage="failed", progress=100, error=str(error))
+
+
+def update_job(
+    job_id: str,
+    status: str | None = None,
+    stage: str | None = None,
+    progress: int | None = None,
+    lecture_id: str | None = None,
+    warnings: list[str] | None = None,
+    metrics=None,
+    error: str | None = None,
+) -> None:
+    job = MEDIA_JOBS.get(job_id)
+    if job is None:
+        return
+    updates = {}
+    if status is not None:
+        updates["status"] = status
+    if stage is not None:
+        updates["stage"] = stage
+    if progress is not None:
+        updates["progress"] = max(0, min(100, progress))
+    if lecture_id is not None:
+        updates["lecture_id"] = lecture_id
+    if warnings is not None:
+        updates["warnings"] = warnings
+    if metrics is not None:
+        updates["metrics"] = metrics
+    if error is not None:
+        updates["error"] = error
+    updates["updated_at"] = current_timestamp()
+    MEDIA_JOBS[job_id] = job.model_copy(update=updates)
+
+
+def current_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 async def save_upload_file(
