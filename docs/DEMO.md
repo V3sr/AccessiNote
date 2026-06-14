@@ -9,7 +9,7 @@ AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 1. Open `http://localhost:3000`.
 2. Point to the Demo readiness panel.
 3. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and optional Microsoft provider configuration before the demo starts.
-4. Call out that missing Azure providers are warnings, not blockers, because the reliable demo path is local-first and no API key is required.
+4. If Azure providers are configured, call out Azure Speech, Azure AI Vision, and Azure OpenAI as selected providers. If not, call out that local fallback keeps the demo reliable.
 
 0:30-1:10 - Baseline sample
 
@@ -24,7 +24,7 @@ AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 2. Choose a short permitted lecture clip.
 3. Optionally attach `.vtt`, `.srt`, or `.txt` captions; otherwise allow local faster-whisper captions.
 4. Click **Upload video**.
-5. Narrate the staged job flow: upload received, extracting audio, transcribing, finding visual changes, running OCR, aligning timeline, ready for review.
+5. Narrate the staged job flow: upload received, extracting audio, transcribing with Azure Speech or local fallback, finding visual changes, running Azure Vision OCR or local fallback, aligning timeline, ready for review.
 
 2:15-3:10 - Evidence review
 
@@ -46,7 +46,7 @@ AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 
 1. Select **WebVTT Captions**, click **Generate output**, then click **Download .vtt**.
 2. Select **Evidence JSON**, click **Generate output**, and show the transparent source trail.
-3. Close on the safety posture: permitted materials only, generated captions and OCR need human review, local storage is explicit, and cloud services are optional provider seams.
+3. Close on the safety posture: permitted materials only, generated captions and OCR need human review, local storage is explicit, Azure keys stay server-side, and local fallback protects the demo.
 
 ## Judging Alignment
 
@@ -68,5 +68,6 @@ Use synthetic or explicitly permitted lecture material. Avoid private student da
 - Demo readiness panel visible near the start.
 - One short permitted video available locally.
 - Optional caption file ready if local transcription is slow on the recording machine.
+- Azure resource names, keys, and endpoints redacted if the Azure portal or `.env` is ever shown.
 - Download actions shown for `.vtt` and Evidence JSON.
 - Safety and human-review language stated in the final 20 seconds.

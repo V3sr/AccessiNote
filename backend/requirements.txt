@@ -8,3 +8,7 @@ imageio-ffmpeg>=0.5,<1
 onnxruntime>=1.18,<2
 rapidocr>=3.7,<4
 faster-whisper>=1.2,<2
+openai>=1.80,<2
+azure-ai-vision-imageanalysis>=1.0,<2
+azure-cognitiveservices-speech>=1.43,<2
+azure-core>=1.30,<2

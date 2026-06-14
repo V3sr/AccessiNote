@@ -7,8 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .models import EvidenceMetrics, FrameEvidence, LectureTimeline, ProcessingMetadata, SourceInfo, TimelineChunk
+from .providers import provider_status, selected_provider
 from .retrieval import extract_concepts, format_timestamp, normalize_whitespace
-from .video_processor import find_tesseract, ocr_status_message, rapidocr_available, run_local_ocr
+from .video_processor import find_tesseract, ocr_status_message, rapidocr_available, run_configured_ocr
 
 
 @dataclass
@@ -35,11 +36,22 @@ def process_image_to_timeline(
 
     has_rapidocr = rapidocr_available()
     tesseract_path = find_tesseract()
+    azure_ocr_selected = selected_provider("ocr") == "azure_vision"
+    azure_ocr_configured = provider_status("ocr").configured if azure_ocr_selected else False
     warnings = []
-    if not has_rapidocr and not tesseract_path:
+    if azure_ocr_selected and not azure_ocr_configured:
+        warnings.append("OCR_PROVIDER=azure_vision is selected but not configured. Local OCR fallback will be used.")
+    if not azure_ocr_configured and not has_rapidocr and not tesseract_path:
         warnings.append("No local OCR engine is available. The image was saved without OCR text.")
 
-    ocr_result = run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=has_rapidocr)
+    ocr_result, ocr_warning = run_configured_ocr(
+        frame_path,
+        tesseract_path=tesseract_path,
+        prefer_rapidocr=has_rapidocr,
+        prefer_azure=azure_ocr_configured,
+    )
+    if ocr_warning:
+        warnings.append(ocr_warning)
     notes_text = normalize_whitespace(notes_hint)
     transcript = notes_text or (
         "Still image uploaded locally. No audio transcription is attached; use OCR text and human review "
@@ -111,7 +123,7 @@ def process_image_to_timeline(
             providers={
                 "pipeline": "local-v2-image",
                 "ocr": metrics.ocr_engine,
-                "generation": "local deterministic",
+                "generation": selected_provider("generation"),
             },
         ),
     )
@@ -125,13 +137,15 @@ def process_image_to_timeline(
 
 def visual_description_for_image(engine: str, has_text: bool) -> str:
     if has_text:
+        location = "with Azure AI Vision" if engine == "azure_vision" else f"locally with {engine}"
         return (
-            f"Still image scanned locally with {engine}. Review the image to confirm layout, diagrams, "
+            f"Still image scanned {location}. Review the image to confirm layout, diagrams, "
             "equations, and any text OCR may have missed."
         )
-    if engine in {"rapidocr", "tesseract"}:
+    if engine in {"rapidocr", "tesseract", "azure_vision"}:
+        location = "Azure AI Vision OCR" if engine == "azure_vision" else "local OCR"
         return (
-            "Still image scanned locally. OCR ran but did not detect readable text; human review is needed "
+            f"Still image scanned with {location}. OCR ran but did not detect readable text; human review is needed "
             "for diagrams, handwritten marks, or low-contrast content."
         )
     return "Still image saved locally, but no OCR engine was available on this machine."

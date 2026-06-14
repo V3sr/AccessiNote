@@ -32,13 +32,14 @@ or equation was captured. Treat low-confidence chunks and "no readable OCR" flag
 Uploaded files and generated timelines are stored in ignored local folders under `data/uploads` and
 `data/outputs`. Clear those folders manually when you no longer need local test material.
 
-## Optional Providers
+## Azure Providers
 
 The default demo path does not send lecture material to Microsoft/Azure or any external provider.
-Optional provider configuration can report Azure Speech, Azure AI Vision, or Azure OpenAI readiness,
-but those integrations are disabled unless a user explicitly selects and configures them in the local
-environment. Missing optional provider keys are demo-readiness warnings, not blockers.
+Azure Speech, Azure AI Vision, and Azure OpenAI are used only when a user explicitly selects and
+configures them in the local environment. Missing provider keys are demo-readiness warnings, not
+blockers.
 
-If cloud providers are implemented later, the app should show provider selection clearly, document
-what data leaves the machine, and require users to confirm they have permission to process the
-material through that provider.
+When Azure providers are enabled, lecture audio, selected frames, OCR inputs, and compact timeline
+evidence may be sent to the configured Azure resources. The frontend never receives Azure keys; all
+provider calls run through the backend. Demo videos and screenshots should not show `.env`, resource
+keys, or full Azure endpoints.

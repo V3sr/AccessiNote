@@ -18,12 +18,14 @@ requirements:
 - RapidOCR and ONNX Runtime for local OCR.
 - Tesseract OCR as an optional user-installed fallback OCR engine.
 
-Optional Microsoft provider configuration is exposed for future integration, but the current demo
-does not call Azure services. If enabled later, the intended provider seams are:
+Optional Microsoft providers can be selected for the hackathon demo:
 
 - Azure AI Speech for transcription.
-- Azure AI Vision for OCR.
-- Azure OpenAI for generation.
+- Azure AI Vision Read OCR for images and selected video frames.
+- Azure OpenAI for source-grounded Markdown generation.
+
+When these providers are enabled, user-provided lecture material or compact extracted evidence may
+be sent to the configured Azure resources. Keep demo material synthetic or permissioned.
 
 AccessiNote does not ship real lecture content. Demo material should remain synthetic or
 user-provided with permission.

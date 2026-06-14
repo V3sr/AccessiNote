@@ -14,7 +14,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Callable
 
+from .azure_clients import run_azure_vision_ocr, transcribe_audio_with_azure_speech
 from .models import CaptionSegment, EvidenceMetrics, FrameEvidence, LectureTimeline, ProcessingMetadata, SourceInfo, TimelineChunk
+from .providers import provider_status, selected_provider
 from .retrieval import extract_concepts, format_timestamp, normalize_whitespace, split_transcript
 
 
@@ -86,6 +88,20 @@ class FrameSelection:
 
 def build_capability_notes() -> list[str]:
     notes = []
+    if selected_provider("ocr") == "azure_vision":
+        status = provider_status("ocr")
+        notes.append(
+            "Azure AI Vision OCR is selected."
+            if status.configured
+            else "Azure AI Vision OCR is selected but missing required environment variables."
+        )
+    if selected_provider("transcription") == "azure_speech":
+        status = provider_status("transcription")
+        notes.append(
+            "Azure Speech transcription is selected."
+            if status.configured
+            else "Azure Speech transcription is selected but missing required environment variables."
+        )
     if not ffmpeg_available():
         notes.append("ffmpeg is unavailable. Reinstall backend requirements or install ffmpeg to extract keyframes.")
     if rapidocr_available():
@@ -289,7 +305,11 @@ def process_video_to_timeline(
 
     has_rapidocr = rapidocr_available()
     tesseract_path = find_tesseract()
-    if not has_rapidocr and not tesseract_path:
+    azure_ocr_selected = selected_provider("ocr") == "azure_vision"
+    azure_ocr_configured = provider_status("ocr").configured if azure_ocr_selected else False
+    if azure_ocr_selected and not azure_ocr_configured:
+        warnings.append("OCR_PROVIDER=azure_vision is selected but not configured. Local OCR fallback will be used.")
+    if not azure_ocr_configured and not has_rapidocr and not tesseract_path:
         warnings.append("No local OCR engine is available. Keyframes were extracted without OCR text.")
 
     report("running OCR", 68)
@@ -299,7 +319,14 @@ def process_video_to_timeline(
     ocr_frame_count = 0
     for index, frame in enumerate(frames, start=1):
         start_seconds = frame.start_seconds
-        ocr_result = run_local_ocr(frame.path, tesseract_path=tesseract_path, prefer_rapidocr=has_rapidocr)
+        ocr_result, ocr_warning = run_configured_ocr(
+            frame.path,
+            tesseract_path=tesseract_path,
+            prefer_rapidocr=has_rapidocr,
+            prefer_azure=azure_ocr_configured,
+        )
+        if ocr_warning and ocr_warning not in warnings:
+            warnings.append(ocr_warning)
         if ocr_result.engine != "none":
             used_engines.add(ocr_result.engine)
         if ocr_result.lines:
@@ -781,6 +808,73 @@ def transcribe_video_to_segments(
     ffmpeg_path: str,
     stage_callback: StageCallback | None = None,
 ) -> TranscriptResult:
+    if selected_provider("transcription") == "azure_speech":
+        status = provider_status("transcription")
+        if status.configured:
+            return transcribe_video_with_azure_speech(video_path, frames_dir, ffmpeg_path, stage_callback)
+        fallback = transcribe_video_with_local_whisper(video_path, frames_dir, ffmpeg_path, stage_callback)
+        fallback.warnings.insert(
+            0,
+            "TRANSCRIPTION_PROVIDER=azure_speech is selected but not configured. Local caption fallback was used.",
+        )
+        return fallback
+    return transcribe_video_with_local_whisper(video_path, frames_dir, ffmpeg_path, stage_callback)
+
+
+def transcribe_video_with_azure_speech(
+    video_path: Path,
+    frames_dir: Path,
+    ffmpeg_path: str,
+    stage_callback: StageCallback | None = None,
+) -> TranscriptResult:
+    audio_path = frames_dir / "azure_speech_audio.wav"
+    if stage_callback:
+        stage_callback("extracting audio", 18)
+    if not extract_audio_for_transcription(video_path, audio_path, ffmpeg_path):
+        return TranscriptResult(
+            segments=[],
+            warnings=["Azure Speech transcription could not extract an audio track from the uploaded video."],
+            engine="azure_speech",
+        )
+    try:
+        if stage_callback:
+            stage_callback("transcribing with Azure Speech", 28)
+        raw_segments = transcribe_audio_with_azure_speech(audio_path, transcription_timeout_seconds())
+        segments = [
+            TranscriptSegment(
+                start_seconds=segment.start_seconds,
+                end_seconds=max(segment.start_seconds + 1, segment.end_seconds),
+                text=segment.text,
+                concepts=extract_concepts(segment.text),
+                source="Azure Speech",
+            )
+            for segment in raw_segments
+            if segment.text
+        ]
+    except Exception as error:
+        if error.__class__.__name__ in {"JobCanceled", "JobStopped"}:
+            raise
+        fallback = transcribe_video_with_local_whisper(video_path, frames_dir, ffmpeg_path, stage_callback)
+        fallback.warnings.insert(0, f"Azure Speech transcription failed; local fallback was used. Detail: {error}")
+        return fallback
+    finally:
+        audio_path.unlink(missing_ok=True)
+
+    if not segments:
+        return TranscriptResult(
+            segments=[],
+            warnings=["Azure Speech transcription ran, but no speech segments were detected."],
+            engine="azure_speech",
+        )
+    return TranscriptResult(segments=segments, warnings=[], engine="azure_speech")
+
+
+def transcribe_video_with_local_whisper(
+    video_path: Path,
+    frames_dir: Path,
+    ffmpeg_path: str,
+    stage_callback: StageCallback | None = None,
+) -> TranscriptResult:
     if not faster_whisper_available():
         return TranscriptResult(
             segments=[],
@@ -925,6 +1019,30 @@ def get_whisper_model():
     return WhisperModel(whisper_model_name(), device="cpu", compute_type="int8")
 
 
+def run_configured_ocr(
+    frame_path: Path,
+    tesseract_path: str | None,
+    prefer_rapidocr: bool,
+    prefer_azure: bool | None = None,
+) -> tuple[OcrResult, str]:
+    use_azure = prefer_azure if prefer_azure is not None else (
+        selected_provider("ocr") == "azure_vision" and provider_status("ocr").configured
+    )
+    if use_azure:
+        try:
+            result = run_azure_vision_ocr(frame_path)
+            if result.lines:
+                return OcrResult(lines=result.lines, confidence=result.confidence, engine=result.engine), ""
+            local_result = run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=prefer_rapidocr)
+            if local_result.lines:
+                return local_result, "Azure AI Vision OCR found no readable text on at least one frame; local OCR fallback found text."
+            return OcrResult(lines=[], confidence=result.confidence, engine=result.engine), ""
+        except Exception as error:
+            local_result = run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=prefer_rapidocr)
+            return local_result, f"Azure AI Vision OCR failed on at least one frame; local OCR fallback was used. Detail: {error}"
+    return run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=prefer_rapidocr), ""
+
+
 def run_local_ocr(frame_path: Path, tesseract_path: str | None, prefer_rapidocr: bool) -> OcrResult:
     variants = [frame_path] + create_ocr_variants(frame_path)
     rapid_results: list[OcrResult] = []
@@ -1032,7 +1150,7 @@ def run_tesseract(frame_path: Path, tesseract_path: str | None) -> OcrResult:
 
 
 def ocr_status_message(engine: str) -> str:
-    if engine in {"rapidocr", "tesseract"}:
+    if engine in {"rapidocr", "tesseract", "azure_vision"}:
         return "OCR engine ran, but no readable text was detected in this frame."
     return "No OCR engine was available for this frame."
 
@@ -1048,11 +1166,12 @@ def visual_description_for_frame(
     if keywords:
         selection_text += f" Transcript keywords: {', '.join(keywords[:4])}."
     if ocr_result.lines:
+        engine_label = "Azure AI Vision" if ocr_result.engine == "azure_vision" else f"local {ocr_result.engine}"
         return (
-            f"Keyframe extracted around {timestamp}. Local {ocr_result.engine} OCR detected visible text; "
+            f"Keyframe extracted around {timestamp}. {engine_label} OCR detected visible text; "
             f"review the frame to confirm diagrams, equations, and layout.{selection_text}"
         )
-    if ocr_result.engine in {"rapidocr", "tesseract"}:
+    if ocr_result.engine in {"rapidocr", "tesseract", "azure_vision"}:
         return (
             f"Keyframe extracted around {timestamp}. OCR ran but did not find readable text; "
             f"human review is needed for diagrams or low-contrast board work.{selection_text}"
@@ -1128,11 +1247,13 @@ def provider_metadata(ocr_engine: str, transcription_engine: str) -> dict[str, s
         "frame_extraction": "ffmpeg",
         "ocr": ocr_engine,
         "transcription": transcription_engine,
-        "generation": "local deterministic",
+        "generation": selected_provider("generation"),
     }
 
 
 def primary_engine_name(used_engines: set[str], has_rapidocr: bool, tesseract_path: str | None) -> str:
+    if "azure_vision" in used_engines:
+        return "azure_vision"
     if "rapidocr" in used_engines or has_rapidocr:
         return "rapidocr"
     if "tesseract" in used_engines or tesseract_path:

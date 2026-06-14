@@ -40,10 +40,9 @@ Generation is deterministic and local. Video upload uses local tooling only:
 - Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
 - Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Microsoft provider configuration.
 
-No Azure services, auth, database, or external processing APIs are required in the MVP. The first
-faster-whisper run may download the selected model artifact before local transcription runs.
-Optional Microsoft provider switches are reported through `/api/capabilities`, but they are
-configuration seams only unless selected and implemented later.
+No auth, database, or Azure storage is required. The app can run local-only, or it can use Azure
+providers when selected through environment variables. The first faster-whisper run may download the
+selected model artifact before local transcription runs.
 
 ## Local Pipeline
 
@@ -56,27 +55,32 @@ flowchart LR
   JOB --> FFMPEG[ffmpeg / imageio-ffmpeg]
   JOB --> WHISPER[faster-whisper captions]
   JOB --> OCR[RapidOCR / Tesseract]
+  JOB -. selected .-> SPEECH[Azure Speech]
+  JOB -. selected .-> VISION[Azure AI Vision OCR]
+  API -. selected .-> AOAI[Azure OpenAI]
   FFMPEG --> FRAMES[Candidate and selected keyframes]
   WHISPER --> ALIGN[Transcript-frame alignment]
+  SPEECH --> ALIGN
   OCR --> ALIGN
+  VISION --> ALIGN
   FRAMES --> ALIGN
   ALIGN --> TIMELINE[LectureTimeline JSON]
   TIMELINE --> OUTPUTS[Markdown / VTT / JSON / TXT exports]
+  AOAI --> OUTPUTS
   TIMELINE --> STORE[data/outputs]
   UPLOADS[data/uploads] --> JOB
-  PROVIDERS[Provider config layer] -. default local .-> WHISPER
-  PROVIDERS -. default local .-> OCR
-  PROVIDERS -. default local .-> OUTPUTS
-  AZURE[Optional Microsoft providers] -. Azure Speech .-> PROVIDERS
-  AZURE -. Azure AI Vision .-> PROVIDERS
-  AZURE -. Azure OpenAI .-> PROVIDERS
+  PROVIDERS[Provider config layer] -. selects .-> WHISPER
+  PROVIDERS -. selects .-> OCR
+  PROVIDERS -. selects .-> SPEECH
+  PROVIDERS -. selects .-> VISION
+  PROVIDERS -. selects .-> AOAI
 ```
 
 ## Provider Seams
 
-`backend/app/providers.py` defines local-first provider protocols for transcription, OCR, visual
-understanding, and generation. The current app defaults to local deterministic implementations; cloud
-providers can be added later without changing the public timeline shape.
+`backend/app/providers.py` defines provider protocols for transcription, OCR, visual understanding,
+and generation. The current app defaults to local deterministic implementations; Azure providers are
+selected only when the corresponding environment variables are set.
 
 Optional provider environment switches:
 
@@ -85,6 +89,15 @@ Optional provider environment switches:
 - `GENERATION_PROVIDER=local|azure_openai`
 
 `/api/capabilities` returns provider metadata for `transcription`, `ocr`, and `generation`, including
-the selected provider name, whether it is configured, and which environment variables would be
-required for Azure-backed implementations. Missing Azure keys are warnings for submission readiness,
-not blockers for the local demo.
+the selected provider name, whether it is configured, and which environment variables are required
+for Azure-backed implementations. Missing Azure keys are warnings for submission readiness, not
+blockers for the local demo.
+
+Azure provider behavior:
+
+- `azure_speech`: transcribes extracted video audio through Azure Speech, then falls back to
+  faster-whisper if the cloud call fails.
+- `azure_vision`: scans uploaded images and selected video frames through Azure AI Vision Read OCR,
+  then falls back to RapidOCR/Tesseract when needed.
+- `azure_openai`: rewrites timeline evidence into accessible Markdown outputs, then falls back to the
+  deterministic local generator if generation fails.

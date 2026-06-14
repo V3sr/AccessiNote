@@ -5,8 +5,9 @@ timeline or pasted transcript into timestamped learning formats such as structur
 ADHD-friendly study packs, screen-reader notes, plain-language explanations, exam prep, and
 notetaker quality reports.
 
-The current demo is intentionally local only. It does not require API keys, Azure services,
-authentication, or a database.
+The current demo works locally without API keys, authentication, or a database. For a stronger
+Microsoft hackathon story, optional Azure providers can be enabled for speech transcription, OCR, and
+AI generation while keeping local fallbacks.
 
 ## Run Locally
 
@@ -106,11 +107,12 @@ is optional and can be used as a fallback local OCR engine:
 winget install UB-Mannheim.TesseractOCR
 ```
 
-## Optional Microsoft Provider Configuration
+## Azure Provider Configuration
 
-The demo path stays local by default. `/api/capabilities` reports optional provider status for a
-future Microsoft/Azure path, but no keys are required to load samples, scan media, generate captions,
-run OCR, or export notes.
+The demo path stays local by default. `/api/capabilities` reports optional provider status for
+Microsoft/Azure services, and `/api/demo/status` shows whether the selected providers are configured.
+No keys are required to load samples, scan media locally, generate captions locally, run local OCR, or
+export notes.
 
 Provider switches:
 
@@ -119,13 +121,14 @@ Provider switches:
 - `GENERATION_PROVIDER=local|azure_openai`
 
 When an Azure provider is selected, AccessiNote reports whether the required environment variables
-are configured. The current implementation is a disabled-by-default configuration seam, not a cloud
-runtime dependency.
+are configured. Provider calls are made from the FastAPI backend so keys are never exposed to the
+browser. If Azure fails, the app returns to local fallback behavior.
 
 ## Hackathon Docs
 
 - `docs/DEMO.md`: five-minute recording flow and checklist.
 - `docs/ARCHITECTURE.md`: local pipeline, API surface, Mermaid diagram, and provider seams.
+- `docs/AZURE.md`: Azure setup, fallback behavior, and safe demo guidance.
 - `docs/SAFETY.md`: permitted-use policy, human review, OCR/caption limitations, and optional provider notes.
 - `docs/ATTRIBUTION.md`: demo content and dependency attribution.
 - `docs/SUBMISSION.md`: project description, judging alignment, Microsoft integration notes, and screenshot checklist.

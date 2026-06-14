@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from .models import GenerateResponse, LectureTimeline, OutputMode, ProviderStatus
-from .video_processor import OcrResult, TranscriptResult
+
+if TYPE_CHECKING:
+    from .video_processor import OcrResult, TranscriptResult
 
 
 class TranscriptionProvider(Protocol):

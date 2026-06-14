@@ -4,7 +4,9 @@ from collections import Counter
 import json
 import re
 
+from .azure_clients import generate_markdown_with_azure_openai
 from .models import CaptionSegment, GenerateResponse, LectureTimeline, OutputMode, SourceReference, TimelineChunk
+from .providers import provider_status, selected_provider
 from .retrieval import extract_concepts
 
 
@@ -147,13 +149,29 @@ def generate_output(timeline: LectureTimeline, mode: OutputMode) -> GenerateResp
         "transcript_txt": build_plain_transcript,
     }
     content = builders[mode](timeline)
+    warnings = [SAFETY_WARNING]
+    if should_use_azure_generation(mode):
+        status = provider_status("generation")
+        if status.configured:
+            try:
+                content = generate_markdown_with_azure_openai(
+                    mode=mode,
+                    title=timeline.title,
+                    timeline_payload=azure_generation_payload(timeline),
+                    local_draft=content,
+                )
+                warnings.append("Generated with Azure OpenAI using AccessiNote timeline evidence.")
+            except Exception as error:
+                warnings.append(f"Azure OpenAI generation failed; local deterministic fallback was used. Detail: {error}")
+        else:
+            warnings.append("GENERATION_PROVIDER=azure_openai is selected but not configured; local deterministic fallback was used.")
     return GenerateResponse(
         lecture_id=timeline.lecture_id,
         mode=mode,
         title=MODE_TITLES[mode],
         content_markdown=content,
         sources=source_references(timeline, mode),
-        warnings=[SAFETY_WARNING],
+        warnings=warnings,
     )
 
 
@@ -516,6 +534,56 @@ def source_references(timeline: LectureTimeline, mode: OutputMode) -> list[Sourc
         )
         for chunk in chunks
     ]
+
+
+def should_use_azure_generation(mode: OutputMode) -> bool:
+    return selected_provider("generation") == "azure_openai" and mode not in {
+        "captions_vtt",
+        "timeline_json",
+        "transcript_txt",
+    }
+
+
+def azure_generation_payload(timeline: LectureTimeline) -> dict:
+    metrics = timeline.processing_metadata.metrics
+    chunks = evidence_reference_chunks(timeline, limit=14)
+    return {
+        "source": {
+            "type": timeline.source.type,
+            "attribution": timeline.source.attribution,
+            "license": timeline.source.license,
+        },
+        "metrics": {
+            "chunk_count": len(timeline.chunks),
+            "caption_segment_count": len(timeline.caption_segments),
+            "ocr_frame_count": metrics.ocr_frame_count,
+            "ocr_engine": metrics.ocr_engine,
+            "caption_source": metrics.caption_source,
+            "weak_chunk_count": metrics.weak_chunk_count,
+            "average_source_confidence": metrics.average_source_confidence,
+        },
+        "chunks": [
+            {
+                "chunk_id": chunk.chunk_id,
+                "start": chunk.start,
+                "end": chunk.end,
+                "transcript": trim_text(chunk.transcript, 650),
+                "ocr": [trim_text(item, 220) for item in chunk.ocr[:4] if has_ocr_evidence_text(item)],
+                "visual_description": trim_text(chunk.visual_description, 360),
+                "concepts": chunk.concepts[:8],
+                "source_confidence": chunk.source_confidence,
+                "evidence_flags": chunk.evidence_flags,
+            }
+            for chunk in chunks
+        ],
+    }
+
+
+def trim_text(text: str, limit: int) -> str:
+    clean = re.sub(r"\s+", " ", text).strip()
+    if len(clean) <= limit:
+        return clean
+    return clean[: limit - 3].rstrip() + "..."
 
 
 def source_coverage_section(timeline: LectureTimeline, detail_limit: int = 6) -> list[str]:

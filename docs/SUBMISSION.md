@@ -30,28 +30,29 @@ human review, and a polished local demo that does not require external API keys.
 - Media processing: ffmpeg or imageio-ffmpeg.
 - Local transcription: faster-whisper.
 - Local OCR: RapidOCR, ONNX Runtime, optional Tesseract OCR.
-- Optional Microsoft provider seams: Azure AI Speech, Azure AI Vision, and Azure OpenAI configuration metadata.
+- Microsoft/Azure providers: Azure AI Speech, Azure AI Vision Read OCR, and Azure OpenAI generation with local fallbacks.
 
 ## Microsoft Integration Story
 
-AccessiNote keeps the hackathon demo local-first for reliability and safety. It includes optional
-provider configuration for Microsoft services:
+AccessiNote keeps local fallback for reliability and safety, but can run an Azure-first hackathon
+demo with Microsoft services:
 
 - `TRANSCRIPTION_PROVIDER=local|azure_speech`
 - `OCR_PROVIDER=local|azure_vision`
 - `GENERATION_PROVIDER=local|azure_openai`
 
 `GET /api/capabilities` reports each selected provider, whether it is configured, and which
-environment variables are required. `GET /api/demo/status` surfaces those optional providers as
-readiness warnings rather than blocking the no-key local path.
+environment variables are required. `GET /api/demo/status` surfaces provider readiness without
+exposing keys to the browser. If Azure Speech, Azure AI Vision, or Azure OpenAI fails during the
+demo, AccessiNote falls back to local transcription, local OCR, or deterministic generation.
 
 ## Judging Alignment
 
 - Accuracy and relevance: outputs are built from timestamped transcript, caption, OCR, keyframe, and confidence evidence.
-- Reasoning and multi-step thinking: the pipeline ingests media, transcribes audio, finds visual changes, scans OCR, aligns evidence, and flags weak chunks.
+- Reasoning and multi-step thinking: the pipeline ingests media, transcribes audio with Azure Speech or local fallback, finds visual changes, scans OCR with Azure AI Vision or local fallback, aligns evidence, and flags weak chunks.
 - Creativity and originality: the app treats lecture accessibility as source-grounded multimodal review instead of generic summarization.
 - User experience and presentation: the workbench shows processing progress, readiness, scan metrics, timeline review, and export actions in one flow.
-- Reliability and safety: the demo works without API keys, stores data locally, warns about weak evidence, and keeps humans in the review loop.
+- Reliability and safety: the demo can use Azure providers without exposing keys, keeps local fallback, stores local timelines explicitly, warns about weak evidence, and keeps humans in the review loop.
 - Community vote: the demo story is easy to understand: upload lecture material, inspect evidence, generate accessible study formats.
 
 ## Accessibility Award Fit
@@ -76,6 +77,7 @@ AccessiNote supports multiple access needs directly:
 - WebVTT caption export.
 - Evidence JSON export.
 - Safety/human-review message.
+- Azure provider readiness with endpoints and keys redacted.
 
 ## Final Verification
 
