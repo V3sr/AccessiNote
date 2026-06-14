@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from .providers import provider_value
 
 
 @dataclass
@@ -105,7 +106,7 @@ def transcribe_audio_with_azure_speech(audio_path: Path, timeout_seconds: int) -
 
     speech_key = require_env("AZURE_SPEECH_KEY")
     speech_region = require_env("AZURE_SPEECH_REGION")
-    language = os.getenv("AZURE_SPEECH_LANGUAGE", "en-US").strip() or "en-US"
+    language = provider_value("AZURE_SPEECH_LANGUAGE", "en-US").strip() or "en-US"
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
     speech_config.speech_recognition_language = language
     speech_config.output_format = speechsdk.OutputFormat.Detailed
@@ -162,7 +163,7 @@ def normalize_space(value: str) -> str:
 
 
 def require_env(name: str) -> str:
-    value = os.getenv(name, "").strip()
+    value = provider_value(name, "").strip()
     if not value:
         raise RuntimeError(f"{name} is not configured.")
     return value

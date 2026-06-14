@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { ModeSelector } from "@/components/ModeSelector";
 import { OutputViewer } from "@/components/OutputViewer";
+import { ProviderSettingsPanel } from "@/components/ProviderSettingsPanel";
 import { SafetyBanner } from "@/components/SafetyBanner";
 import { TimelineViewer } from "@/components/TimelineViewer";
 import { UploadPanel } from "@/components/UploadPanel";
@@ -105,6 +106,15 @@ export default function Home() {
       setRecentLectures(lectures);
     } catch {
       setRecentLectures([]);
+    }
+  }
+
+  async function refreshCapabilities() {
+    try {
+      const nextCapabilities = await getCapabilities();
+      setCapabilities(nextCapabilities);
+    } catch {
+      setCapabilities(null);
     }
   }
 
@@ -392,6 +402,13 @@ export default function Home() {
           </div>
 
           <aside className="min-w-0 space-y-5">
+            <ProviderSettingsPanel
+              capabilities={capabilities}
+              onSaved={async () => {
+                await refreshCapabilities();
+                await refreshDemoStatus();
+              }}
+            />
             <DemoReadinessPanel status={demoStatus} />
             <ScanReportPanel lecture={lecture} job={processingJob} />
             <InsightsPanel

@@ -117,6 +117,27 @@ export interface ProviderStatus {
   required_env: string[];
 }
 
+export interface ProviderSettingsRequest {
+  transcription_provider: string;
+  ocr_provider: string;
+  generation_provider: string;
+  azure_speech_key?: string;
+  azure_speech_region?: string;
+  azure_speech_language?: string;
+  azure_vision_endpoint?: string;
+  azure_vision_key?: string;
+  azure_openai_endpoint?: string;
+  azure_openai_api_key?: string;
+  azure_openai_deployment?: string;
+  clear_existing?: boolean;
+}
+
+export interface ProviderSettingsResponse {
+  providers: Record<string, ProviderStatus>;
+  configured_env: string[];
+  message: string;
+}
+
 export interface CapabilityResponse {
   ffmpeg_available: boolean;
   rapidocr_available: boolean;

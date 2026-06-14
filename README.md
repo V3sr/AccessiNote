@@ -114,6 +114,10 @@ Microsoft/Azure services, and `/api/demo/status` shows whether the selected prov
 No keys are required to load samples, scan media locally, generate captions locally, run local OCR, or
 export notes.
 
+Users can paste Azure keys into the **AI provider keys** panel in the workbench. Those keys are stored
+only in the running backend session, never returned to the frontend, and cleared on backend restart or
+when switching back to local-only mode. For repeatable demos, a private `.env` file can still be used.
+
 Provider switches:
 
 - `TRANSCRIPTION_PROVIDER=local|azure_speech`

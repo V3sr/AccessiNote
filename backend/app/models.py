@@ -137,6 +137,27 @@ class ProviderStatus(BaseModel):
     required_env: list[str] = Field(default_factory=list)
 
 
+class ProviderSettingsRequest(BaseModel):
+    transcription_provider: str = "local"
+    ocr_provider: str = "local"
+    generation_provider: str = "local"
+    azure_speech_key: str | None = None
+    azure_speech_region: str | None = None
+    azure_speech_language: str | None = None
+    azure_vision_endpoint: str | None = None
+    azure_vision_key: str | None = None
+    azure_openai_endpoint: str | None = None
+    azure_openai_api_key: str | None = None
+    azure_openai_deployment: str | None = None
+    clear_existing: bool = False
+
+
+class ProviderSettingsResponse(BaseModel):
+    providers: dict[str, ProviderStatus] = Field(default_factory=dict)
+    configured_env: list[str] = Field(default_factory=list)
+    message: str = ""
+
+
 class CapabilityResponse(BaseModel):
     ffmpeg_available: bool
     rapidocr_available: bool

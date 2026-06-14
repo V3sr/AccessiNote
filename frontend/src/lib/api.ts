@@ -8,6 +8,8 @@ import type {
   LectureTimeline,
   OutputMode,
   ProcessingJob,
+  ProviderSettingsRequest,
+  ProviderSettingsResponse,
   VideoUploadResponse,
 } from "./types";
 
@@ -43,6 +45,17 @@ export function getCapabilities(): Promise<CapabilityResponse> {
 
 export function getDemoStatus(): Promise<DemoStatusResponse> {
   return request<DemoStatusResponse>("/api/demo/status");
+}
+
+export function getProviderSettings(): Promise<ProviderSettingsResponse> {
+  return request<ProviderSettingsResponse>("/api/provider-settings");
+}
+
+export function updateProviderSettings(settings: ProviderSettingsRequest): Promise<ProviderSettingsResponse> {
+  return request<ProviderSettingsResponse>("/api/provider-settings", {
+    method: "POST",
+    body: JSON.stringify(settings),
+  });
 }
 
 export function loadSampleLecture(): Promise<LectureTimeline> {

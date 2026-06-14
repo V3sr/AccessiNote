@@ -4,7 +4,12 @@ AccessiNote can run as an Azure-first demo while preserving local fallbacks.
 
 ## Providers
 
-Set these switches in a private `.env` file:
+Use the **AI provider keys** panel in the AccessiNote workbench for the easiest setup. The panel lets
+users choose local or Azure providers and paste Azure keys into the running backend session. Session
+keys are not returned to the browser and are cleared when the backend restarts or when **Use local
+only** is clicked.
+
+For repeatable local demos, set these switches in a private `.env` file instead:
 
 ```powershell
 TRANSCRIPTION_PROVIDER=azure_speech
@@ -27,7 +32,8 @@ AZURE_OPENAI_API_KEY=...
 AZURE_OPENAI_DEPLOYMENT=<deployment-name>
 ```
 
-Do not commit `.env`. The repository only includes `.env.example` with blank values.
+Do not commit `.env`. The repository only includes `.env.example` with blank values. UI-entered keys
+are runtime overrides and are not written to `.env`.
 
 ## What Azure Does
 
@@ -46,14 +52,16 @@ AccessiNote keeps local fallback for demo reliability:
 - If Azure AI Vision OCR fails or finds no text, the backend falls back to local RapidOCR/Tesseract.
 - If Azure OpenAI generation fails, the backend returns the deterministic local output.
 
-The frontend Demo readiness panel reports whether optional Azure providers are selected and
-configured.
+The frontend Demo readiness panel and AI provider keys panel report whether Azure providers are
+selected and configured.
 
 ## Safe Demo Guidance
 
 - Never show `.env`, Azure keys, or full resource endpoints in the demo video.
 - Do not call Azure directly from the browser. AccessiNote routes provider calls through the FastAPI
   backend so secrets stay server-side.
+- Use the UI key panel for live setup if you want judges to see that any local user can bring their
+  own Azure resources without editing source code.
 - Redact Azure resource names in screenshots if they appear in portal pages.
 - Use synthetic or permitted lecture material only.
 - Clear `data/uploads` and `data/outputs` before publishing screenshots if they contain private test

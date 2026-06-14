@@ -22,6 +22,7 @@ human review, and a polished local demo that does not require external API keys.
 - Aligns transcript/caption, OCR, keyframe, concept, confidence, and warning evidence into one timeline.
 - Generates structured notes, ADHD study packs, screen-reader notes, exam prep, plain-language notes, notetaker quality reports, WebVTT captions, Evidence JSON, and plain transcripts.
 - Shows a demo-readiness panel for local tools, recent video processing, exports, and optional Microsoft provider configuration.
+- Lets users enter their own Azure provider keys through a session-only UI without exposing secrets to the browser.
 
 ## Technologies Used
 
@@ -45,6 +46,8 @@ demo with Microsoft services:
 environment variables are required. `GET /api/demo/status` surfaces provider readiness without
 exposing keys to the browser. If Azure Speech, Azure AI Vision, or Azure OpenAI fails during the
 demo, AccessiNote falls back to local transcription, local OCR, or deterministic generation.
+The workbench also includes an AI provider keys panel so judges or local users can bring their own
+Azure resources without editing source code.
 
 ## Judging Alignment
 

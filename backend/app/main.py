@@ -26,9 +26,11 @@ from .models import (
     LectureSummary,
     LectureTimeline,
     ProcessingJob,
+    ProviderSettingsRequest,
+    ProviderSettingsResponse,
     VideoUploadResponse,
 )
-from .providers import provider_statuses
+from .providers import get_provider_settings, provider_statuses, update_provider_settings
 from .retrieval import create_timeline_from_transcript
 from .storage import (
     OUTPUTS_DIR,
@@ -111,6 +113,16 @@ def get_capabilities() -> CapabilityResponse:
         notes=build_capability_notes(),
         providers=provider_statuses(),
     )
+
+
+@app.get("/api/provider-settings", response_model=ProviderSettingsResponse)
+def read_provider_settings() -> ProviderSettingsResponse:
+    return get_provider_settings()
+
+
+@app.post("/api/provider-settings", response_model=ProviderSettingsResponse)
+def save_provider_settings(request: ProviderSettingsRequest) -> ProviderSettingsResponse:
+    return update_provider_settings(request)
 
 
 @app.get("/api/demo/status", response_model=DemoStatusResponse)

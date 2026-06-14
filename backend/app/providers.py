@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from threading import Lock
 from typing import TYPE_CHECKING, Protocol
 
 from dotenv import load_dotenv
 
-from .models import GenerateResponse, LectureTimeline, OutputMode, ProviderStatus
+from .models import GenerateResponse, LectureTimeline, OutputMode, ProviderSettingsRequest, ProviderSettingsResponse, ProviderStatus
 
 if TYPE_CHECKING:
     from .video_processor import OcrResult, TranscriptResult
@@ -80,10 +81,27 @@ PROVIDER_CONFIG = {
     },
 }
 
+PROVIDER_ENV_TO_REQUEST_FIELD = {
+    "TRANSCRIPTION_PROVIDER": "transcription_provider",
+    "OCR_PROVIDER": "ocr_provider",
+    "GENERATION_PROVIDER": "generation_provider",
+    "AZURE_SPEECH_KEY": "azure_speech_key",
+    "AZURE_SPEECH_REGION": "azure_speech_region",
+    "AZURE_SPEECH_LANGUAGE": "azure_speech_language",
+    "AZURE_VISION_ENDPOINT": "azure_vision_endpoint",
+    "AZURE_VISION_KEY": "azure_vision_key",
+    "AZURE_OPENAI_ENDPOINT": "azure_openai_endpoint",
+    "AZURE_OPENAI_API_KEY": "azure_openai_api_key",
+    "AZURE_OPENAI_DEPLOYMENT": "azure_openai_deployment",
+}
+
+RUNTIME_PROVIDER_SETTINGS: dict[str, str] = {}
+RUNTIME_PROVIDER_LOCK = Lock()
+
 
 def selected_provider(kind: str) -> str:
     config = PROVIDER_CONFIG[kind]
-    return os.getenv(config["env"], config["default"]).strip().lower() or config["default"]
+    return provider_value(config["env"], config["default"]).strip().lower() or config["default"]
 
 
 def provider_statuses() -> dict[str, ProviderStatus]:
@@ -100,6 +118,66 @@ def provider_status(kind: str) -> ProviderStatus:
     return ProviderStatus(
         name=selected,
         enabled=True,
-        configured=all(os.getenv(env_name, "").strip() for env_name in required_env),
+        configured=all(provider_value(env_name, "").strip() for env_name in required_env),
         required_env=required_env,
     )
+
+
+def get_provider_settings() -> ProviderSettingsResponse:
+    return ProviderSettingsResponse(
+        providers=provider_statuses(),
+        configured_env=configured_provider_env_names(),
+        message="Provider settings loaded. Secret values are never returned.",
+    )
+
+
+def update_provider_settings(request: ProviderSettingsRequest) -> ProviderSettingsResponse:
+    if request.clear_existing:
+        with RUNTIME_PROVIDER_LOCK:
+            RUNTIME_PROVIDER_SETTINGS.clear()
+
+    updates = request.model_dump(exclude={"clear_existing"}, exclude_none=True)
+    provider_updates = {
+        "TRANSCRIPTION_PROVIDER": request.transcription_provider,
+        "OCR_PROVIDER": request.ocr_provider,
+        "GENERATION_PROVIDER": request.generation_provider,
+    }
+    for env_name, value in provider_updates.items():
+        set_runtime_provider_value(env_name, value)
+
+    for env_name, request_field in PROVIDER_ENV_TO_REQUEST_FIELD.items():
+        if env_name in provider_updates:
+            continue
+        if request_field in updates:
+            set_runtime_provider_value(env_name, updates[request_field])
+
+    return ProviderSettingsResponse(
+        providers=provider_statuses(),
+        configured_env=configured_provider_env_names(),
+        message=(
+            "Provider settings saved for this backend session. "
+            "Keys are not returned to the browser and are not written to disk."
+        ),
+    )
+
+
+def provider_value(env_name: str, default: str = "") -> str:
+    with RUNTIME_PROVIDER_LOCK:
+        runtime_value = RUNTIME_PROVIDER_SETTINGS.get(env_name)
+    if runtime_value is not None:
+        return runtime_value
+    return os.getenv(env_name, default)
+
+
+def set_runtime_provider_value(env_name: str, value: str | None) -> None:
+    clean_value = (value or "").strip()
+    with RUNTIME_PROVIDER_LOCK:
+        if clean_value:
+            RUNTIME_PROVIDER_SETTINGS[env_name] = clean_value
+        else:
+            RUNTIME_PROVIDER_SETTINGS.pop(env_name, None)
+
+
+def configured_provider_env_names() -> list[str]:
+    names = sorted(PROVIDER_ENV_TO_REQUEST_FIELD)
+    return [name for name in names if provider_value(name, "").strip()]

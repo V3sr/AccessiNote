@@ -44,6 +44,7 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Mode selector: compact output builder with clear icon, label, and short description.
 - Output viewer: markdown preview plus export actions and a compact "Evidence used" drawer. It shows the top source checkpoints first and points to the timeline/Evidence JSON for the full source trail.
 - Learning insights: source coverage ring, key concept count, review time estimate, and generated format count.
+- AI provider keys: compact session settings panel for local or Azure provider selection, server-side key entry, provider readiness, and local-only reset. It must never display saved secret values.
 - Component foundation: shadcn/ui-owned primitives are used for buttons, cards, badges, alerts, separators, and tabs. Keep AccessiNote-specific visual decisions in local class names instead of drifting back to generic shadcn defaults.
 
 ## Interaction
@@ -53,6 +54,7 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Local capability warnings should appear before upload, not after failure.
 - Video scans should report OCR coverage, caption source, weak chunks, and engine choice immediately after upload.
 - Failed, canceled, low-confidence, missing-caption, and no-OCR states should appear as actionable scan-review warnings.
+- Provider key setup should refresh readiness immediately and explain that keys are session-only unless configured through private `.env`.
 - Generated output export actions should stay close to the output title and name the exported format directly.
 
 ## Motion
