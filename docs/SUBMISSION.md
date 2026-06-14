@@ -79,4 +79,12 @@ AccessiNote supports multiple access needs directly:
 
 ## Final Verification
 
-Final tested commit: pending final verification.
+Final tested commit: `2bc919c`.
+
+Checks completed on June 14, 2026:
+
+- Backend compile: `python -m compileall backend/app`.
+- Frontend typecheck: `npm run typecheck`.
+- Frontend lint: `npm run lint`.
+- Frontend production build: `npm run build`.
+- Backend smoke tests: health, capabilities, demo status, sample lecture, transcript creation, ADHD/screen-reader generation, WebVTT generation, image media job, video media job with uploaded captions, and job cancellation.
