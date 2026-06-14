@@ -4,10 +4,17 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
+from dotenv import load_dotenv
+
 from .models import GenerateResponse, LectureTimeline, OutputMode, ProviderStatus
 
 if TYPE_CHECKING:
     from .video_processor import OcrResult, TranscriptResult
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(ROOT_DIR / ".env")
+load_dotenv(BACKEND_DIR / ".env", override=False)
 
 
 class TranscriptionProvider(Protocol):
