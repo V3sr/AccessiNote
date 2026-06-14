@@ -18,6 +18,7 @@ OutputMode = Literal[
 ]
 
 JobStatus = Literal["queued", "running", "complete", "failed", "canceled"]
+DemoCheckStatus = Literal["pass", "warn", "fail"]
 
 
 class SourceInfo(BaseModel):
@@ -147,6 +148,18 @@ class CapabilityResponse(BaseModel):
     ocr_engines: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     providers: dict[str, ProviderStatus] = Field(default_factory=dict)
+
+
+class DemoCheck(BaseModel):
+    id: str
+    label: str
+    status: DemoCheckStatus
+    detail: str
+
+
+class DemoStatusResponse(BaseModel):
+    ready: bool
+    checks: list[DemoCheck]
 
 
 class VideoUploadResponse(BaseModel):

@@ -130,6 +130,20 @@ export interface CapabilityResponse {
   providers: Record<string, ProviderStatus>;
 }
 
+export type DemoCheckStatus = "pass" | "warn" | "fail";
+
+export interface DemoCheck {
+  id: string;
+  label: string;
+  status: DemoCheckStatus;
+  detail: string;
+}
+
+export interface DemoStatusResponse {
+  ready: boolean;
+  checks: DemoCheck[];
+}
+
 export interface VideoUploadResponse {
   lecture_id: string;
   status: string;

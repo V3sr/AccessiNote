@@ -1,6 +1,7 @@
 import type {
   CapabilityResponse,
   CreateLectureResponse,
+  DemoStatusResponse,
   GenerateResponse,
   ImageUploadResponse,
   LectureSummary,
@@ -38,6 +39,10 @@ export function getHealth(): Promise<{ status: string }> {
 
 export function getCapabilities(): Promise<CapabilityResponse> {
   return request<CapabilityResponse>("/api/capabilities");
+}
+
+export function getDemoStatus(): Promise<DemoStatusResponse> {
+  return request<DemoStatusResponse>("/api/demo/status");
 }
 
 export function loadSampleLecture(): Promise<LectureTimeline> {

@@ -16,6 +16,8 @@ from .generator import generate_output
 from .image_processor import process_image_to_timeline
 from .models import (
     CapabilityResponse,
+    DemoCheck,
+    DemoStatusResponse,
     CreateLectureRequest,
     CreateLectureResponse,
     GenerateRequest,
@@ -109,6 +111,21 @@ def get_capabilities() -> CapabilityResponse:
         notes=build_capability_notes(),
         providers=provider_statuses(),
     )
+
+
+@app.get("/api/demo/status", response_model=DemoStatusResponse)
+def get_demo_status() -> DemoStatusResponse:
+    checks = [
+        sample_lecture_check(),
+        local_outputs_check(),
+        ffmpeg_check(),
+        ocr_check(),
+        transcription_check(),
+        export_check(),
+        recent_video_check(),
+        optional_provider_check(),
+    ]
+    return DemoStatusResponse(ready=all(check.status != "fail" for check in checks), checks=checks)
 
 
 @app.get("/api/lectures/sample", response_model=LectureTimeline)
@@ -337,6 +354,161 @@ def get_lecture_frame(lecture_id: str, filename: str) -> FileResponse:
     if not frame_path.exists() or not frame_path.is_file():
         raise HTTPException(status_code=404, detail="Frame not found.")
     return FileResponse(frame_path)
+
+
+def sample_lecture_check() -> DemoCheck:
+    try:
+        sample = load_sample_timeline()
+    except Exception as error:
+        return DemoCheck(id="sample_lecture", label="Sample lecture", status="fail", detail=f"Could not load sample: {error}")
+    if not sample.chunks:
+        return DemoCheck(id="sample_lecture", label="Sample lecture", status="fail", detail="Sample timeline has no chunks.")
+    return DemoCheck(
+        id="sample_lecture",
+        label="Sample lecture",
+        status="pass",
+        detail=f"Loaded {sample.title} with {len(sample.chunks)} timeline chunk(s).",
+    )
+
+
+def local_outputs_check() -> DemoCheck:
+    try:
+        OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        return DemoCheck(id="local_outputs", label="Local outputs", status="fail", detail=f"Cannot write data/outputs: {error}")
+    return DemoCheck(
+        id="local_outputs",
+        label="Local outputs",
+        status="pass",
+        detail="Local JSON timeline storage is available.",
+    )
+
+
+def ffmpeg_check() -> DemoCheck:
+    if ffmpeg_available():
+        return DemoCheck(id="ffmpeg", label="Frame extraction", status="pass", detail="ffmpeg or imageio-ffmpeg is available.")
+    return DemoCheck(
+        id="ffmpeg",
+        label="Frame extraction",
+        status="warn",
+        detail="ffmpeg is unavailable. Video upload may fall back to transcript evidence only.",
+    )
+
+
+def ocr_check() -> DemoCheck:
+    engines = []
+    if rapidocr_available():
+        engines.append("RapidOCR")
+    if tesseract_available():
+        engines.append("Tesseract")
+    if engines:
+        return DemoCheck(id="ocr", label="OCR", status="pass", detail=f"Ready: {', '.join(engines)}.")
+    return DemoCheck(
+        id="ocr",
+        label="OCR",
+        status="warn",
+        detail="No local OCR engine is available. Image/video scans will still create review timelines with warnings.",
+    )
+
+
+def transcription_check() -> DemoCheck:
+    if faster_whisper_available():
+        return DemoCheck(
+            id="transcription",
+            label="Local transcription",
+            status="pass",
+            detail="faster-whisper is available for local caption generation.",
+        )
+    return DemoCheck(
+        id="transcription",
+        label="Local transcription",
+        status="warn",
+        detail="faster-whisper is unavailable. Upload TXT/SRT/VTT captions for best video alignment.",
+    )
+
+
+def export_check() -> DemoCheck:
+    return DemoCheck(
+        id="exports",
+        label="Exports",
+        status="pass",
+        detail="Markdown, WebVTT, Evidence JSON, and transcript text exports are available.",
+    )
+
+
+def recent_video_check() -> DemoCheck:
+    with MEDIA_JOB_LOCK:
+        video_jobs = [job for job in MEDIA_JOBS.values() if job.kind == "video"]
+    video_jobs.sort(key=lambda item: item.updated_at or item.created_at, reverse=True)
+    if video_jobs:
+        latest = video_jobs[0]
+        if latest.status == "complete":
+            return DemoCheck(
+                id="recent_video_job",
+                label="Recent video job",
+                status="pass",
+                detail=f"Latest video job completed at {latest.stage}.",
+            )
+        if latest.status in {"queued", "running"}:
+            return DemoCheck(
+                id="recent_video_job",
+                label="Recent video job",
+                status="warn",
+                detail=f"A video job is currently {latest.status} at {latest.stage}.",
+            )
+        return DemoCheck(
+            id="recent_video_job",
+            label="Recent video job",
+            status="warn",
+            detail=latest.error or f"Latest video job ended as {latest.status}.",
+        )
+
+    try:
+        recent_video = next((item for item in list_saved_timelines(limit=20) if item.source_type == "video"), None)
+    except Exception:
+        recent_video = None
+    if recent_video:
+        return DemoCheck(
+            id="recent_video_job",
+            label="Recent video job",
+            status="pass",
+            detail=f"Saved video timeline is available: {recent_video.title}.",
+        )
+    return DemoCheck(
+        id="recent_video_job",
+        label="Recent video job",
+        status="warn",
+        detail="No recent video timeline is saved yet. Upload a short permitted video before recording the demo.",
+    )
+
+
+def optional_provider_check() -> DemoCheck:
+    statuses = provider_statuses()
+    selected_optional = [status for status in statuses.values() if status.name != "local"]
+    configured_optional = [status for status in selected_optional if status.configured]
+    unconfigured_optional = [status for status in selected_optional if not status.configured]
+    if unconfigured_optional:
+        missing = sorted({env_name for status in unconfigured_optional for env_name in status.required_env})
+        return DemoCheck(
+            id="optional_microsoft_providers",
+            label="Optional Microsoft providers",
+            status="warn",
+            detail=f"Azure provider selected but missing environment variable(s): {', '.join(missing) or 'unknown'}. Local demo remains available.",
+        )
+    if configured_optional:
+        names = ", ".join(status.name for status in configured_optional)
+        return DemoCheck(
+            id="optional_microsoft_providers",
+            label="Optional Microsoft providers",
+            status="pass",
+            detail=f"Configured optional provider(s): {names}.",
+        )
+    return DemoCheck(
+        id="optional_microsoft_providers",
+        label="Optional Microsoft providers",
+        status="warn",
+        detail="Azure Speech, Azure AI Vision, and Azure OpenAI are optional and not configured. Local demo still works.",
+    )
 
 
 def ensure_media_job_worker_started() -> None:

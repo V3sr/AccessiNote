@@ -17,6 +17,7 @@ The backend exposes:
 - `GET /api/lectures/{lecture_id}`
 - `POST /api/lectures/{lecture_id}/generate`
 - `GET /api/capabilities` with local tool readiness and optional provider metadata
+- `GET /api/demo/status`
 - `POST /api/jobs/media`
 - `GET /api/jobs?active=true`
 - `GET /api/jobs/{job_id}`
@@ -37,6 +38,7 @@ Generation is deterministic and local. Video upload uses local tooling only:
 - Timeline JSON includes `processing_metadata` with stages, providers, metrics, warnings, and per-frame evidence.
 - If video frames cannot be extracted, the backend returns a fallback timeline with explicit warnings.
 - Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
+- Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Microsoft provider configuration.
 
 No Azure services, auth, database, or external processing APIs are required in the MVP. The first
 faster-whisper run may download the selected model artifact before local transcription runs.
@@ -48,6 +50,8 @@ configuration seams only unless selected and implemented later.
 ```mermaid
 flowchart LR
   UI[Next.js workbench] --> API[FastAPI API]
+  UI --> STATUS[Demo readiness panel]
+  STATUS --> API
   API --> JOB[Local in-memory job runner]
   JOB --> FFMPEG[ffmpeg / imageio-ffmpeg]
   JOB --> WHISPER[faster-whisper captions]

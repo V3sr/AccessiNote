@@ -14,6 +14,7 @@ import {
   Sparkles,
   TimerReset,
   UploadCloud,
+  XCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -32,6 +33,7 @@ import {
   createLectureFromTranscript,
   generateOutput,
   getCapabilities,
+  getDemoStatus,
   getHealth,
   getLecture,
   getProcessingJob,
@@ -42,6 +44,8 @@ import {
 } from "@/lib/api";
 import type {
   CapabilityResponse,
+  DemoCheckStatus,
+  DemoStatusResponse,
   GenerateResponse,
   LectureSummary,
   LectureTimeline,
@@ -68,6 +72,7 @@ export default function Home() {
   const [selectedMode, setSelectedMode] = useState<OutputMode>("adhd_study_pack");
   const [output, setOutput] = useState<GenerateResponse | null>(null);
   const [recentLectures, setRecentLectures] = useState<LectureSummary[]>([]);
+  const [demoStatus, setDemoStatus] = useState<DemoStatusResponse | null>(null);
   const [processingJob, setProcessingJob] = useState<ProcessingJob | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +93,7 @@ export default function Home() {
     getCapabilities()
       .then(setCapabilities)
       .catch(() => setCapabilities(null));
+    void refreshDemoStatus();
     refreshRecentLectures();
     void resumeActiveProcessingJob();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,6 +105,15 @@ export default function Home() {
       setRecentLectures(lectures);
     } catch {
       setRecentLectures([]);
+    }
+  }
+
+  async function refreshDemoStatus() {
+    try {
+      const status = await getDemoStatus();
+      setDemoStatus(status);
+    } catch {
+      setDemoStatus(null);
     }
   }
 
@@ -155,6 +170,7 @@ export default function Home() {
     setLecture(nextLecture);
     setOutput(null);
     await refreshRecentLectures();
+    await refreshDemoStatus();
     setNotice(describeCompletedJob(completedJob));
   }
 
@@ -165,6 +181,7 @@ export default function Home() {
       setProcessingJob(canceledJob);
       setNotice("Processing canceled.");
       setIsBusy(false);
+      await refreshDemoStatus();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Could not cancel processing.");
     }
@@ -375,6 +392,7 @@ export default function Home() {
           </div>
 
           <aside className="min-w-0 space-y-5">
+            <DemoReadinessPanel status={demoStatus} />
             <ScanReportPanel lecture={lecture} job={processingJob} />
             <InsightsPanel
               coverage={coverage}
@@ -536,6 +554,80 @@ function WorkbenchStat({
       <p className="mt-1 text-xs leading-5 text-zinc-600">{detail}</p>
     </Card>
   );
+}
+
+function DemoReadinessPanel({ status }: { status: DemoStatusResponse | null }) {
+  const checks = status?.checks ?? [];
+  const failCount = checks.filter((check) => check.status === "fail").length;
+  const warnCount = checks.filter((check) => check.status === "warn").length;
+  const passCount = checks.filter((check) => check.status === "pass").length;
+
+  return (
+    <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-zinc-950">Demo readiness</h2>
+        <Badge
+          className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+            status?.ready
+              ? "bg-emerald-50 text-emerald-900 ring-emerald-100 hover:bg-emerald-50"
+              : "bg-amber-50 text-amber-950 ring-amber-200 hover:bg-amber-50"
+          }`}
+        >
+          {status ? (status.ready ? "Ready" : "Needs review") : "Checking"}
+        </Badge>
+      </div>
+
+      {status ? (
+        <>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+            <ReadinessCount label="Pass" value={passCount} tone="pass" />
+            <ReadinessCount label="Warn" value={warnCount} tone="warn" />
+            <ReadinessCount label="Fail" value={failCount} tone="fail" />
+          </div>
+          <div className="mt-3 space-y-2">
+            {checks.slice(0, 6).map((check) => (
+              <div key={check.id} className="rounded-lg bg-zinc-50 px-3 py-2 ring-1 ring-zinc-200">
+                <div className="flex items-center gap-2">
+                  <ReadinessIcon status={check.status} />
+                  <p className="min-w-0 truncate text-sm font-semibold text-zinc-950">{check.label}</p>
+                </div>
+                <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-600">{check.detail}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-zinc-600">
+          Checking local tools, exports, recent video processing, and optional Microsoft provider configuration.
+        </p>
+      )}
+    </Card>
+  );
+}
+
+function ReadinessCount({ label, value, tone }: { label: string; value: number; tone: DemoCheckStatus }) {
+  const color =
+    tone === "pass"
+      ? "bg-emerald-50 text-emerald-900 ring-emerald-100"
+      : tone === "warn"
+        ? "bg-amber-50 text-amber-950 ring-amber-200"
+        : "bg-rose-50 text-rose-900 ring-rose-200";
+  return (
+    <div className={`rounded-lg px-2 py-2 ring-1 ${color}`}>
+      <p className="text-base font-semibold">{value}</p>
+      <p>{label}</p>
+    </div>
+  );
+}
+
+function ReadinessIcon({ status }: { status: DemoCheckStatus }) {
+  if (status === "pass") {
+    return <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />;
+  }
+  if (status === "warn") {
+    return <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />;
+  }
+  return <XCircle className="h-4 w-4 shrink-0 text-rose-700" aria-hidden="true" />;
 }
 
 function ScanReportPanel({ lecture, job }: { lecture: LectureTimeline | null; job: ProcessingJob | null }) {
