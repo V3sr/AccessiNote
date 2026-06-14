@@ -50,7 +50,7 @@ from .video_processor import (
 )
 
 
-app = FastAPI(title="AccessiNote Local MVP", version="0.1.0")
+app = FastAPI(title="AccessiNote API", version="0.2.0")
 MEDIA_JOBS: dict[str, ProcessingJob] = {}
 MEDIA_JOB_PAYLOADS: dict[str, "MediaJobPayload"] = {}
 MEDIA_JOB_QUEUE: Queue[str] = Queue()
@@ -76,14 +76,24 @@ class JobCanceled(Exception):
 class JobStopped(Exception):
     pass
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+
+def configured_cors_origins() -> list[str]:
+    default_origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
-    ],
+    ]
+    raw_origins = os.getenv("ACCESSINOTE_CORS_ORIGINS", "").strip()
+    if not raw_origins:
+        return default_origins
+    configured_origins = [origin.strip().rstrip("/") for origin in raw_origins.split(",") if origin.strip()]
+    return list(dict.fromkeys([*default_origins, *configured_origins]))
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=configured_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

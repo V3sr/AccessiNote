@@ -1,1 +1,1 @@
-"""AccessiNote local MVP backend."""
+"""AccessiNote backend."""

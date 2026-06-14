@@ -2,7 +2,7 @@
 
 AccessiNote is designed for permitted lecture materials only.
 
-Do not use this local MVP with:
+Do not use this demo system with:
 
 - private student data
 - exams or answer keys

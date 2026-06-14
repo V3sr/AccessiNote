@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AccessiNote",
-  description: "Local lecture accessibility MVP",
+  description: "Accessible lecture intelligence for multimodal study materials",
 };
 
 export default function RootLayout({

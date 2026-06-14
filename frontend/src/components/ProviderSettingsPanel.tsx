@@ -1,21 +1,34 @@
 "use client";
 
-import { CheckCircle2, Cloud, KeyRound, Loader2, Save, ShieldCheck, Trash2, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Cloud,
+  ExternalLink,
+  KeyRound,
+  Loader2,
+  LockKeyhole,
+  Save,
+  ShieldCheck,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 
-import { getProviderSettings, updateProviderSettings } from "@/lib/api";
-import type { CapabilityResponse, ProviderSettingsRequest, ProviderSettingsResponse, ProviderStatus } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getProviderSettings, updateProviderSettings } from "@/lib/api";
+import type { CapabilityResponse, ProviderSettingsRequest, ProviderSettingsResponse, ProviderStatus } from "@/lib/types";
 
 interface ProviderSettingsPanelProps {
   capabilities: CapabilityResponse | null;
   onSaved: () => Promise<void>;
+  variant?: "compact" | "full";
 }
 
-export function ProviderSettingsPanel({ capabilities, onSaved }: ProviderSettingsPanelProps) {
+export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compact" }: ProviderSettingsPanelProps) {
   const [settings, setSettings] = useState<ProviderSettingsResponse | null>(null);
   const [transcriptionProvider, setTranscriptionProvider] = useState("local");
   const [ocrProvider, setOcrProvider] = useState("local");
@@ -31,6 +44,8 @@ export function ProviderSettingsPanel({ capabilities, onSaved }: ProviderSetting
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const isFull = variant === "full";
 
   useEffect(() => {
     let isMounted = true;
@@ -112,130 +127,193 @@ export function ProviderSettingsPanel({ capabilities, onSaved }: ProviderSetting
 
   const providers = settings?.providers ?? capabilities?.providers ?? {};
   const configuredEnv = settings?.configured_env ?? [];
+  const selectedAzureCount = [transcriptionProvider, ocrProvider, generationProvider].filter((name) =>
+    name.startsWith("azure"),
+  ).length;
+
+  const formBody = (
+    <form onSubmit={handleSave} className={isFull ? "mt-5 space-y-5" : "mt-3 space-y-4"}>
+      <div className={isFull ? "grid gap-3 lg:grid-cols-3" : "grid gap-3"}>
+        <ProviderSelect
+          label="Speech transcription"
+          value={transcriptionProvider}
+          onChange={setTranscriptionProvider}
+          options={[
+            ["local", "Local faster-whisper"],
+            ["azure_speech", "Azure Speech"],
+          ]}
+        />
+        <ProviderSelect
+          label="OCR"
+          value={ocrProvider}
+          onChange={setOcrProvider}
+          options={[
+            ["local", "Local RapidOCR/Tesseract"],
+            ["azure_vision", "Azure AI Vision"],
+          ]}
+        />
+        <ProviderSelect
+          label="Study output generation"
+          value={generationProvider}
+          onChange={setGenerationProvider}
+          options={[
+            ["local", "Local deterministic"],
+            ["azure_openai", "Azure OpenAI"],
+          ]}
+        />
+      </div>
+
+      <div className={isFull ? "grid gap-3 xl:grid-cols-3" : "grid gap-3"}>
+        <SecretGroup
+          title="Azure Speech"
+          description="Required for Azure caption generation from uploaded video audio."
+        >
+          <SecretInput label="Speech key" value={speechKey} onChange={setSpeechKey} />
+          <TextInput label="Region" value={speechRegion} onChange={setSpeechRegion} placeholder="eastus" />
+          <TextInput label="Language" value={speechLanguage} onChange={setSpeechLanguage} placeholder="en-US" />
+        </SecretGroup>
+
+        <SecretGroup
+          title="Azure AI Vision"
+          description="Required for Azure OCR on uploaded images and selected video frames."
+        >
+          <TextInput
+            label="Vision endpoint"
+            value={visionEndpoint}
+            onChange={setVisionEndpoint}
+            placeholder="https://resource.cognitiveservices.azure.com/"
+          />
+          <SecretInput label="Vision key" value={visionKey} onChange={setVisionKey} />
+        </SecretGroup>
+
+        <SecretGroup
+          title="Azure OpenAI"
+          description="Required for Azure-generated study outputs from grounded timeline evidence."
+        >
+          <TextInput
+            label="OpenAI endpoint"
+            value={openaiEndpoint}
+            onChange={setOpenaiEndpoint}
+            placeholder="https://resource.openai.azure.com/"
+          />
+          <SecretInput label="OpenAI key" value={openaiKey} onChange={setOpenaiKey} />
+          <TextInput
+            label="Deployment"
+            value={openaiDeployment}
+            onChange={setOpenaiDeployment}
+            placeholder="gpt-4.1-mini"
+          />
+        </SecretGroup>
+      </div>
+
+      <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-950">
+        <p className="flex items-start gap-2">
+          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          Leave a key field blank to keep the existing session or private `.env` value. Use local-only to clear
+          runtime overrides.
+        </p>
+      </div>
+
+      {message && (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-950">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-900">
+          {error}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          type="submit"
+          disabled={isSaving}
+          className="min-h-10 flex-1 rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:bg-emerald-50 disabled:text-emerald-900"
+        >
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Save settings
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleUseLocalOnly}
+          disabled={isSaving}
+          className="min-h-10 flex-1 rounded-md border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 active:translate-y-px disabled:cursor-not-allowed"
+        >
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          Use local only
+        </Button>
+      </div>
+    </form>
+  );
 
   return (
-    <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
+    <Card className={isFull ? "rounded-2xl border-zinc-200 bg-white p-5 shadow-soft lg:p-6" : "rounded-2xl border-zinc-200 bg-white p-4 shadow-soft"}>
+      <div className={isFull ? "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" : "flex items-start justify-between gap-3"}>
+        <div className="min-w-0">
+          <h2 className={isFull ? "flex items-center gap-2 text-xl font-semibold text-zinc-950" : "flex items-center gap-2 text-base font-semibold text-zinc-950"}>
             <KeyRound className="h-4 w-4 text-emerald-700" aria-hidden="true" />
             AI provider keys
           </h2>
-          <p className="mt-1 text-sm leading-6 text-zinc-700">
-            Add Azure keys for this backend session. Secrets stay server-side and are never shown again.
+          <p className={isFull ? "mt-2 max-w-3xl text-sm leading-6 text-zinc-700" : "mt-1 text-sm leading-6 text-zinc-700"}>
+            Add Azure keys for this backend session. Secrets stay server-side, are never shown again, and can be
+            cleared back to local processing.
           </p>
         </div>
-        <Badge className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">
-          Session
+        <Badge className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">
+          Session only
         </Badge>
       </div>
 
-      <div className="mt-3 grid gap-2">
+      {isFull && (
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <SetupMetric label="Azure routes selected" value={String(selectedAzureCount)} />
+          <SetupMetric label="Configured values" value={String(configuredEnv.length)} />
+          <SetupMetric label="Fallback mode" value="Local ready" />
+        </div>
+      )}
+
+      <div className={isFull ? "mt-4 grid gap-3 sm:grid-cols-3" : "mt-3 grid gap-2"}>
         <ProviderStatusRow label="Speech" status={providers.transcription} />
         <ProviderStatusRow label="OCR" status={providers.ocr} />
         <ProviderStatusRow label="Generation" status={providers.generation} />
       </div>
 
-      <details className="group mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
-          <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
-            <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
-            Configure Azure
-          </span>
-          <span className="text-xs font-semibold text-zinc-600">{configuredEnv.length} value(s) configured</span>
-        </summary>
-
-        <form onSubmit={handleSave} className="mt-3 space-y-4">
-          <div className="grid gap-3">
-            <ProviderSelect
-              label="Speech transcription"
-              value={transcriptionProvider}
-              onChange={setTranscriptionProvider}
-              options={[
-                ["local", "Local faster-whisper"],
-                ["azure_speech", "Azure Speech"],
-              ]}
-            />
-            <ProviderSelect
-              label="OCR"
-              value={ocrProvider}
-              onChange={setOcrProvider}
-              options={[
-                ["local", "Local RapidOCR/Tesseract"],
-                ["azure_vision", "Azure AI Vision"],
-              ]}
-            />
-            <ProviderSelect
-              label="Study output generation"
-              value={generationProvider}
-              onChange={setGenerationProvider}
-              options={[
-                ["local", "Local deterministic"],
-                ["azure_openai", "Azure OpenAI"],
-              ]}
-            />
-          </div>
-
-          <SecretGroup title="Azure Speech">
-            <SecretInput label="Speech key" value={speechKey} onChange={setSpeechKey} />
-            <TextInput label="Region" value={speechRegion} onChange={setSpeechRegion} placeholder="eastus" />
-            <TextInput label="Language" value={speechLanguage} onChange={setSpeechLanguage} placeholder="en-US" />
-          </SecretGroup>
-
-          <SecretGroup title="Azure AI Vision">
-            <TextInput
-              label="Vision endpoint"
-              value={visionEndpoint}
-              onChange={setVisionEndpoint}
-              placeholder="https://resource.cognitiveservices.azure.com/"
-            />
-            <SecretInput label="Vision key" value={visionKey} onChange={setVisionKey} />
-          </SecretGroup>
-
-          <SecretGroup title="Azure OpenAI">
-            <TextInput
-              label="OpenAI endpoint"
-              value={openaiEndpoint}
-              onChange={setOpenaiEndpoint}
-              placeholder="https://resource.openai.azure.com/"
-            />
-            <SecretInput label="OpenAI key" value={openaiKey} onChange={setOpenaiKey} />
-            <TextInput label="Deployment" value={openaiDeployment} onChange={setOpenaiDeployment} placeholder="gpt-4.1-mini" />
-          </SecretGroup>
-
-          <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-950">
+      {isFull ? (
+        <>
+          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
             <p className="flex items-start gap-2">
-              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              Leave a key field blank to keep the existing session or `.env` value. Use local-only to clear runtime
-              overrides.
+              <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              Use this page for a live hackathon setup. Do not show real keys in recordings or screenshots.
             </p>
           </div>
-
-          {message && <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-950">{message}</p>}
-          {error && <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-900">{error}</p>}
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="submit"
-              disabled={isSaving}
-              className="min-h-10 flex-1 rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:bg-emerald-50 disabled:text-emerald-900"
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save settings
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleUseLocalOnly}
-              disabled={isSaving}
-              className="min-h-10 flex-1 rounded-md border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 active:translate-y-px disabled:cursor-not-allowed"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-              Use local only
-            </Button>
-          </div>
-        </form>
-      </details>
+          {formBody}
+        </>
+      ) : (
+        <>
+          <Button
+            asChild
+            variant="outline"
+            className="mt-4 min-h-10 w-full rounded-md border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 active:translate-y-px"
+          >
+            <Link href="/settings">
+              Open full setup
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+          <details className="group mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
+              <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+                <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
+                Quick configure
+              </span>
+              <span className="text-xs font-semibold text-zinc-600">{configuredEnv.length} value(s)</span>
+            </summary>
+            {formBody}
+          </details>
+        </>
+      )}
     </Card>
   );
 
@@ -246,14 +324,23 @@ export function ProviderSettingsPanel({ capabilities, onSaved }: ProviderSetting
   }
 }
 
+function SetupMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-zinc-50 px-3 py-3 ring-1 ring-zinc-200">
+      <p className="text-xs font-medium text-zinc-600">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-zinc-950">{value}</p>
+    </div>
+  );
+}
+
 function ProviderStatusRow({ label, status }: { label: string; status?: ProviderStatus }) {
   const ready = Boolean(status?.configured);
   const Icon = ready ? CheckCircle2 : XCircle;
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md bg-zinc-50 px-3 py-2 text-xs ring-1 ring-zinc-200">
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-zinc-50 px-3 py-2 text-xs ring-1 ring-zinc-200">
       <span className="font-semibold text-zinc-800">{label}</span>
       <span
-        className={`inline-flex max-w-[170px] items-center gap-1 rounded-md px-2 py-1 font-semibold ${
+        className={`inline-flex max-w-[190px] items-center gap-1 rounded-md px-2 py-1 font-semibold ${
           ready ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-950"
         }`}
       >
@@ -293,11 +380,20 @@ function ProviderSelect({
   );
 }
 
-function SecretGroup({ title, children }: { title: string; children: ReactNode }) {
+function SecretGroup({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-3">
       <h3 className="text-xs font-semibold text-zinc-950">{title}</h3>
-      <div className="mt-2 grid gap-2">{children}</div>
+      <p className="mt-1 text-xs leading-5 text-zinc-600">{description}</p>
+      <div className="mt-3 grid gap-2">{children}</div>
     </div>
   );
 }
@@ -345,7 +441,7 @@ function SecretInput({ label, value, onChange }: { label: string; value: string;
 function assignIfPresent(payload: ProviderSettingsRequest, field: keyof ProviderSettingsRequest, value: string) {
   const cleanValue = value.trim();
   if (cleanValue) {
-    ((payload as unknown) as Record<string, string | boolean | undefined>)[field] = cleanValue;
+    (payload as unknown as Record<string, string | boolean | undefined>)[field] = cleanValue;
   }
 }
 

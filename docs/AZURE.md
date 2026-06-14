@@ -4,7 +4,7 @@ AccessiNote can run as an Azure-first demo while preserving local fallbacks.
 
 ## Providers
 
-Use the **AI provider keys** panel in the AccessiNote workbench for the easiest setup. The panel lets
+Use the **AI provider keys** page at `/settings` for the easiest setup. The page lets
 users choose local or Azure providers and paste Azure keys into the running backend session. Session
 keys are not returned to the browser and are cleared when the backend restarts or when **Use local
 only** is clicked.
@@ -52,7 +52,7 @@ AccessiNote keeps local fallback for demo reliability:
 - If Azure AI Vision OCR fails or finds no text, the backend falls back to local RapidOCR/Tesseract.
 - If Azure OpenAI generation fails, the backend returns the deterministic local output.
 
-The frontend Demo readiness panel and AI provider keys panel report whether Azure providers are
+The frontend Demo readiness panel and AI provider keys page report whether Azure providers are
 selected and configured.
 
 ## Safe Demo Guidance

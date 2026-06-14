@@ -2,7 +2,7 @@
 
 ## Style Summary
 
-AccessiNote is a restrained product workbench with a light product-intake hero and evidence-first workspace. It should look calm, precise, and source-aware rather than promotional. The first viewport pairs a clear local source desk with a direct accessibility promise, then moves into a three-column review workbench for lecture overview, output generation, and learning insights.
+AccessiNote is a restrained product workbench with a light product-intake hero and evidence-first workspace. It should look calm, precise, and source-aware rather than promotional. The first viewport pairs a clear source desk with a direct accessibility promise, then moves into a three-column review workbench for lecture overview, output generation, and learning insights.
 
 ## Color
 
@@ -44,7 +44,7 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Mode selector: compact output builder with clear icon, label, and short description.
 - Output viewer: markdown preview plus export actions and a compact "Evidence used" drawer. It shows the top source checkpoints first and points to the timeline/Evidence JSON for the full source trail.
 - Learning insights: source coverage ring, key concept count, review time estimate, and generated format count.
-- AI provider keys: compact session settings panel for local or Azure provider selection, server-side key entry, provider readiness, and local-only reset. It must never display saved secret values.
+- AI provider keys: dedicated `/settings` page plus compact workbench status panel for local or Azure provider selection, server-side key entry, provider readiness, and local-only reset. It must never display saved secret values.
 - Component foundation: shadcn/ui-owned primitives are used for buttons, cards, badges, alerts, separators, and tabs. Keep AccessiNote-specific visual decisions in local class names instead of drifting back to generic shadcn defaults.
 
 ## Interaction

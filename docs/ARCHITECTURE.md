@@ -31,7 +31,7 @@ The backend exposes:
 - `POST /api/images/upload`
 - `GET /api/lectures/{lecture_id}/frames/{filename}`
 
-Generation is deterministic and local. Video upload uses local tooling only:
+Generation defaults to deterministic local output and can use Azure OpenAI when selected. Video upload uses local tooling with optional Azure providers:
 
 - System `ffmpeg` or the Python `imageio-ffmpeg` fallback extracts selected keyframes from the uploaded video.
 - RapidOCR scans original and preprocessed keyframe variants locally when available; Tesseract OCR can be used as a fallback.
@@ -45,9 +45,11 @@ Generation is deterministic and local. Video upload uses local tooling only:
 - Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
 - Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Microsoft provider configuration.
 
-No auth, database, or Azure storage is required. The app can run local-only, or it can use Azure
-providers when selected through environment variables. The first faster-whisper run may download the
-selected model artifact before local transcription runs.
+No auth, database, or Azure storage is required for the hackathon demo. The app can run with local
+fallbacks, or it can use Azure providers when selected through environment variables. For a public
+production demo, host the Next.js frontend on Vercel and the FastAPI media backend on Azure Container
+Apps or Azure App Service for Containers. A longer-lived public product should move uploads and
+outputs from local JSON files to durable Azure storage.
 
 ## Local Pipeline
 

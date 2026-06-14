@@ -5,9 +5,10 @@ import {
   ArrowDown,
   AlertTriangle,
   CheckCircle2,
+  Cloud,
   Eye,
   FileCheck2,
-  HardDrive,
+  KeyRound,
   Loader2,
   ScanText,
   ShieldCheck,
@@ -16,6 +17,7 @@ import {
   UploadCloud,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
@@ -253,19 +255,19 @@ export default function Home() {
     <main className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
       <Header apiStatus={apiStatus} />
 
-      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_58%,#f7fbff_100%)]">
+      <section id="product" className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_58%,#f7fbff_100%)]">
         <div className="mx-auto grid min-w-0 max-w-[1500px] gap-8 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-center lg:px-8 lg:py-12">
           <div className="min-w-0">
             <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-50">
               <Sparkles className="h-4 w-4" aria-hidden="true" />
-              Local AI-powered accessibility
+              Azure-ready accessibility
             </Badge>
             <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
-              Turn lecture materials into accessible study formats
+              Turn lecture materials into accessible study systems
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
-              Upload permitted recordings, slides, or transcripts and generate source-grounded notes, study packs,
-              screen-reader summaries, and review reports on this machine.
+              Upload permitted recordings, slides, or transcripts and generate source-grounded notes, captions,
+              screen-reader summaries, and review reports with local fallback or Azure AI providers.
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -302,9 +304,9 @@ export default function Home() {
                 detail="Build formats for focus, screen readers, and plain language."
               />
               <HeroBenefit
-                icon={<HardDrive className="h-4 w-4" aria-hidden="true" />}
-                title="Stay local"
-                detail="No account, no cloud database, no Azure pipeline yet."
+                icon={<Cloud className="h-4 w-4" aria-hidden="true" />}
+                title="Connect Azure"
+                detail="Use Azure Speech, Vision, and OpenAI with local fallback."
               />
             </div>
           </div>
@@ -323,6 +325,7 @@ export default function Home() {
       </section>
 
       <SafetyBanner />
+      <WorkflowSection />
 
       <section id="workbench" className="mx-auto max-w-[1500px] px-5 py-6 lg:px-8 lg:py-8">
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -409,7 +412,9 @@ export default function Home() {
                 await refreshDemoStatus();
               }}
             />
-            <DemoReadinessPanel status={demoStatus} />
+            <div id="demo">
+              <DemoReadinessPanel status={demoStatus} />
+            </div>
             <ScanReportPanel lecture={lecture} job={processingJob} />
             <InsightsPanel
               coverage={coverage}
@@ -449,6 +454,64 @@ async function waitForProcessingJob(
 
 function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+function WorkflowSection() {
+  const steps = [
+    {
+      title: "Ingest permitted material",
+      detail: "Upload video, slide images, transcripts, captions, or load a saved local timeline.",
+    },
+    {
+      title: "Extract multimodal evidence",
+      detail: "Transcribe audio, select keyframes, run OCR, and preserve caption timing.",
+    },
+    {
+      title: "Review source coverage",
+      detail: "Check timestamps, visual evidence, warnings, confidence, and weak chunks before export.",
+    },
+    {
+      title: "Generate accessible outputs",
+      detail: "Create ADHD study packs, screen-reader notes, captions, exam prep, and evidence JSON.",
+    },
+  ];
+
+  return (
+    <section id="workflow" className="border-b border-zinc-200 bg-white">
+      <div className="mx-auto max-w-[1500px] px-5 py-7 lg:px-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">Production workflow</p>
+            <h2 className="mt-1 max-w-3xl text-2xl font-semibold tracking-normal text-zinc-950">
+              A full review path from upload to accessible export
+            </h2>
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            className="min-h-10 w-fit rounded-md border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 active:translate-y-px"
+          >
+            <Link href="/settings">
+              Configure production keys
+              <KeyRound className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {steps.map((step, index) => (
+            <Card key={step.title} className="rounded-2xl border-zinc-200 bg-zinc-50 p-4 shadow-none">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-emerald-700 text-sm font-semibold text-white">
+                {index + 1}
+              </span>
+              <h3 className="mt-4 text-base font-semibold text-zinc-950">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-700">{step.detail}</p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function HeroBenefit({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
@@ -762,7 +825,7 @@ function PrivacyPanel() {
         Privacy and safety
       </h2>
       <p className="mt-2 text-sm leading-6 text-zinc-700">
-        Local MVP processing keeps the workflow explicit. Review generated notes before using them for class or access
+        AccessiNote keeps processing choices explicit. Review generated notes before using them for class or access
         support.
       </p>
       <div className="mt-4 space-y-2 text-sm text-zinc-700">

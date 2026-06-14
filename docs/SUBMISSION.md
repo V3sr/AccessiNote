@@ -2,7 +2,7 @@
 
 ## Project Description
 
-AccessiNote is a local-first lecture accessibility workbench. It turns permitted lecture videos,
+AccessiNote is a lecture accessibility workbench with local fallback and optional Azure AI providers. It turns permitted lecture videos,
 slides, screenshots, captions, or transcripts into reviewable evidence timelines and accessible
 learning outputs for different study needs.
 
@@ -67,7 +67,7 @@ demo with Microsoft services:
 environment variables are required. `GET /api/demo/status` surfaces provider readiness without
 exposing keys to the browser. If Azure Speech, Azure AI Vision, or Azure OpenAI fails during the
 demo, AccessiNote falls back to local transcription, local OCR, or deterministic generation.
-The workbench also includes an AI provider keys panel so judges or local users can bring their own
+The `/settings` page also includes an AI provider keys panel so judges or local users can bring their own
 Azure resources without editing source code.
 
 ## Judging Alignment
@@ -105,13 +105,14 @@ AccessiNote supports multiple access needs directly:
 
 ## Final Verification
 
-Final tested commit: `58e57a5`.
+Final tested commit: record the final public submission SHA after the last deployment commit.
 
 Checks completed on June 14, 2026:
 
 - Backend compile: `python -m compileall backend/app`.
 - Frontend typecheck: `npm run typecheck`.
 - Frontend lint: `npm run lint`.
+- Frontend production build: `npm run build`.
 - Frontend production build: `npm run build`.
 - Backend smoke tests: health, capabilities, demo status, sample lecture, transcript creation, ADHD/screen-reader generation, WebVTT generation, image media job, video media job with uploaded captions, and job cancellation.
 - Provider settings API: session-only Azure key settings save, report configured status without returning secrets, and clear back to local providers.

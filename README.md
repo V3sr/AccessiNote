@@ -1,13 +1,13 @@
 # AccessiNote
 
-AccessiNote is a local-first lecture accessibility workbench. It turns a permitted lecture
+AccessiNote is a lecture accessibility workbench. It turns a permitted lecture
 timeline or pasted transcript into timestamped learning formats such as structured notes,
 ADHD-friendly study packs, screen-reader notes, plain-language explanations, exam prep, and
 notetaker quality reports.
 
-The current demo works locally without API keys, authentication, or a database. For a stronger
-Microsoft hackathon story, optional Azure providers can be enabled for speech transcription, OCR, and
-AI generation while keeping local fallbacks.
+The app runs locally without API keys and can also run as an Azure-backed production demo. Azure
+providers can power speech transcription, OCR, and AI generation while local fallbacks keep the
+workflow reliable.
 
 ## Run Locally
 
@@ -30,7 +30,7 @@ npm.cmd run dev
 
 Open `http://localhost:3000`.
 
-## Local MVP
+## Product Capabilities
 
 - Load a synthetic sample lecture timeline.
 - Paste a custom transcript and create an approximate timeline.
@@ -114,9 +114,10 @@ Microsoft/Azure services, and `/api/demo/status` shows whether the selected prov
 No keys are required to load samples, scan media locally, generate captions locally, run local OCR, or
 export notes.
 
-Users can paste Azure keys into the **AI provider keys** panel in the workbench. Those keys are stored
+Users can paste Azure keys into the **AI provider keys** page at `/settings`. Those keys are stored
 only in the running backend session, never returned to the frontend, and cleared on backend restart or
-when switching back to local-only mode. For repeatable demos, a private `.env` file can still be used.
+when switching back to local-only mode. For production demos, set keys as backend environment secrets
+instead of pasting them in the browser.
 
 Provider switches:
 
@@ -128,11 +129,18 @@ When an Azure provider is selected, AccessiNote reports whether the required env
 are configured. Provider calls are made from the FastAPI backend so keys are never exposed to the
 browser. If Azure fails, the app returns to local fallback behavior.
 
+## Production Deployment
+
+For a public demo, deploy the Next.js frontend to Vercel and deploy the FastAPI media backend to
+Azure Container Apps or Azure App Service for Containers. Set `NEXT_PUBLIC_API_BASE_URL` on Vercel to
+the backend URL, then set Azure provider keys only on the backend. See `docs/PRODUCTION.md`.
+
 ## Hackathon Docs
 
 - `docs/DEMO.md`: five-minute recording flow and checklist.
 - `docs/ARCHITECTURE.md`: local pipeline, API surface, Mermaid diagram, and provider seams.
 - `docs/AZURE.md`: Azure setup, fallback behavior, and safe demo guidance.
+- `docs/PRODUCTION.md`: Vercel plus Azure backend launch guide.
 - `docs/SAFETY.md`: permitted-use policy, human review, OCR/caption limitations, and optional provider notes.
 - `docs/ATTRIBUTION.md`: demo content and dependency attribution.
 - `docs/SUBMISSION.md`: project description, required submission checklist, judging alignment, Microsoft integration notes, and screenshot checklist.

@@ -7,12 +7,12 @@ YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
 
 ## Five-Minute Flow
 
-0:00-0:30 - Local readiness
+0:00-0:30 - Production readiness
 
-1. Open `http://localhost:3000`.
-2. Point to the Demo readiness panel.
-3. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and optional Microsoft provider configuration before the demo starts.
-4. If Azure providers are configured, call out Azure Speech, Azure AI Vision, and Azure OpenAI as selected providers. If not, call out that local fallback keeps the demo reliable.
+1. Open the deployed frontend URL, or `http://localhost:3000` while recording locally.
+2. Open `/settings` briefly and show Azure Speech, Azure AI Vision, and Azure OpenAI readiness without revealing keys.
+3. Return to the workspace and point to the Demo readiness panel.
+4. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and Microsoft provider configuration before the demo starts.
 
 0:30-1:10 - Baseline sample
 
@@ -66,8 +66,9 @@ Use synthetic or explicitly permitted lecture material. Avoid private student da
 
 ## Recording Checklist
 
-- Browser opened to `http://localhost:3000`.
-- Backend running on `http://localhost:8000`.
+- Browser opened to the deployed frontend URL, or `http://localhost:3000` for local recording.
+- Backend running on Azure or `http://localhost:8000`.
+- `/settings` provider page verified without showing keys.
 - Demo readiness panel visible near the start.
 - One short permitted video available locally.
 - Optional caption file ready if local transcription is slow on the recording machine.
