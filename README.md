@@ -106,6 +106,22 @@ is optional and can be used as a fallback local OCR engine:
 winget install UB-Mannheim.TesseractOCR
 ```
 
+## Optional Microsoft Provider Configuration
+
+The demo path stays local by default. `/api/capabilities` reports optional provider status for a
+future Microsoft/Azure path, but no keys are required to load samples, scan media, generate captions,
+run OCR, or export notes.
+
+Provider switches:
+
+- `TRANSCRIPTION_PROVIDER=local|azure_speech`
+- `OCR_PROVIDER=local|azure_vision`
+- `GENERATION_PROVIDER=local|azure_openai`
+
+When an Azure provider is selected, AccessiNote reports whether the required environment variables
+are configured. The current implementation is a disabled-by-default configuration seam, not a cloud
+runtime dependency.
+
 ## Safety
 
 Use only lecture material you are allowed to process. Do not upload private student data,

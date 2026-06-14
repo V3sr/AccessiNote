@@ -110,6 +110,13 @@ export interface GenerateResponse {
   warnings: string[];
 }
 
+export interface ProviderStatus {
+  name: string;
+  enabled: boolean;
+  configured: boolean;
+  required_env: string[];
+}
+
 export interface CapabilityResponse {
   ffmpeg_available: boolean;
   rapidocr_available: boolean;
@@ -120,6 +127,7 @@ export interface CapabilityResponse {
   image_upload_enabled: boolean;
   ocr_engines: string[];
   notes: string[];
+  providers: Record<string, ProviderStatus>;
 }
 
 export interface VideoUploadResponse {

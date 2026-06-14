@@ -129,6 +129,13 @@ class GenerateResponse(BaseModel):
     warnings: list[str]
 
 
+class ProviderStatus(BaseModel):
+    name: str
+    enabled: bool = False
+    configured: bool = False
+    required_env: list[str] = Field(default_factory=list)
+
+
 class CapabilityResponse(BaseModel):
     ffmpeg_available: bool
     rapidocr_available: bool
@@ -139,6 +146,7 @@ class CapabilityResponse(BaseModel):
     image_upload_enabled: bool = True
     ocr_engines: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    providers: dict[str, ProviderStatus] = Field(default_factory=dict)
 
 
 class VideoUploadResponse(BaseModel):

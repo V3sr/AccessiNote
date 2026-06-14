@@ -16,9 +16,11 @@ The backend exposes:
 - `POST /api/lectures`
 - `GET /api/lectures/{lecture_id}`
 - `POST /api/lectures/{lecture_id}/generate`
-- `GET /api/capabilities`
+- `GET /api/capabilities` with local tool readiness and optional provider metadata
 - `POST /api/jobs/media`
+- `GET /api/jobs?active=true`
 - `GET /api/jobs/{job_id}`
+- `POST /api/jobs/{job_id}/cancel`
 - `POST /api/videos/upload`
 - `POST /api/images/upload`
 - `GET /api/lectures/{lecture_id}/frames/{filename}`
@@ -36,8 +38,10 @@ Generation is deterministic and local. Video upload uses local tooling only:
 - If video frames cannot be extracted, the backend returns a fallback timeline with explicit warnings.
 - Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
 
-No Azure services, auth, database, or external processing APIs are used in the MVP. The first
+No Azure services, auth, database, or external processing APIs are required in the MVP. The first
 faster-whisper run may download the selected model artifact before local transcription runs.
+Optional Microsoft provider switches are reported through `/api/capabilities`, but they are
+configuration seams only unless selected and implemented later.
 
 ## Local Pipeline
 
@@ -56,9 +60,12 @@ flowchart LR
   TIMELINE --> OUTPUTS[Markdown / VTT / JSON / TXT exports]
   TIMELINE --> STORE[data/outputs]
   UPLOADS[data/uploads] --> JOB
-  PROVIDERS[Future provider interfaces] -. optional .-> WHISPER
-  PROVIDERS -. optional .-> OCR
-  PROVIDERS -. optional .-> OUTPUTS
+  PROVIDERS[Provider config layer] -. default local .-> WHISPER
+  PROVIDERS -. default local .-> OCR
+  PROVIDERS -. default local .-> OUTPUTS
+  AZURE[Optional Microsoft providers] -. Azure Speech .-> PROVIDERS
+  AZURE -. Azure AI Vision .-> PROVIDERS
+  AZURE -. Azure OpenAI .-> PROVIDERS
 ```
 
 ## Provider Seams
@@ -66,3 +73,14 @@ flowchart LR
 `backend/app/providers.py` defines local-first provider protocols for transcription, OCR, visual
 understanding, and generation. The current app defaults to local deterministic implementations; cloud
 providers can be added later without changing the public timeline shape.
+
+Optional provider environment switches:
+
+- `TRANSCRIPTION_PROVIDER=local|azure_speech`
+- `OCR_PROVIDER=local|azure_vision`
+- `GENERATION_PROVIDER=local|azure_openai`
+
+`/api/capabilities` returns provider metadata for `transcription`, `ocr`, and `generation`, including
+the selected provider name, whether it is configured, and which environment variables would be
+required for Azure-backed implementations. Missing Azure keys are warnings for submission readiness,
+not blockers for the local demo.

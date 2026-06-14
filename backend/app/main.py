@@ -26,6 +26,7 @@ from .models import (
     ProcessingJob,
     VideoUploadResponse,
 )
+from .providers import provider_statuses
 from .retrieval import create_timeline_from_transcript
 from .storage import (
     OUTPUTS_DIR,
@@ -106,6 +107,7 @@ def get_capabilities() -> CapabilityResponse:
         transcription_engine="faster-whisper" if faster_whisper_available() else "none",
         ocr_engines=ocr_engines,
         notes=build_capability_notes(),
+        providers=provider_statuses(),
     )
 
 
