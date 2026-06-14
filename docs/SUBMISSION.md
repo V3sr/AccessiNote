@@ -10,6 +10,26 @@ The app focuses on the Microsoft Agents League Creative Apps + Accessibility pat
 Accessibility Award: it prioritizes multimodal extraction quality, transparent source grounding,
 human review, and a polished local demo that does not require external API keys.
 
+## Required Submission Fields
+
+Use this section to fill the contest platform submission.
+
+| Required item | AccessiNote artifact | Status |
+| --- | --- | --- |
+| Project description | This file, `README.md`, and the "Project Description" section above | Ready |
+| Features, functionality, problem solved, technologies used | "What It Does" and "Technologies Used" below | Ready |
+| Demo video link on YouTube or Vimeo | Record with `docs/DEMO.md`, then paste the URL here | Pending: add URL before submission |
+| Public GitHub repository | Make the repo public, then paste the URL here | Pending: add URL before submission |
+| Architecture diagram | `docs/ARCHITECTURE.md` Mermaid diagram | Ready |
+| Microsoft tool usage | Azure AI Speech, Azure AI Vision, Azure OpenAI; GitHub Copilot if actually used by the team | Ready, with Copilot truthfulness note |
+| Team member information | Add Microsoft Learn usernames in the contest platform if submitting as a team | Pending if applicable |
+
+Demo video URL: `TODO`
+
+Public GitHub repository URL: `TODO`
+
+Team / Microsoft Learn usernames: `TODO if applicable`
+
 ## What It Does
 
 - Loads a synthetic sample lecture for a reliable demo baseline.
@@ -32,6 +52,7 @@ human review, and a polished local demo that does not require external API keys.
 - Local transcription: faster-whisper.
 - Local OCR: RapidOCR, ONNX Runtime, optional Tesseract OCR.
 - Microsoft/Azure providers: Azure AI Speech, Azure AI Vision Read OCR, and Azure OpenAI generation with local fallbacks.
+- AI-assisted development: name GitHub Copilot in the final contest submission only if the team used it during the submitted build.
 
 ## Microsoft Integration Story
 
@@ -84,7 +105,7 @@ AccessiNote supports multiple access needs directly:
 
 ## Final Verification
 
-Final tested commit: `2bc919c`.
+Final tested commit: `58e57a5`.
 
 Checks completed on June 14, 2026:
 
@@ -93,3 +114,4 @@ Checks completed on June 14, 2026:
 - Frontend lint: `npm run lint`.
 - Frontend production build: `npm run build`.
 - Backend smoke tests: health, capabilities, demo status, sample lecture, transcript creation, ADHD/screen-reader generation, WebVTT generation, image media job, video media job with uploaded captions, and job cancellation.
+- Provider settings API: session-only Azure key settings save, report configured status without returning secrets, and clear back to local providers.

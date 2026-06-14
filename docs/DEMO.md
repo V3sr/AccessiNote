@@ -2,6 +2,9 @@
 
 AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 
+Before recording, review `docs/SUBMISSION.md` and fill in the public GitHub repository URL and
+YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
+
 ## Five-Minute Flow
 
 0:00-0:30 - Local readiness

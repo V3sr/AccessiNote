@@ -135,7 +135,7 @@ browser. If Azure fails, the app returns to local fallback behavior.
 - `docs/AZURE.md`: Azure setup, fallback behavior, and safe demo guidance.
 - `docs/SAFETY.md`: permitted-use policy, human review, OCR/caption limitations, and optional provider notes.
 - `docs/ATTRIBUTION.md`: demo content and dependency attribution.
-- `docs/SUBMISSION.md`: project description, judging alignment, Microsoft integration notes, and screenshot checklist.
+- `docs/SUBMISSION.md`: project description, required submission checklist, judging alignment, Microsoft integration notes, and screenshot checklist.
 
 ## Safety
 

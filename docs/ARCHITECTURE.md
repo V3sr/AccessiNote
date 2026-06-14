@@ -8,6 +8,11 @@ AccessiNote currently runs as a local two-process app:
 - `data/outputs/`: ignored local generated timelines.
 - `data/uploads/`: reserved ignored local upload folder.
 
+For the Agents League Creative Apps track, the submission story should also describe the AI-assisted
+development workflow used to build and polish the application. If GitHub Copilot was used by the
+team, name it in the submission form and demo narration; do not claim Copilot usage unless it is
+accurate for the final submitted work.
+
 The backend exposes:
 
 - `GET /health`
@@ -48,6 +53,8 @@ selected model artifact before local transcription runs.
 
 ```mermaid
 flowchart LR
+  DEV[GitHub Copilot / AI-assisted development workflow] -. build-time support .-> UI
+  DEV -. build-time support .-> API
   UI[Next.js workbench] --> API[FastAPI API]
   UI --> STATUS[Demo readiness panel]
   STATUS --> API
