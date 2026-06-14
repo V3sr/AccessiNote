@@ -122,6 +122,14 @@ When an Azure provider is selected, AccessiNote reports whether the required env
 are configured. The current implementation is a disabled-by-default configuration seam, not a cloud
 runtime dependency.
 
+## Hackathon Docs
+
+- `docs/DEMO.md`: five-minute recording flow and checklist.
+- `docs/ARCHITECTURE.md`: local pipeline, API surface, Mermaid diagram, and provider seams.
+- `docs/SAFETY.md`: permitted-use policy, human review, OCR/caption limitations, and optional provider notes.
+- `docs/ATTRIBUTION.md`: demo content and dependency attribution.
+- `docs/SUBMISSION.md`: project description, judging alignment, Microsoft integration notes, and screenshot checklist.
+
 ## Safety
 
 Use only lecture material you are allowed to process. Do not upload private student data,

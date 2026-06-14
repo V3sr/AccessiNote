@@ -1,0 +1,82 @@
+# Hackathon Submission
+
+## Project Description
+
+AccessiNote is a local-first lecture accessibility workbench. It turns permitted lecture videos,
+slides, screenshots, captions, or transcripts into reviewable evidence timelines and accessible
+learning outputs for different study needs.
+
+The app focuses on the Microsoft Agents League Creative Apps + Accessibility path and the
+Accessibility Award: it prioritizes multimodal extraction quality, transparent source grounding,
+human review, and a polished local demo that does not require external API keys.
+
+## What It Does
+
+- Loads a synthetic sample lecture for a reliable demo baseline.
+- Accepts pasted transcripts and creates timestamped local timelines.
+- Uploads images/slides and scans them with local OCR.
+- Uploads permitted videos through a staged local media job flow.
+- Generates local captions with faster-whisper when captions are not uploaded.
+- Selects video frames from early coverage, scene changes, transcript keywords, coverage points, and periodic visual coverage.
+- Runs OCR on original and preprocessed frames with RapidOCR and optional Tesseract.
+- Aligns transcript/caption, OCR, keyframe, concept, confidence, and warning evidence into one timeline.
+- Generates structured notes, ADHD study packs, screen-reader notes, exam prep, plain-language notes, notetaker quality reports, WebVTT captions, Evidence JSON, and plain transcripts.
+- Shows a demo-readiness panel for local tools, recent video processing, exports, and optional Microsoft provider configuration.
+
+## Technologies Used
+
+- Frontend: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui-style primitives, lucide icons.
+- Backend: FastAPI, Pydantic, local JSON storage.
+- Media processing: ffmpeg or imageio-ffmpeg.
+- Local transcription: faster-whisper.
+- Local OCR: RapidOCR, ONNX Runtime, optional Tesseract OCR.
+- Optional Microsoft provider seams: Azure AI Speech, Azure AI Vision, and Azure OpenAI configuration metadata.
+
+## Microsoft Integration Story
+
+AccessiNote keeps the hackathon demo local-first for reliability and safety. It includes optional
+provider configuration for Microsoft services:
+
+- `TRANSCRIPTION_PROVIDER=local|azure_speech`
+- `OCR_PROVIDER=local|azure_vision`
+- `GENERATION_PROVIDER=local|azure_openai`
+
+`GET /api/capabilities` reports each selected provider, whether it is configured, and which
+environment variables are required. `GET /api/demo/status` surfaces those optional providers as
+readiness warnings rather than blocking the no-key local path.
+
+## Judging Alignment
+
+- Accuracy and relevance: outputs are built from timestamped transcript, caption, OCR, keyframe, and confidence evidence.
+- Reasoning and multi-step thinking: the pipeline ingests media, transcribes audio, finds visual changes, scans OCR, aligns evidence, and flags weak chunks.
+- Creativity and originality: the app treats lecture accessibility as source-grounded multimodal review instead of generic summarization.
+- User experience and presentation: the workbench shows processing progress, readiness, scan metrics, timeline review, and export actions in one flow.
+- Reliability and safety: the demo works without API keys, stores data locally, warns about weak evidence, and keeps humans in the review loop.
+- Community vote: the demo story is easy to understand: upload lecture material, inspect evidence, generate accessible study formats.
+
+## Accessibility Award Fit
+
+AccessiNote supports multiple access needs directly:
+
+- ADHD study packs reduce overload with a start path, must-know ideas, quick checks, and recovery steps.
+- Screen-reader notes provide a linear reading order with visual descriptions and OCR review notes.
+- Plain-language output makes lecture material easier to approach.
+- Captions and WebVTT export support audio access.
+- Notetaker quality reports expose weak areas before material is shared.
+
+## Screenshot And Video Checklist
+
+- First viewport with AccessiNote branding and local upload desk.
+- Demo readiness panel showing pass/warn/fail checks.
+- Video job progress stages.
+- Scan report with candidate frames, selected frames, OCR frames, caption source, and weak chunks.
+- Evidence timeline with keyframe, transcript, collapsed OCR details, collapsed visual review, and warning flags.
+- ADHD Study Pack output.
+- Screen Reader Notes output.
+- WebVTT caption export.
+- Evidence JSON export.
+- Safety/human-review message.
+
+## Final Verification
+
+Final tested commit: pending final verification.

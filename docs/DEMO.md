@@ -4,19 +4,49 @@ AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 
 ## Five-Minute Flow
 
-1. Open the local app and show the Demo readiness panel: sample data, ffmpeg, OCR, transcription, exports, recent video status, and optional Microsoft provider status.
-2. Call out that missing Azure providers are warnings, not blockers, because the demo path is local-first and no API key is required.
-3. Load the sample lecture to show the baseline evidence timeline and output modes.
-4. Upload a short permitted lecture video.
-5. Call out the staged processing flow: upload received, transcription, visual change detection, OCR, alignment, ready for review.
-6. Review the scan report: candidate frames, selected frames, OCR frames, caption source, weak chunks.
-7. Inspect the timeline: keyframes, transcript text, OCR text, visual review notes, concepts, confidence, evidence flags.
-8. Generate ADHD Study Pack and show the start path, must-know ideas, quick checks, and overwhelm-recovery steps.
-9. Generate Screen Reader Notes and show the linear reading order, visual descriptions, OCR review notes, and compact source coverage.
-10. Generate Notetaker Quality Report to show transcript, OCR, source-confidence, and weak-evidence scores.
-11. Generate WebVTT Captions and download the `.vtt` file.
-12. Generate Evidence JSON to show the full transparent source trail without cluttering the student-facing outputs.
-13. Close with the safety posture: permitted materials only, human review required, local-first processing.
+0:00-0:30 - Local readiness
+
+1. Open `http://localhost:3000`.
+2. Point to the Demo readiness panel.
+3. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and optional Microsoft provider configuration before the demo starts.
+4. Call out that missing Azure providers are warnings, not blockers, because the reliable demo path is local-first and no API key is required.
+
+0:30-1:10 - Baseline sample
+
+1. Click **Load sample lecture**.
+2. Scroll to the Evidence timeline.
+3. Show timestamped transcript chunks, concepts, OCR/visual evidence slots, and source confidence.
+4. Say: every generated format is grounded in the same reviewable timeline.
+
+1:10-2:15 - Video processing
+
+1. In the upload desk, click the **Video** tab.
+2. Choose a short permitted lecture clip.
+3. Optionally attach `.vtt`, `.srt`, or `.txt` captions; otherwise allow local faster-whisper captions.
+4. Click **Upload video**.
+5. Narrate the staged job flow: upload received, extracting audio, transcribing, finding visual changes, running OCR, aligning timeline, ready for review.
+
+2:15-3:10 - Evidence review
+
+1. In **Scan report**, show candidate frames, selected frames, OCR frames, caption source, weak chunks, and warnings.
+2. In **Evidence timeline**, expand one OCR details drawer and one visual review drawer.
+3. Point out review flags for low-confidence or missing evidence.
+4. Say: raw evidence stays available for audit, while student-facing outputs stay concise.
+
+3:10-4:20 - Accessibility outputs
+
+1. Select **ADHD Study Pack** and click **Generate output**.
+2. Show the start path, must-know ideas, quick checks, and overwhelm-recovery section.
+3. Select **Screen Reader Notes** and click **Generate output**.
+4. Show linear reading order, visual descriptions, OCR review notes, and compact source coverage.
+5. Select **Quality Report** and click **Generate output**.
+6. Show transcript, OCR, source-confidence, and weak-evidence scores.
+
+4:20-5:00 - Exports and safety
+
+1. Select **WebVTT Captions**, click **Generate output**, then click **Download .vtt**.
+2. Select **Evidence JSON**, click **Generate output**, and show the transparent source trail.
+3. Close on the safety posture: permitted materials only, generated captions and OCR need human review, local storage is explicit, and cloud services are optional provider seams.
 
 ## Judging Alignment
 
@@ -30,3 +60,13 @@ AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 ## Demo Data Guidance
 
 Use synthetic or explicitly permitted lecture material. Avoid private student data, exams, accommodation records, or copyrighted lecture recordings without permission.
+
+## Recording Checklist
+
+- Browser opened to `http://localhost:3000`.
+- Backend running on `http://localhost:8000`.
+- Demo readiness panel visible near the start.
+- One short permitted video available locally.
+- Optional caption file ready if local transcription is slow on the recording machine.
+- Download actions shown for `.vtt` and Evidence JSON.
+- Safety and human-review language stated in the final 20 seconds.
