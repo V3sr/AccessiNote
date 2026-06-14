@@ -3,6 +3,7 @@
 import {
   Activity,
   ArrowDown,
+  AlertTriangle,
   CheckCircle2,
   Eye,
   FileCheck2,
@@ -541,6 +542,7 @@ function ScanReportPanel({ lecture, job }: { lecture: LectureTimeline | null; jo
   const metadata = lecture?.processing_metadata;
   const metrics = metadata?.metrics ?? job?.metrics;
   const stage = job?.status === "running" || job?.status === "queued" ? job.stage : metadata?.stages.at(-1);
+  const scanWarnings = scanReviewMessages(lecture, job);
 
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
@@ -562,8 +564,23 @@ function ScanReportPanel({ lecture, job }: { lecture: LectureTimeline | null; jo
         </div>
       ) : (
         <p className="mt-3 text-sm leading-6 text-zinc-600">
-          Upload a video to see frame selection, OCR coverage, caption source, and confidence diagnostics.
+          Upload a permitted video or image to see frame selection, OCR coverage, caption source, and confidence
+          diagnostics.
         </p>
+      )}
+
+      {scanWarnings.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {scanWarnings.map((warning) => (
+            <div
+              key={warning}
+              className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950"
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <p>{warning}</p>
+            </div>
+          ))}
+        </div>
       )}
 
       {metadata?.warnings.length ? (
@@ -715,6 +732,34 @@ function formatJobKind(kind: string): string {
     return "Image";
   }
   return "Video";
+}
+
+function scanReviewMessages(lecture: LectureTimeline | null, job: ProcessingJob | null): string[] {
+  const messages: string[] = [];
+  if (job?.status === "failed") {
+    messages.push(job.error || "Processing failed before AccessiNote could create a reviewable timeline.");
+  }
+  if (job?.status === "canceled") {
+    messages.push("Processing was canceled. Start a new upload when you are ready to scan again.");
+  }
+  if (!lecture) {
+    return messages;
+  }
+
+  const metrics = lecture.processing_metadata.metrics;
+  if (lecture.source.type === "video" && lecture.caption_segments.length === 0) {
+    messages.push("No caption track is attached. Upload captions or enable local transcription for better alignment.");
+  }
+  if ((lecture.source.type === "video" || lecture.source.type === "image") && metrics.ocr_frame_count === 0) {
+    messages.push("No readable OCR text was found. Review keyframes manually, especially slides or board work.");
+  }
+  if (metrics.average_source_confidence < 0.65) {
+    messages.push("Source confidence is low. Treat generated notes as a draft and verify important details.");
+  }
+  if (metrics.weak_chunk_count > 0) {
+    messages.push(`${metrics.weak_chunk_count} timeline chunk(s) need human review before sharing.`);
+  }
+  return messages.slice(0, 4);
 }
 
 function describeCompletedJob(job: ProcessingJob): string {

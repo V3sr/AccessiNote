@@ -1,4 +1,4 @@
-import { Clock, Eye, FileText, Gauge, ImageIcon, ScanText } from "lucide-react";
+import { AlertTriangle, Captions, ChevronDown, Clock, Eye, FileText, Gauge, ImageIcon, ScanText } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { assetUrl } from "@/lib/api";
@@ -30,6 +30,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
 
   const ocrChunks = lecture.chunks.filter((chunk) => hasReadableOcrEvidence(chunk.ocr)).length;
   const weakChunks = lecture.processing_metadata.metrics.weak_chunk_count;
+  const captionSource = lecture.processing_metadata.metrics.caption_source;
   const averageSourceConfidence =
     lecture.chunks.reduce((total, chunk) => total + chunk.source_confidence, 0) / Math.max(1, lecture.chunks.length);
 
@@ -44,7 +45,11 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
           <SummaryPill icon={<Clock className="h-3.5 w-3.5" />} label={`${lecture.chunks.length} chunks`} />
           <SummaryPill icon={<ScanText className="h-3.5 w-3.5" />} label={`${ocrChunks} with OCR`} />
-          <SummaryPill icon={<FileText className="h-3.5 w-3.5" />} label={`${lecture.caption_segments.length} captions`} />
+          <SummaryPill
+            icon={<Captions className="h-3.5 w-3.5" />}
+            label={lecture.caption_segments.length ? `${lecture.caption_segments.length} captions` : "No captions"}
+          />
+          <SummaryPill icon={<FileText className="h-3.5 w-3.5" />} label={formatCaptionSource(captionSource)} />
           <SummaryPill
             icon={<Gauge className="h-3.5 w-3.5" />}
             label={`${percent(averageSourceConfidence)} avg source`}
@@ -56,9 +61,14 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
       </div>
 
       <div className="grid gap-3 p-4">
-        {lecture.chunks.map((chunk) => (
-          <TimelineChunkCard key={chunk.chunk_id} chunk={chunk} />
-        ))}
+        {lecture.chunks.length > 0 ? (
+          lecture.chunks.map((chunk) => <TimelineChunkCard key={chunk.chunk_id} chunk={chunk} />)
+        ) : (
+          <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm leading-6 text-zinc-700">
+            This lecture has no timeline chunks yet. Try a shorter source, attach captions, or check local OCR and
+            transcription readiness before processing again.
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -67,6 +77,8 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
 function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
   const hasFrame = Boolean(chunk.keyframe_path);
   const ocrDetected = chunk.ocr_confidence > 0 || hasReadableOcrEvidence(chunk.ocr);
+  const reviewNeeded = chunk.source_confidence < 0.68 || chunk.evidence_flags.some(isReviewFlag);
+  const title = chunkTitle(chunk);
 
   return (
     <article className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -99,7 +111,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
         )}
 
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <Badge variant="secondary" className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-800">
               <Clock className="h-3.5 w-3.5" aria-hidden="true" />
               {chunk.start}-{chunk.end}
@@ -109,9 +121,29 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
               {percent(chunk.source_confidence)} source
             </Badge>
+            {reviewNeeded && (
+              <Badge className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
+                <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                Review needed
+              </Badge>
+            )}
           </div>
 
-          <p className="mt-3 text-sm leading-6 text-zinc-800">{chunk.transcript}</p>
+          <h3 className="mt-3 text-base font-semibold leading-6 text-zinc-950">{title}</h3>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <EvidenceBadge active={Boolean(chunk.transcript.trim())} label="Transcript" />
+            <EvidenceBadge active={hasFrame} label="Keyframe" />
+            <EvidenceBadge active={ocrDetected} label={ocrDetected ? "OCR text" : "OCR empty"} />
+            <EvidenceBadge active={chunk.visual_description.trim().length > 0} label="Visual note" />
+          </div>
+
+          <div className="mt-3 rounded-lg bg-zinc-50 px-3 py-2">
+            <p className="text-xs font-semibold text-zinc-600">Transcript or caption text</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-800">
+              {chunk.transcript || "No transcript text was aligned to this chunk."}
+            </p>
+          </div>
 
           {chunk.concepts.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -126,7 +158,15 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
           {chunk.evidence_flags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {chunk.evidence_flags.map((flag) => (
-                <span key={flag} className="rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-900 ring-1 ring-sky-100">
+                <span
+                  key={flag}
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ${
+                    isReviewFlag(flag)
+                      ? "bg-amber-50 text-amber-950 ring-amber-200"
+                      : "bg-sky-50 text-sky-900 ring-sky-100"
+                  }`}
+                >
+                  {isReviewFlag(flag) && <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />}
                   {flag}
                 </span>
               ))}
@@ -138,19 +178,25 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <EvidencePanel
           icon={<ScanText className="h-4 w-4 text-emerald-700" aria-hidden="true" />}
-          title="OCR Text"
+          title="OCR details"
+          summary={ocrDetected ? `${chunk.ocr.length} readable item(s)` : "No readable text detected"}
           tone={ocrDetected ? "strong" : "quiet"}
         >
-          <ul className="space-y-1 text-sm leading-6">
-            {chunk.ocr.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+          {chunk.ocr.length > 0 ? (
+            <ul className="space-y-1 text-sm leading-6">
+              {chunk.ocr.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm leading-6">OCR did not return readable text for this frame.</p>
+          )}
         </EvidencePanel>
 
         <EvidencePanel
           icon={<Eye className="h-4 w-4 text-zinc-600" aria-hidden="true" />}
-          title="Visual Review"
+          title="Visual review"
+          summary={hasFrame ? "Keyframe and layout note" : "No keyframe attached"}
           tone="quiet"
         >
           <p className="text-sm leading-6">{chunk.visual_description}</p>
@@ -172,28 +218,36 @@ function SummaryPill({ icon, label }: { icon: ReactNode; label: string }) {
 function EvidencePanel({
   icon,
   title,
+  summary,
   tone,
   children,
 }: {
   icon: ReactNode;
   title: string;
+  summary: string;
   tone: "strong" | "quiet";
   children: ReactNode;
 }) {
   return (
-    <div
-      className={`rounded-xl px-3 py-3 ${
+    <details
+      className={`group rounded-xl px-3 py-3 ${
         tone === "strong"
           ? "border border-emerald-200 bg-emerald-50 text-emerald-950"
           : "border border-zinc-200 bg-zinc-50 text-zinc-800"
       }`}
     >
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
-        {icon}
-        {title}
-      </h3>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-zinc-950 marker:hidden">
+        <span className="flex min-w-0 items-center gap-2">
+          {icon}
+          <span>{title}</span>
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-2 text-xs font-medium text-zinc-600">
+          {summary}
+          <ChevronDown className="h-4 w-4 transition group-open:rotate-180" aria-hidden="true" />
+        </span>
+      </summary>
       <div className="mt-2">{children}</div>
-    </div>
+    </details>
   );
 }
 
@@ -208,4 +262,59 @@ function hasReadableOcrEvidence(items: string[]): boolean {
       !item.toLowerCase().startsWith("no ocr") &&
       !item.toLowerCase().includes("no readable text"),
   );
+}
+
+function chunkTitle(chunk: TimelineChunk): string {
+  const conceptTitle = chunk.concepts.find((concept) => concept.trim().length > 2);
+  if (conceptTitle) {
+    return conceptTitle;
+  }
+  const firstSentence = chunk.transcript.split(/[.!?]/).find((sentence) => sentence.trim().length > 12);
+  if (firstSentence) {
+    return trimToWords(firstSentence.trim(), 9);
+  }
+  return `Evidence checkpoint ${chunk.chunk_id}`;
+}
+
+function trimToWords(text: string, wordLimit: number): string {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length <= wordLimit) {
+    return text;
+  }
+  return `${words.slice(0, wordLimit).join(" ")}...`;
+}
+
+function EvidenceBadge({ active, label }: { active: boolean; label: string }) {
+  const className = active
+    ? "bg-emerald-50 text-emerald-900 ring-emerald-100"
+    : "bg-zinc-50 text-zinc-700 ring-zinc-200";
+  return (
+    <span className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${className}`}>
+      {label}
+    </span>
+  );
+}
+
+function isReviewFlag(flag: string): boolean {
+  const normalized = flag.toLowerCase();
+  return (
+    normalized.includes("review") ||
+    normalized.includes("missing") ||
+    normalized.includes("no readable") ||
+    normalized.includes("weak") ||
+    normalized.includes("low-confidence")
+  );
+}
+
+function formatCaptionSource(value: string): string {
+  if (!value || value === "none") {
+    return "No caption source";
+  }
+  if (value === "faster-whisper") {
+    return "Local captions";
+  }
+  if (value === "uploaded captions") {
+    return "Uploaded captions";
+  }
+  return value;
 }

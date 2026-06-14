@@ -40,9 +40,9 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Safety banner: persistent, readable, and visually distinct without dominating the page.
 - Source desk: upload-focused intake card with supported source types and tabs for sample, transcript, image/slide OCR, and video.
 - Scan pre-flight: compact capability rows for frame extraction and OCR engine readiness.
-- Timeline chunks: repeated evidence records with timestamp, concepts, transcript, OCR confidence, visual evidence, and optional keyframes.
+- Timeline chunks: repeated evidence records with timestamp, readable chunk heading, transcript/source badges, concepts, review flags, and optional keyframes. OCR text and visual details are collapsible so reviewers can audit evidence without forcing every student-facing view to carry raw extraction noise.
 - Mode selector: compact output builder with clear icon, label, and short description.
-- Output viewer: markdown preview plus source references and export actions.
+- Output viewer: markdown preview plus export actions and a compact "Evidence used" drawer. It shows the top source checkpoints first and points to the timeline/Evidence JSON for the full source trail.
 - Learning insights: source coverage ring, key concept count, review time estimate, and generated format count.
 - Component foundation: shadcn/ui-owned primitives are used for buttons, cards, badges, alerts, separators, and tabs. Keep AccessiNote-specific visual decisions in local class names instead of drifting back to generic shadcn defaults.
 
@@ -51,8 +51,9 @@ Color should remain restrained. Use accent colors for action, current state, and
 - Every button needs hover, disabled, and keyboard focus states.
 - Async actions show inline loading via the button that triggered them.
 - Local capability warnings should appear before upload, not after failure.
-- Video scans should report OCR coverage and engine choice immediately after upload.
-- Generated output export actions should stay close to the output title.
+- Video scans should report OCR coverage, caption source, weak chunks, and engine choice immediately after upload.
+- Failed, canceled, low-confidence, missing-caption, and no-OCR states should appear as actionable scan-review warnings.
+- Generated output export actions should stay close to the output title and name the exported format directly.
 
 ## Motion
 
