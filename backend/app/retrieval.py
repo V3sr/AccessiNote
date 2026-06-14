@@ -156,9 +156,9 @@ def split_transcript(transcript: str, target_words: int = 85) -> list[str]:
 
 def extract_concepts(text: str, limit: int = 5) -> list[str]:
     words = [
-        word.lower().replace("’", "'")
+        word.lower().replace("\u2019", "'")
         for word in re.findall(r"[A-Za-z][A-Za-z'-]{3,}", text)
-        if word.lower().replace("’", "'") not in STOPWORDS
+        if word.lower().replace("\u2019", "'") not in STOPWORDS
     ]
     counts = Counter(words)
     concepts = [word for word, _ in counts.most_common(limit)]

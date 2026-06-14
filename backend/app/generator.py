@@ -159,36 +159,41 @@ def generate_output(timeline: LectureTimeline, mode: OutputMode) -> GenerateResp
 
 def build_structured_notes(timeline: LectureTimeline) -> str:
     chunks = timeline.chunks
+    if not chunks:
+        return empty_output(timeline, "Structured Notes")
+
+    focus_chunks = evidence_reference_chunks(timeline, limit=8)
     lines = [
         f"# Structured Notes: {timeline.title}",
         "",
         "## Overview",
-        f"This lecture explains {concept_phrase(chunks)} using transcript evidence, visible text, and visual descriptions from the timeline.",
+        f"- Main focus: **{concept_phrase(chunks)}**.",
+        f"- Built from {len(chunks)} timestamped chunk(s), {len(timeline.caption_segments)} caption segment(s), and local visual/OCR evidence.",
+        "- Use the timestamps below to review the original material before relying on these notes.",
         "",
-        "## Timeline Outline",
+        "## Key Takeaways",
     ]
-    for chunk in chunks:
-        lines.extend(
-            [
-                f"- **{time_range(chunk)}** ({chunk.chunk_id}): {chunk.transcript}",
-                f"  - Visual source: {chunk.visual_description}",
-                f"  - OCR/source text: {ocr_text(chunk)}",
-            ]
-        )
+    for concept in top_concepts(chunks, limit=6):
+        source = first_chunk_with_concept(chunks, concept)
+        lines.append(f"- **{title_case(concept)}** ({time_range(source)}): {definition_for(concept, chunks)}.")
+
+    lines.extend(["", "## Guided Timeline"])
+    for chunk in focus_chunks:
+        lines.append(f"- **{time_range(chunk)}**: {chunk_takeaway(chunk)}")
 
     lines.extend(["", "## Key Definitions"])
     for concept in top_concepts(chunks, limit=8):
-        lines.append(f"- **{title_case(concept)}**: {definition_for(concept)}.")
+        source = first_chunk_with_concept(chunks, concept)
+        lines.append(f"- **{title_case(concept)}**: {definition_for(concept, chunks)} Source: **{time_range(source)}**.")
 
-    lines.extend(["", "## Worked Examples"])
-    example_chunks = [chunk for chunk in chunks if "example" in " ".join(chunk.concepts).lower()]
-    for chunk in example_chunks or chunks[-2:-1]:
+    example_chunks = example_or_high_signal_chunks(chunks, limit=4)
+    lines.extend(["", "## Review Anchors"])
+    for chunk in example_chunks:
         lines.append(
-            f"- **{time_range(chunk)}**: Follow the steps described in the transcript. "
-            f"The visual evidence notes: {chunk.visual_description}"
+            f"- **{time_range(chunk)}**: {chunk_takeaway(chunk)}"
         )
 
-    lines.extend(source_coverage_section(timeline))
+    lines.extend(source_coverage_section(timeline, detail_limit=4))
     lines.extend(safety_section())
     return "\n".join(lines)
 
@@ -268,146 +273,188 @@ def build_adhd_study_pack(timeline: LectureTimeline) -> str:
 
 def build_screen_reader_notes(timeline: LectureTimeline) -> str:
     chunks = timeline.chunks
+    if not chunks:
+        return empty_output(timeline, "Screen Reader Notes")
+
+    focus_chunks = evidence_reference_chunks(timeline, limit=10)
     lines = [
         f"# Screen Reader Notes: {timeline.title}",
         "",
         "## Lecture Overview",
-        f"The lecture covers {concept_phrase(chunks)}. Notes are organized by timestamp and avoid layout-dependent tables.",
+        f"This lecture covers **{concept_phrase(chunks)}**. Notes are linear, timestamped, and avoid tables so they work well in screen readers.",
         "",
-        "## Section-by-Section Notes",
+        "## Essential Concepts",
     ]
-    for chunk in chunks:
+    for concept in top_concepts(chunks, limit=6):
+        source = first_chunk_with_concept(chunks, concept)
+        lines.append(f"- **{title_case(concept)}**, introduced around **{time_range(source)}**: {definition_for(concept, chunks)}.")
+
+    lines.extend(
+        [
+            "",
+            "## Timestamped Notes",
+        ]
+    )
+    for chunk in focus_chunks:
         lines.extend(
             [
-                f"- **{time_range(chunk)}**. {chunk.transcript}",
-                f"  Important concepts: {', '.join(chunk.concepts)}.",
+                f"### {time_range(chunk)}",
+                chunk_takeaway(chunk),
+                f"Source confidence: {percent_number(chunk.source_confidence)}.",
             ]
         )
 
-    lines.extend(["", "## Visual Content Descriptions"])
-    for chunk in chunks:
+    visual_chunks = [chunk for chunk in focus_chunks if chunk.visual_description]
+    lines.extend(
+        [
+            "",
+            "## Visual Content To Review",
+        ]
+    )
+    for chunk in visual_chunks:
         lines.append(f"- **{time_range(chunk)}**: {chunk.visual_description}")
 
-    lines.extend(["", "## Equations and Symbols"])
-    for chunk in chunks:
-        lines.append(f"- **{time_range(chunk)}**: {ocr_text(chunk)}")
+    ocr_chunks = [chunk for chunk in focus_chunks if has_ocr_evidence(chunk)]
+    lines.extend(
+        [
+            "",
+            "## Visible Text Or Symbols",
+        ]
+    )
+    if ocr_chunks:
+        for chunk in ocr_chunks[:6]:
+            lines.append(f"- **{time_range(chunk)}**: {short_ocr_text(chunk)}")
+    else:
+        lines.append("- No reliable OCR text was detected in the selected review checkpoints.")
 
-    lines.extend(source_coverage_section(timeline))
+    lines.extend(source_coverage_section(timeline, detail_limit=3))
     lines.extend(safety_section())
     return "\n".join(lines)
 
 
 def build_exam_prep_pack(timeline: LectureTimeline) -> str:
     chunks = timeline.chunks
+    if not chunks:
+        return empty_output(timeline, "Exam Prep Pack")
+
     concepts = top_concepts(chunks, limit=8)
+    focus_chunks = evidence_reference_chunks(timeline, limit=6)
     lines = [
         f"# Exam Prep Pack: {timeline.title}",
         "",
-        "## Likely Testable Concepts",
+        "## What To Know First",
     ]
-    for concept in concepts:
-        lines.append(f"- **{title_case(concept)}** from the timestamped material: {definition_for(concept)}.")
+    for concept in concepts[:6]:
+        source = first_chunk_with_concept(chunks, concept)
+        lines.append(f"- **{title_case(concept)}** ({time_range(source)}): {definition_for(concept, chunks)}.")
 
     lines.extend(["", "## Flashcards"])
     for concept in concepts[:6]:
         source = first_chunk_with_concept(chunks, concept)
         lines.extend(
             [
-                f"- **Q:** What does {title_case(concept)} mean in this lecture?",
-                f"  **A:** {definition_for(concept)}. Source: **{time_range(source)}**.",
+                f"- **Q:** Explain **{title_case(concept)}** in one sentence.",
+                f"  **A:** {ensure_sentence(definition_for(concept, chunks))} Source: **{time_range(source)}**.",
             ]
         )
 
-    lines.extend(["", "## Practice Questions"])
-    for chunk in chunks:
-        lines.append(
-            f"- Using the evidence at **{time_range(chunk)}**, explain how {chunk.concepts[0]} connects to the lecture's main idea."
-        )
+    lines.extend(["", "## Practice Prompts"])
+    for chunk in focus_chunks[:5]:
+        lines.append(f"- Using **{time_range(chunk)}**, explain why this matters: {chunk_takeaway(chunk)}")
 
-    lines.extend(
-        [
-            "",
-            "## Common Mistakes",
-            "- Treating a matrix as only a grid of numbers instead of a transformation.",
-            "- Ignoring where the basis vectors move.",
-            "- Skipping visual evidence such as arrows, coordinate grids, or worked steps.",
-            "- Memorizing terms without linking them to timestamps and examples.",
-        ]
-    )
-    lines.extend(source_coverage_section(timeline))
+    lines.extend(["", "## Common Mistakes To Avoid"])
+    for mistake in common_mistakes_for(concepts):
+        lines.append(f"- {mistake}")
+
+    lines.extend(source_coverage_section(timeline, detail_limit=4))
     lines.extend(safety_section())
     return "\n".join(lines)
 
 
 def build_plain_language(timeline: LectureTimeline) -> str:
     chunks = timeline.chunks
+    if not chunks:
+        return empty_output(timeline, "Plain-Language Explanation")
+
+    concepts = top_concepts(chunks, limit=6)
+    focus_chunks = evidence_reference_chunks(timeline, limit=6)
     lines = [
         f"# Plain-Language Explanation: {timeline.title}",
         "",
         "## Big Idea",
-        "A lecture timeline can be read like a map. Each timestamp gives one part of the idea, and the transcript, OCR text, and visual description help confirm what happened there.",
+        f"This lecture is about **{concept_phrase(chunks)}**. In plain language, it is trying to help you connect a few important ideas to the examples shown or spoken in the lecture.",
         "",
-        "## Step-by-Step Explanation",
+        "## Main Ideas Without Jargon",
     ]
-    for chunk in chunks:
-        lines.append(
-            f"- **{time_range(chunk)}**: In simple terms, this part says: {simplify_sentence(chunk.transcript)}"
-        )
+    for concept in concepts[:5]:
+        source = first_chunk_with_concept(chunks, concept)
+        lines.append(f"- **{title_case(concept)}** ({time_range(source)}): {definition_for(concept, chunks)}.")
+
+    lines.extend(["", "## Follow The Lecture In Six Stops"])
+    for chunk in focus_chunks:
+        lines.append(f"- **{time_range(chunk)}**: {simplify_sentence(chunk_takeaway(chunk), limit=170)}")
 
     lines.extend(
         [
             "",
-            "## Analogy",
-            "Think of a matrix like a machine that moves arrows on a grid. The input vector goes in, the matrix changes it, and the output vector shows where it landed.",
-            "",
-            "## Terms in Simple Language",
+            "## What To Do If It Still Feels Confusing",
+            "- Pick one timestamp above and replay only that section.",
+            "- Write one term and one example beside it.",
+            "- If OCR or visual evidence looks wrong, use the transcript as the first source and mark the frame for review.",
         ]
     )
-    for concept in top_concepts(chunks, limit=8):
-        lines.append(f"- **{title_case(concept)}**: {definition_for(concept)}.")
-
-    lines.extend(source_coverage_section(timeline))
+    lines.extend(source_coverage_section(timeline, detail_limit=3))
     lines.extend(safety_section())
     return "\n".join(lines)
 
 
 def build_notetaker_quality_report(timeline: LectureTimeline) -> str:
     chunks = timeline.chunks
-    completeness = min(100, 55 + len(chunks) * 7)
-    structure = 88 if all(chunk.start and chunk.end for chunk in chunks) else 60
-    accessibility = 90 if all(chunk.visual_description and has_ocr_evidence(chunk) for chunk in chunks) else 62
-    clarity = int(sum(chunk.source_confidence for chunk in chunks) / max(1, len(chunks)) * 100)
+    if not chunks:
+        return empty_output(timeline, "Notetaker Quality Report")
+
+    metrics = timeline.processing_metadata.metrics
+    transcript_score = 100 if metrics.transcript_segment_count > 0 else 35
+    ocr_score = int((metrics.ocr_frame_count / max(1, metrics.extracted_frame_count)) * 100) if metrics.extracted_frame_count else 0
+    confidence_score = int(sum(chunk.source_confidence for chunk in chunks) / max(1, len(chunks)) * 100)
+    weak_penalty = min(25, metrics.weak_chunk_count * 4)
+    overall = max(0, min(100, round((transcript_score * 0.35) + (ocr_score * 0.2) + (confidence_score * 0.35) + 10 - weak_penalty)))
 
     lines = [
         f"# Notetaker Quality Report: {timeline.title}",
         "",
-        "## Scores",
-        f"- Completeness: **{completeness}/100**",
-        f"- Structure: **{structure}/100**",
-        f"- Accessibility: **{accessibility}/100**",
-        f"- Clarity: **{clarity}/100**",
+        "## Overall Readiness",
+        f"- Overall review readiness: **{overall}/100**.",
+        f"- Transcript/caption evidence: **{transcript_score}/100**.",
+        f"- OCR coverage: **{ocr_score}/100**.",
+        f"- Average source confidence: **{confidence_score}/100**.",
+        f"- Weak evidence chunks: **{metrics.weak_chunk_count}**.",
         "",
-        "## Strengths",
-        "- The notes are timestamped, which supports review and source checking.",
-        "- OCR text is separated from transcript text, making visual-source evidence easier to audit.",
-        "- Visual descriptions are present for screen-reader and low-vision review workflows.",
-        "",
-        "## Missing or Weak Sections",
-        "- Confirm whether equations, diagrams, and examples are complete against the original permitted lecture material.",
-        "- Add speaker names if multiple speakers appear in the recording.",
-        "- Flag unclear concepts that need human review or instructor confirmation.",
-        "",
-        "## Accessibility Improvements",
-        "- Keep each timestamped section short and scannable.",
-        "- Spell out symbols before relying on notation alone.",
-        "- Add alt text or visual descriptions for every board drawing, slide, and diagram.",
-        "",
-        "## Upload Checklist",
-        "- Confirm you have permission to use the lecture material.",
-        "- Remove private student data, exams, accommodation records, and unrelated personal information.",
-        "- Review generated notes before relying on them for study or accessibility support.",
+        "## What Looks Strong",
     ]
-    lines.extend(source_coverage_section(timeline))
+    for strength in quality_strengths(timeline):
+        lines.append(f"- {strength}")
+
+    lines.extend(
+        [
+            "",
+            "## What Needs Human Review",
+        ]
+    )
+    for warning in quality_review_items(timeline):
+        lines.append(f"- {warning}")
+
+    lines.extend(
+        [
+            "",
+            "## Accessibility Checklist",
+            "- Confirm generated captions against the original audio before treating them as official transcript material.",
+            "- Check OCR-heavy chunks for equations, names, and small slide text.",
+            "- Keep the ADHD, screen-reader, and plain-language outputs as editable drafts, not final accommodations.",
+            "- Preserve timestamps when moving notes into another tool so students can audit the source.",
+        ]
+    )
+    lines.extend(source_coverage_section(timeline, detail_limit=5))
     lines.extend(safety_section())
     return "\n".join(lines)
 
@@ -499,6 +546,105 @@ def safety_section() -> list[str]:
     return ["", "## Safety Note", f"- {SAFETY_WARNING}"]
 
 
+def empty_output(timeline: LectureTimeline, title: str) -> str:
+    return "\n".join(
+        [
+            f"# {title}: {timeline.title}",
+            "",
+            "## No Timeline Evidence",
+            "- No transcript, caption, OCR, or frame evidence is available yet.",
+            "- Upload permitted media, paste a transcript, or load the sample lecture before using this output.",
+        ]
+    )
+
+
+def example_or_high_signal_chunks(chunks: list[TimelineChunk], limit: int = 4) -> list[TimelineChunk]:
+    example_chunks = [
+        chunk
+        for chunk in chunks
+        if "example" in chunk.transcript.lower()
+        or any(marker in chunk.transcript.lower() for marker in ["for instance", "suppose", "probability", "payoff"])
+    ]
+    selected = example_chunks or sorted(
+        chunks,
+        key=lambda chunk: (learning_value_score(chunk), chunk.source_confidence),
+        reverse=True,
+    )
+    return selected[:limit]
+
+
+def short_ocr_text(chunk: TimelineChunk) -> str:
+    useful = [item for item in chunk.ocr if has_ocr_evidence_text(item)]
+    if not useful:
+        return "No reliable OCR text was detected."
+    return "; ".join(simplify_sentence(item, limit=90) for item in useful[:3])
+
+
+def common_mistakes_for(concepts: list[str]) -> list[str]:
+    concept_set = set(concepts)
+    mistakes = []
+    if "game theory" in concept_set:
+        mistakes.append("Treating game theory as only games or competition; it is about strategic decisions.")
+    if "expected utility" in concept_set or "utility" in concept_set:
+        mistakes.append("Mixing up money, probability, and utility; expected utility weights value by likelihood.")
+    if "lottery" in concept_set or "probability" in concept_set:
+        mistakes.append("Ignoring the probability attached to each outcome.")
+    if "matrix-vector multiplication" in concept_set or "linear transformation" in concept_set:
+        mistakes.append("Memorizing formulas without checking what the transformation does visually.")
+    if not mistakes:
+        mistakes.extend(
+            [
+                "Memorizing terms without linking them to a timestamped example.",
+                "Skipping visual/OCR evidence when slides or board work carry the key idea.",
+                "Trusting generated notes without replaying unclear timestamps.",
+            ]
+        )
+    return mistakes[:4]
+
+
+def quality_strengths(timeline: LectureTimeline) -> list[str]:
+    metrics = timeline.processing_metadata.metrics
+    strengths = []
+    if metrics.transcript_segment_count > 0:
+        strengths.append(f"Captions/transcript evidence is present with {metrics.transcript_segment_count} segment(s).")
+    if metrics.ocr_frame_count > 0:
+        strengths.append(f"OCR found readable text in {metrics.ocr_frame_count} frame(s).")
+    if metrics.extracted_frame_count > 0:
+        strengths.append(f"Visual frame evidence is available from {metrics.extracted_frame_count} extracted frame(s).")
+    if metrics.weak_chunk_count == 0:
+        strengths.append("No weak evidence chunks were flagged by the local pipeline.")
+    return strengths or ["The source was converted into a reviewable timeline, but evidence coverage is limited."]
+
+
+def quality_review_items(timeline: LectureTimeline) -> list[str]:
+    metrics = timeline.processing_metadata.metrics
+    items = []
+    if metrics.transcript_segment_count == 0:
+        items.append("No caption/transcript evidence was found; generated notes may miss spoken context.")
+    if metrics.extracted_frame_count == 0:
+        items.append("No frames were extracted; visual slide or board content needs separate review.")
+    if metrics.ocr_frame_count == 0:
+        items.append("No readable OCR text was detected; check diagrams, slides, and board work manually.")
+    if metrics.weak_chunk_count > 0:
+        items.append(f"{metrics.weak_chunk_count} weak evidence chunk(s) need human review.")
+    if not items:
+        items.append("Review equations, names, and technical terms against the original lecture before sharing.")
+    return items
+
+
+def percent_number(value: float) -> str:
+    return f"{round(max(0, min(1, value)) * 100)}%"
+
+
+def ensure_sentence(text: str) -> str:
+    stripped = text.strip()
+    if not stripped:
+        return ""
+    if stripped[-1] in {".", "!", "?"}:
+        return stripped
+    return f"{stripped}."
+
+
 def top_concepts(chunks: list[TimelineChunk], limit: int = 8) -> list[str]:
     counts: Counter[str] = Counter()
     for chunk in chunks:
@@ -555,13 +701,18 @@ def select_reference_chunks(chunks: list[TimelineChunk], limit: int = 6) -> list
         if chunk.chunk_id not in {item.chunk_id for item in selected}:
             selected.append(chunk)
 
-    add(chunks[0])
+    early_candidates = [chunk for chunk in chunks if timestamp_seconds(chunk.start) <= 600 and learning_value_score(chunk) > 0]
+    if early_candidates:
+        add(max(early_candidates, key=learning_value_score))
+    else:
+        add(chunks[0])
+
     high_signal = sorted(
         chunks,
         key=lambda chunk: (
+            learning_value_score(chunk),
             len([item for item in chunk.ocr if has_ocr_evidence_text(item)]),
             chunk.source_confidence,
-            len(clean_teaching_text(chunk.transcript)),
         ),
         reverse=True,
     )
@@ -571,11 +722,13 @@ def select_reference_chunks(chunks: list[TimelineChunk], limit: int = 6) -> list
         if chunk_takeaway(chunk) != "Review this timestamp for context.":
             add(chunk)
 
-    add(chunks[-1])
+    if learning_value_score(chunks[-1]) > 0:
+        add(chunks[-1])
     if len(selected) < limit:
         stride = max(1, len(chunks) // limit)
         for index in range(stride, len(chunks), stride):
-            add(chunks[index])
+            if learning_value_score(chunks[index]) > 0:
+                add(chunks[index])
             if len(selected) >= limit:
                 break
 
@@ -709,7 +862,7 @@ def is_useful_phrase(phrase: str) -> bool:
 
 
 def clean_concept(concept: str) -> str:
-    clean = concept.strip().lower().replace("’", "'")
+    clean = concept.strip().lower().replace("\u2019", "'")
     clean = re.sub(r"[^a-z0-9' -]", "", clean)
     clean = re.sub(r"\s+", " ", clean).strip()
     if not clean or len(clean) < 4:
@@ -726,7 +879,9 @@ def clean_concept(concept: str) -> str:
 def clean_teaching_text(text: str) -> str:
     cleaned = re.sub(r"\b(um|uh|yeah|okay|alright)\b[,.]?\s*", "", text, flags=re.IGNORECASE)
     cleaned = re.sub(r"^(great|right|so|now|well)[,.]?\s+", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"^(so\s+)?let'?s\s+(now\s+)?", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"^let'?s\s+(now\s+)?", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"^[?.,;:\s]+", "", cleaned)
     if "no audio transcription provider is configured" in cleaned.lower():
         return ""
     return cleaned.strip()
@@ -744,7 +899,8 @@ def best_sentence(text: str) -> str:
             continue
         scored.append((len(words), len(clean), clean))
     if not scored:
-        return clean_teaching_text(text)
+        cleaned = clean_teaching_text(text)
+        return "" if is_low_value_sentence(cleaned) else cleaned
     return sorted(scored, reverse=True)[0][2]
 
 

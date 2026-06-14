@@ -43,9 +43,26 @@ Open `http://localhost:3000`.
 - Preserve a timed caption track and export WebVTT captions.
 - Show frame-level OCR confidence, evidence flags, weak chunks, and scan coverage.
 - Reopen recent locally generated timelines from `data/outputs`.
-- Select an output mode.
+- Select an output mode for structured notes, ADHD study support, screen-reader notes, exam prep, plain-language review, or quality reporting.
 - Generate deterministic markdown, WebVTT captions, raw evidence JSON, or plain transcript exports.
 - Copy or download the generated output.
+
+## Generated Outputs
+
+AccessiNote outputs are designed for review, not clutter. Normal study formats keep source
+grounding concise and move long evidence trails into the timeline and Evidence JSON export.
+
+- Structured Notes summarize the lecture focus, key takeaways, definitions, timestamped review
+  anchors, and compact source coverage.
+- ADHD Study Pack provides a short start path, must-know ideas, a 10-minute review plan, quick
+  checks, and overwhelm-recovery steps.
+- Screen Reader Notes present the lecture linearly with timestamped visual descriptions, readable
+  OCR text, and review warnings for low-confidence visual content.
+- Exam Prep builds source-backed flashcards, practice prompts, likely mistakes, and a short review
+  plan.
+- Plain Language explains the lecture in simpler words with a small set of timestamped stops.
+- Notetaker Quality Report scores transcript, OCR, confidence, and weak-evidence coverage so a
+  human reviewer can decide what needs attention before sharing.
 
 ## Local Video/OCR
 
