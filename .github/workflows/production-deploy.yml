@@ -54,6 +54,40 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Register Azure resource providers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          register_provider() {
+            local namespace="$1"
+            local state
+            state="$(az provider show --namespace "$namespace" --query registrationState -o tsv 2>/dev/null || true)"
+            if [[ "$state" == "Registered" ]]; then
+              echo "$namespace already registered"
+              return
+            fi
+
+            echo "Registering $namespace"
+            az provider register --namespace "$namespace" --output none
+
+            for _ in $(seq 1 60); do
+              state="$(az provider show --namespace "$namespace" --query registrationState -o tsv 2>/dev/null || true)"
+              if [[ "$state" == "Registered" ]]; then
+                echo "$namespace registered"
+                return
+              fi
+              sleep 10
+            done
+
+            echo "Timed out waiting for $namespace to register. Current state: $state" >&2
+            exit 1
+          }
+
+          register_provider Microsoft.ContainerRegistry
+          register_provider Microsoft.App
+          register_provider Microsoft.OperationalInsights
+
       - name: Create resource group
         run: |
           az group create \
@@ -70,11 +104,22 @@ jobs:
             --admin-enabled true \
             --output none
 
+      - name: Fetch Azure Container Registry token
+        id: acr-token
+        run: |
+          echo "accessToken=$(az acr login \
+            --name "${{ inputs.acr_name }}" \
+            --expose-token \
+            --only-show-errors \
+            --query accessToken -o tsv)" >> "$GITHUB_OUTPUT"
+          echo "loginServer=$(az acr show \
+            --name "${{ inputs.acr_name }}" \
+            --only-show-errors \
+            --query loginServer -o tsv)" >> "$GITHUB_OUTPUT"
+
       - name: Log into Azure Container Registry
         run: |
-          az acr login \
-            --name "${{ inputs.acr_name }}" \
-            --output none
+          echo "${{ steps.acr-token.outputs.accessToken }}" | docker login "${{ steps.acr-token.outputs.loginServer }}" -u 00000000-0000-0000-0000-000000000000 --password-stdin
 
       - name: Build backend image locally
         run: |

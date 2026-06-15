@@ -72,6 +72,11 @@ The repository includes:
 - `.github/workflows/production-deploy.yml` for a manual production deploy to Azure Container Apps
   and Vercel, followed by the smoke check script.
 
+For the fastest hosted demo path, use the GitHub Actions deploy workflow. It builds and pushes the
+backend image on the runner, registers the needed Azure resource providers, and then creates or
+updates the Container App. The Azure portal wizard is useful once an image already exists in ACR,
+but it is not the easiest path when your local machine cannot run Docker.
+
 Required GitHub repository secrets for all production deploys:
 
 ```text
