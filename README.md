@@ -146,6 +146,14 @@ The helper scripts `scripts/deploy-backend-azure-containerapp.ps1` and `scripts/
 cover backend deployment and smoke testing. GitHub Actions workflows are included for CI and manual
 production deploys. See `docs/PRODUCTION.md`.
 
+Before recording or submitting, run the combined readiness check:
+
+```powershell
+.\scripts\check-hackathon-readiness.ps1 -FrontendUrl http://localhost:3000 -BackendUrl http://localhost:8000
+```
+
+For a public hosted demo, add `-PublicMode` and pass the Vercel and Azure backend URLs.
+
 ## Hackathon Docs
 
 - `docs/DEMO.md`: five-minute recording flow and checklist.

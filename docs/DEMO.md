@@ -69,6 +69,7 @@ Use synthetic or explicitly permitted lecture material. Avoid private student da
 
 - Browser opened to the deployed frontend URL, or `http://localhost:3000` for local recording.
 - Backend running on Azure or `http://localhost:8000`.
+- `scripts/check-hackathon-readiness.ps1` run successfully against the recording frontend/backend.
 - `/settings` provider page verified without showing keys.
 - Demo readiness panel visible near the start.
 - One short permitted video available locally.

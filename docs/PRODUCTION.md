@@ -149,6 +149,15 @@ You can run the smoke check script after both deployments:
   -BackendUrl "https://<backend-domain>"
 ```
 
+Run the full hackathon readiness check before recording or submitting:
+
+```powershell
+.\scripts\check-hackathon-readiness.ps1 `
+  -FrontendUrl "https://<your-vercel-domain>" `
+  -BackendUrl "https://<backend-domain>" `
+  -PublicMode
+```
+
 ## Public Demo Safety
 
 - Never show `.env`, Azure keys, or full secret values in the demo video.

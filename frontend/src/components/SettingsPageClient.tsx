@@ -5,14 +5,19 @@ import {
   ArrowLeft,
   CheckCircle2,
   Cloud,
+  ClipboardCheck,
   ExternalLink,
   FileText,
   KeyRound,
+  LockKeyhole,
+  Rocket,
   Server,
   ShieldCheck,
+  SquareTerminal,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 import { Header } from "@/components/Header";
@@ -145,7 +150,10 @@ export function SettingsPageClient() {
       </section>
 
       <section className="mx-auto grid max-w-[1500px] gap-5 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8 lg:py-8">
-        <ProviderSettingsPanel capabilities={capabilities} onSaved={refreshAll} variant="full" />
+        <div className="min-w-0 space-y-5">
+          <LaunchCommandCenter capabilities={capabilities} productionStatus={productionStatus} />
+          <ProviderSettingsPanel capabilities={capabilities} onSaved={refreshAll} variant="full" />
+        </div>
 
         <aside className="space-y-5">
           <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
@@ -235,6 +243,130 @@ function ProductionChecklist({ status }: { status: ProductionStatusResponse | nu
       )}
     </Card>
   );
+}
+
+function LaunchCommandCenter({
+  capabilities,
+  productionStatus,
+}: {
+  capabilities: CapabilityResponse | null;
+  productionStatus: ProductionStatusResponse | null;
+}) {
+  const providers = capabilities?.providers ?? {};
+  const microsoftIqReady = ["transcription", "ocr", "generation"].every((kind) => {
+    const provider = providers[kind];
+    return Boolean(provider?.name.startsWith("azure") && provider.configured);
+  });
+  const hostedSafetyReady = findProductionCheck(productionStatus, "production_runtime_settings")?.status === "pass";
+  const corsReady = findProductionCheck(productionStatus, "production_cors")?.status === "pass";
+  const productionReady = Boolean(productionStatus?.ready);
+
+  return (
+    <Card className="rounded-2xl border-zinc-200 bg-white p-5 shadow-soft lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-xl font-semibold text-zinc-950">
+            <Rocket className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+            Launch command center
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-700">
+            Use this page before sharing AccessiNote publicly. It tracks the Microsoft IQ requirement, hosted safety
+            lock, public frontend origin, and final submission package.
+          </p>
+        </div>
+        <Badge
+          className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+            productionReady
+              ? "bg-emerald-50 text-emerald-900 ring-emerald-100 hover:bg-emerald-50"
+              : "bg-amber-50 text-amber-950 ring-amber-200 hover:bg-amber-50"
+          }`}
+        >
+          {productionReady ? "Shareable" : "Needs launch config"}
+        </Badge>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <LaunchStep
+          icon={<Cloud className="h-4 w-4" aria-hidden="true" />}
+          title="Microsoft IQ layer"
+          detail="Azure AI Speech, Azure AI Vision, and Azure OpenAI are selected and configured."
+          ready={microsoftIqReady}
+          fallback="Local demo still works, but public submission should show Azure routes configured."
+        />
+        <LaunchStep
+          icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />}
+          title="Hosted key safety"
+          detail="Runtime provider edits are disabled so visitors cannot change backend-owned keys."
+          ready={hostedSafetyReady}
+          fallback="Set ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled before public launch."
+        />
+        <LaunchStep
+          icon={<Server className="h-4 w-4" aria-hidden="true" />}
+          title="Frontend and backend link"
+          detail="The deployed frontend origin is allowed by the Azure-hosted backend CORS policy."
+          ready={corsReady}
+          fallback="Set ACCESSINOTE_CORS_ORIGINS to the Vercel URL on the backend."
+        />
+        <LaunchStep
+          icon={<ClipboardCheck className="h-4 w-4" aria-hidden="true" />}
+          title="Submission package"
+          detail="README, architecture, demo script, safety, attribution, production, and Microsoft IQ docs are present."
+          ready
+          fallback="Add the final public GitHub URL and demo video URL before submission."
+        />
+      </div>
+
+      <div className="mt-5 rounded-xl bg-zinc-50 p-3 ring-1 ring-zinc-200">
+        <p className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+          <SquareTerminal className="h-4 w-4 text-zinc-700" aria-hidden="true" />
+          Final verification command
+        </p>
+        <code className="mt-2 block overflow-x-auto rounded-md bg-zinc-950 px-3 py-2 text-xs leading-5 text-zinc-50">
+          .\scripts\check-hackathon-readiness.ps1 -FrontendUrl https://your-vercel-url -BackendUrl
+          https://your-azure-backend
+        </code>
+      </div>
+    </Card>
+  );
+}
+
+function LaunchStep({
+  icon,
+  title,
+  detail,
+  ready,
+  fallback,
+}: {
+  icon: ReactNode;
+  title: string;
+  detail: string;
+  ready: boolean;
+  fallback: string;
+}) {
+  return (
+    <div className="rounded-xl bg-zinc-50 p-3 ring-1 ring-zinc-200">
+      <div className="flex items-start justify-between gap-3">
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white text-emerald-700 ring-1 ring-zinc-200">
+          {icon}
+        </span>
+        <Badge
+          className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${
+            ready
+              ? "bg-emerald-50 text-emerald-900 ring-emerald-100 hover:bg-emerald-50"
+              : "bg-amber-50 text-amber-950 ring-amber-200 hover:bg-amber-50"
+          }`}
+        >
+          {ready ? "Ready" : "Action"}
+        </Badge>
+      </div>
+      <h3 className="mt-3 text-sm font-semibold text-zinc-950">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-zinc-700">{ready ? detail : fallback}</p>
+    </div>
+  );
+}
+
+function findProductionCheck(status: ProductionStatusResponse | null, id: string): DemoCheck | undefined {
+  return status?.checks.find((check) => check.id === id);
 }
 
 function ProductionCheckRow({ check }: { check: DemoCheck }) {
