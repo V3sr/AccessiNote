@@ -183,6 +183,12 @@ class DemoStatusResponse(BaseModel):
     checks: list[DemoCheck]
 
 
+class ProductionStatusResponse(BaseModel):
+    ready: bool
+    mode: str = "local"
+    checks: list[DemoCheck]
+
+
 class VideoUploadResponse(BaseModel):
     lecture_id: str
     status: str = "created"

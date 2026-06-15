@@ -20,8 +20,15 @@ import { ProviderSettingsPanel } from "@/components/ProviderSettingsPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getCapabilities, getDemoStatus, getHealth } from "@/lib/api";
-import type { CapabilityResponse, DemoCheckStatus, DemoStatusResponse, ProviderStatus } from "@/lib/types";
+import { getCapabilities, getDemoStatus, getHealth, getProductionStatus } from "@/lib/api";
+import type {
+  CapabilityResponse,
+  DemoCheck,
+  DemoCheckStatus,
+  DemoStatusResponse,
+  ProductionStatusResponse,
+  ProviderStatus,
+} from "@/lib/types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -29,6 +36,7 @@ export function SettingsPageClient() {
   const [apiStatus, setApiStatus] = useState<"checking" | "ok" | "offline">("checking");
   const [capabilities, setCapabilities] = useState<CapabilityResponse | null>(null);
   const [demoStatus, setDemoStatus] = useState<DemoStatusResponse | null>(null);
+  const [productionStatus, setProductionStatus] = useState<ProductionStatusResponse | null>(null);
 
   useEffect(() => {
     void refreshAll();
@@ -53,9 +61,16 @@ export function SettingsPageClient() {
     } catch {
       setDemoStatus(null);
     }
+
+    try {
+      setProductionStatus(await getProductionStatus());
+    } catch {
+      setProductionStatus(null);
+    }
   }
 
   const providers = capabilities?.providers ?? {};
+  const providerStatusText = providerSummary(providers);
 
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
@@ -116,8 +131,13 @@ export function SettingsPageClient() {
               />
               <StatusLine
                 label="Azure providers"
-                value={providerSummary(providers)}
-                status={providerSummary(providers).includes("configured") ? "pass" : "warn"}
+                value={providerStatusText}
+                status={providerStatusText.includes("configured") ? "pass" : "warn"}
+              />
+              <StatusLine
+                label="Production readiness"
+                value={productionStatus ? (productionStatus.ready ? "Ready" : "Needs config") : "Checking"}
+                status={productionStatus?.ready ? "pass" : productionStatus ? "warn" : "warn"}
               />
             </div>
           </Card>
@@ -174,9 +194,66 @@ export function SettingsPageClient() {
               </p>
             </div>
           </Card>
+
+          <ProductionChecklist status={productionStatus} />
         </aside>
       </section>
     </main>
+  );
+}
+
+function ProductionChecklist({ status }: { status: ProductionStatusResponse | null }) {
+  const checks = status?.checks ?? [];
+  return (
+    <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
+          <Server className="h-4 w-4 text-sky-700" aria-hidden="true" />
+          Production checklist
+        </h2>
+        <Badge
+          className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+            status?.ready
+              ? "bg-emerald-50 text-emerald-900 ring-emerald-100 hover:bg-emerald-50"
+              : "bg-amber-50 text-amber-950 ring-amber-200 hover:bg-amber-50"
+          }`}
+        >
+          {status ? (status.ready ? "Ready" : "Configure") : "Checking"}
+        </Badge>
+      </div>
+
+      {checks.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          {checks.map((check) => (
+            <ProductionCheckRow key={check.id} check={check} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-zinc-700">
+          Checking CORS, Azure providers, backend storage, and fallback tools.
+        </p>
+      )}
+    </Card>
+  );
+}
+
+function ProductionCheckRow({ check }: { check: DemoCheck }) {
+  const Icon = check.status === "pass" ? CheckCircle2 : check.status === "fail" ? XCircle : AlertTriangle;
+  const tone =
+    check.status === "pass"
+      ? "text-emerald-800"
+      : check.status === "fail"
+        ? "text-rose-800"
+        : "text-amber-800";
+
+  return (
+    <div className="rounded-xl bg-zinc-50 p-3 ring-1 ring-zinc-200">
+      <div className="flex items-center gap-2">
+        <Icon className={`h-4 w-4 shrink-0 ${tone}`} aria-hidden="true" />
+        <p className="min-w-0 truncate text-sm font-semibold text-zinc-950">{check.label}</p>
+      </div>
+      <p className="mt-1 line-clamp-3 text-xs leading-5 text-zinc-600">{check.detail}</p>
+    </div>
   );
 }
 

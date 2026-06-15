@@ -71,9 +71,13 @@ After deployment:
 
 1. Open `https://<backend-domain>/health` and confirm `{"status":"ok"}`.
 2. Open `https://<backend-domain>/api/capabilities` and confirm Azure providers are selected and configured.
-3. Open the Vercel frontend.
-4. Open `/settings` and confirm runtime readiness.
-5. Upload a short permitted video and verify captions, OCR, generated notes, and exports.
+3. Open `https://<backend-domain>/api/production/status` and confirm `ready` is `true`.
+4. Open the Vercel frontend.
+5. Open `/settings` and confirm runtime and production readiness.
+6. Upload a short permitted video and verify captions, OCR, generated notes, and exports.
+
+If `/api/production/status` is not ready, it will list the missing CORS origin, provider switch, or
+backend secret without exposing secret values.
 
 ## Public Demo Safety
 

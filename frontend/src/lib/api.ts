@@ -8,6 +8,7 @@ import type {
   LectureTimeline,
   OutputMode,
   ProcessingJob,
+  ProductionStatusResponse,
   ProviderSettingsRequest,
   ProviderSettingsResponse,
   VideoUploadResponse,
@@ -45,6 +46,10 @@ export function getCapabilities(): Promise<CapabilityResponse> {
 
 export function getDemoStatus(): Promise<DemoStatusResponse> {
   return request<DemoStatusResponse>("/api/demo/status");
+}
+
+export function getProductionStatus(): Promise<ProductionStatusResponse> {
+  return request<ProductionStatusResponse>("/api/production/status");
 }
 
 export function getProviderSettings(): Promise<ProviderSettingsResponse> {

@@ -52,8 +52,8 @@ AccessiNote keeps local fallback for demo reliability:
 - If Azure AI Vision OCR fails or finds no text, the backend falls back to local RapidOCR/Tesseract.
 - If Azure OpenAI generation fails, the backend returns the deterministic local output.
 
-The frontend Demo readiness panel and AI provider keys page report whether Azure providers are
-selected and configured.
+The frontend Demo readiness panel, `/settings` page, and `/api/production/status` report whether
+Azure providers are selected and configured.
 
 ## Safe Demo Guidance
 

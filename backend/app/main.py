@@ -26,6 +26,7 @@ from .models import (
     LectureSummary,
     LectureTimeline,
     ProcessingJob,
+    ProductionStatusResponse,
     ProviderSettingsRequest,
     ProviderSettingsResponse,
     VideoUploadResponse,
@@ -148,6 +149,24 @@ def get_demo_status() -> DemoStatusResponse:
         optional_provider_check(),
     ]
     return DemoStatusResponse(ready=all(check.status != "fail" for check in checks), checks=checks)
+
+
+@app.get("/api/production/status", response_model=ProductionStatusResponse)
+def get_production_status() -> ProductionStatusResponse:
+    checks = [
+        production_cors_check(),
+        production_provider_check("transcription", "azure_speech", "Azure Speech"),
+        production_provider_check("ocr", "azure_vision", "Azure AI Vision"),
+        production_provider_check("generation", "azure_openai", "Azure OpenAI"),
+        production_storage_check(),
+        production_fallback_check(),
+    ]
+    ready = all(check.status == "pass" for check in checks)
+    return ProductionStatusResponse(
+        ready=ready,
+        mode="production" if ready else "needs_configuration",
+        checks=checks,
+    )
 
 
 @app.get("/api/lectures/sample", response_model=LectureTimeline)
@@ -530,6 +549,115 @@ def optional_provider_check() -> DemoCheck:
         label="Optional Microsoft providers",
         status="warn",
         detail="Azure Speech, Azure AI Vision, and Azure OpenAI are optional and not configured. Local demo still works.",
+    )
+
+
+def production_cors_check() -> DemoCheck:
+    origins = configured_cors_origins()
+    public_origins = [origin for origin in origins if not is_local_origin(origin)]
+    if public_origins:
+        return DemoCheck(
+            id="production_cors",
+            label="Production frontend origin",
+            status="pass",
+            detail=f"{len(public_origins)} public origin(s) allowed. Secret values are not exposed.",
+        )
+    return DemoCheck(
+        id="production_cors",
+        label="Production frontend origin",
+        status="fail",
+        detail="Set ACCESSINOTE_CORS_ORIGINS to the deployed Vercel URL before sharing the public app.",
+    )
+
+
+def production_provider_check(kind: str, expected_name: str, label: str) -> DemoCheck:
+    status = provider_statuses().get(kind)
+    if status is None:
+        return DemoCheck(
+            id=f"production_{kind}",
+            label=label,
+            status="fail",
+            detail=f"{label} provider metadata is unavailable.",
+        )
+    if status.name != expected_name:
+        return DemoCheck(
+            id=f"production_{kind}",
+            label=label,
+            status="fail",
+            detail=f"Set {provider_env_name(kind)}={expected_name} for the production demo.",
+        )
+    if status.configured:
+        return DemoCheck(
+            id=f"production_{kind}",
+            label=label,
+            status="pass",
+            detail=f"{label} is selected and configured through backend environment secrets.",
+        )
+    missing = ", ".join(status.required_env) or "required environment values"
+    return DemoCheck(
+        id=f"production_{kind}",
+        label=label,
+        status="fail",
+        detail=f"{label} is selected but missing: {missing}.",
+    )
+
+
+def production_storage_check() -> DemoCheck:
+    try:
+        UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+        OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        return DemoCheck(
+            id="production_storage",
+            label="Upload and output storage",
+            status="fail",
+            detail=f"Backend cannot write upload/output data: {error}",
+        )
+    return DemoCheck(
+        id="production_storage",
+        label="Upload and output storage",
+        status="pass",
+        detail="Backend can write uploads and generated timelines. Use durable Azure storage for longer public operation.",
+    )
+
+
+def production_fallback_check() -> DemoCheck:
+    missing = []
+    if not ffmpeg_available():
+        missing.append("ffmpeg")
+    if not rapidocr_available() and not tesseract_available():
+        missing.append("local OCR")
+    if missing:
+        return DemoCheck(
+            id="production_fallbacks",
+            label="Local fallback tools",
+            status="warn",
+            detail=f"Missing fallback tool(s): {', '.join(missing)}. Azure can still run if configured.",
+        )
+    return DemoCheck(
+        id="production_fallbacks",
+        label="Local fallback tools",
+        status="pass",
+        detail="Frame extraction and local OCR fallback tools are available for reliability.",
+    )
+
+
+def provider_env_name(kind: str) -> str:
+    if kind == "transcription":
+        return "TRANSCRIPTION_PROVIDER"
+    if kind == "ocr":
+        return "OCR_PROVIDER"
+    if kind == "generation":
+        return "GENERATION_PROVIDER"
+    return "PROVIDER"
+
+
+def is_local_origin(origin: str) -> bool:
+    clean_origin = origin.lower()
+    return (
+        "localhost" in clean_origin
+        or "127.0.0.1" in clean_origin
+        or clean_origin.startswith("http://0.0.0.0")
     )
 
 

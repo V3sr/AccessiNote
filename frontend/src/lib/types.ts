@@ -165,6 +165,12 @@ export interface DemoStatusResponse {
   checks: DemoCheck[];
 }
 
+export interface ProductionStatusResponse {
+  ready: boolean;
+  mode: string;
+  checks: DemoCheck[];
+}
+
 export interface VideoUploadResponse {
   lecture_id: string;
   status: string;
