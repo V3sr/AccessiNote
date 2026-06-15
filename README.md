@@ -5,9 +5,9 @@ timeline or pasted transcript into timestamped learning formats such as structur
 ADHD-friendly study packs, screen-reader notes, plain-language explanations, exam prep, and
 notetaker quality reports.
 
-The app runs locally without API keys and can also run as an Azure-backed production demo. Azure
-providers can power speech transcription, OCR, and AI generation while local fallbacks keep the
-workflow reliable.
+The app runs locally without API keys and can also run as an Azure-backed production demo. The
+Microsoft IQ intelligence layer is implemented through Azure AI Speech, Azure AI Vision, and Azure
+OpenAI provider routes while local fallbacks keep the workflow reliable.
 
 ## Run Locally
 
@@ -107,12 +107,18 @@ is optional and can be used as a fallback local OCR engine:
 winget install UB-Mannheim.TesseractOCR
 ```
 
-## Azure Provider Configuration
+## Microsoft IQ / Azure Provider Configuration
 
 The demo path stays local by default. `/api/capabilities` reports optional provider status for
-Microsoft/Azure services, and `/api/demo/status` shows whether the selected providers are configured.
-No keys are required to load samples, scan media locally, generate captions locally, run local OCR, or
+Microsoft IQ services, and `/api/demo/status` shows whether the selected providers are configured. No
+keys are required to load samples, scan media locally, generate captions locally, run local OCR, or
 export notes.
+
+AccessiNote uses three Microsoft IQ routes when configured:
+
+- Azure AI Speech for generated captions and timed transcript segments.
+- Azure AI Vision for OCR on slides, screenshots, and selected video frames.
+- Azure OpenAI for grounded accessible study outputs.
 
 Users can paste Azure keys into the **AI provider keys** page at `/settings`. Those keys are stored
 only in the running backend session, never returned to the frontend, and cleared on backend restart or
@@ -144,6 +150,7 @@ production deploys. See `docs/PRODUCTION.md`.
 
 - `docs/DEMO.md`: five-minute recording flow and checklist.
 - `docs/ARCHITECTURE.md`: local pipeline, API surface, Mermaid diagram, and provider seams.
+- `docs/MICROSOFT_IQ.md`: required Microsoft IQ integration story and demo talking points.
 - `docs/AZURE.md`: Azure setup, fallback behavior, and safe demo guidance.
 - `docs/PRODUCTION.md`: Vercel plus Azure backend launch guide.
 - `docs/SAFETY.md`: permitted-use policy, human review, OCR/caption limitations, and optional provider notes.

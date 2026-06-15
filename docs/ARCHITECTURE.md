@@ -32,7 +32,9 @@ The backend exposes:
 - `POST /api/images/upload`
 - `GET /api/lectures/{lecture_id}/frames/{filename}`
 
-Generation defaults to deterministic local output and can use Azure OpenAI when selected. Video upload uses local tooling with optional Azure providers:
+Generation defaults to deterministic local output and can use Azure OpenAI when selected. For the
+Microsoft IQ requirement, the Azure-backed routes are Azure AI Speech, Azure AI Vision, and Azure
+OpenAI. Video upload uses local tooling with optional Azure providers:
 
 - System `ffmpeg` or the Python `imageio-ffmpeg` fallback extracts selected keyframes from the uploaded video.
 - RapidOCR scans original and preprocessed keyframe variants locally when available; Tesseract OCR can be used as a fallback.
@@ -44,7 +46,7 @@ Generation defaults to deterministic local output and can use Azure OpenAI when 
 - Timeline JSON includes `processing_metadata` with stages, providers, metrics, warnings, and per-frame evidence.
 - If video frames cannot be extracted, the backend returns a fallback timeline with explicit warnings.
 - Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
-- Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Microsoft provider configuration.
+- Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Microsoft IQ provider configuration.
 - Production readiness checks public CORS origin configuration, Azure Speech, Azure AI Vision, Azure OpenAI, hosted settings safety, writable backend storage, and fallback media tools.
 
 No auth, database, or Azure storage is required for the hackathon demo. The app can run with local

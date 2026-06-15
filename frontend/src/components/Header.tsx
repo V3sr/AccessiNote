@@ -10,11 +10,11 @@ interface HeaderProps {
 
 const navItems = [
   { label: "Product", href: "/#product" },
+  { label: "Microsoft IQ", href: "/#microsoft-iq" },
   { label: "Workflow", href: "/#workflow" },
+  { label: "Use Cases", href: "/#use-cases" },
   { label: "Workspace", href: "/#workbench" },
   { label: "API Keys", href: "/settings" },
-  { label: "Demo", href: "/#demo" },
-  { label: "Safety", href: "/#safety" },
 ];
 
 export function Header({ apiStatus }: HeaderProps) {
@@ -67,7 +67,7 @@ export function Header({ apiStatus }: HeaderProps) {
           >
             <Link href="/settings">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Connect Azure</span>
+              <span className="hidden sm:inline">Configure IQ</span>
               <ArrowDown className="h-4 w-4 sm:hidden" aria-hidden="true" />
             </Link>
           </Button>

@@ -10,9 +10,10 @@ YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
 0:00-0:30 - Production readiness
 
 1. Open the deployed frontend URL, or `http://localhost:3000` while recording locally.
-2. Open `/settings` briefly and show Azure Speech, Azure AI Vision, and Azure OpenAI readiness without revealing keys.
-3. Return to the workspace and point to the Demo readiness panel.
-4. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and Microsoft provider configuration before the demo starts.
+2. Point to the Microsoft IQ section and say: AccessiNote integrates Azure AI Speech, Azure AI Vision, and Azure OpenAI as its required Microsoft IQ layer.
+3. Open `/settings` briefly and show provider readiness without revealing keys.
+4. Return to the workspace and point to the Demo readiness panel.
+5. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and Microsoft provider configuration before the demo starts.
 
 0:30-1:10 - Baseline sample
 
@@ -54,7 +55,7 @@ YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
 ## Judging Alignment
 
 - Accuracy and relevance: timeline chunks preserve transcript, OCR, keyframes, and confidence.
-- Reasoning and multi-step thinking: local pipeline extracts audio, detects visual changes, scans OCR, aligns evidence, and flags weak chunks.
+- Reasoning and multi-step thinking: local pipeline extracts audio, detects visual changes, scans OCR, aligns evidence, and flags weak chunks, with Microsoft IQ provider routes available for speech, OCR, and generation.
 - Creativity and originality: lecture accessibility is treated as multimodal evidence review, not just summarization.
 - User experience and presentation: the workbench shows progress, scan metrics, concise source grounding, and export controls in one flow.
 - Reliability and safety: demo readiness diagnostics, no required external API keys, explicit warnings, local storage, and human-in-the-loop review.

@@ -81,14 +81,14 @@ export function SettingsPageClient() {
           <div className="min-w-0">
             <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
-              Production provider setup
+              Microsoft IQ provider setup
             </Badge>
             <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
-              Connect AccessiNote to your Azure AI services
+              Connect AccessiNote to your Microsoft IQ layer
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
-              Use server-side Azure keys for the public demo. Local and bring-your-own-key demo modes can still accept
-              session keys without exposing secrets in the browser.
+              Use server-side Azure AI keys for the public demo. Local and bring-your-own-key demo modes can still
+              accept session keys without exposing secrets in the browser.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button
@@ -130,7 +130,7 @@ export function SettingsPageClient() {
                 status={demoStatus?.ready ? "pass" : demoStatus ? "warn" : "warn"}
               />
               <StatusLine
-                label="Azure providers"
+                label="Microsoft IQ routes"
                 value={providerStatusText}
                 status={providerStatusText.includes("configured") ? "pass" : "warn"}
               />
@@ -151,12 +151,12 @@ export function SettingsPageClient() {
           <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
             <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
               <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              What Azure powers
+              What Microsoft IQ powers
             </h2>
             <div className="mt-4 space-y-3">
-              <ProviderUse label="Speech" detail="Captions and transcript segments from uploaded video audio." />
-              <ProviderUse label="Vision OCR" detail="Readable text from slides, screenshots, and selected frames." />
-              <ProviderUse label="OpenAI" detail="Higher-quality accessible notes from grounded evidence." />
+              <ProviderUse label="Azure AI Speech" detail="Captions and transcript segments from uploaded video audio." />
+              <ProviderUse label="Azure AI Vision" detail="Readable text from slides, screenshots, and selected frames." />
+              <ProviderUse label="Azure OpenAI" detail="Higher-quality accessible notes from grounded evidence." />
             </div>
           </Card>
 
@@ -186,8 +186,8 @@ export function SettingsPageClient() {
                 Deploy the Next.js frontend on Vercel with `NEXT_PUBLIC_API_BASE_URL` pointing to the backend URL.
               </p>
               <p>
-                Deploy the FastAPI backend on Azure App Service or Azure Container Apps with Azure keys set as backend
-                secrets.
+                Deploy the FastAPI backend on Azure App Service or Azure Container Apps with Microsoft IQ keys set as
+                backend secrets.
               </p>
               <p>
                 Add the Vercel domain to `ACCESSINOTE_CORS_ORIGINS` on the backend before recording or sharing the app.

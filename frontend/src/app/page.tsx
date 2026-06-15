@@ -4,17 +4,25 @@ import {
   Activity,
   ArrowDown,
   AlertTriangle,
+  BrainCircuit,
+  Captions,
   CheckCircle2,
   Cloud,
   Eye,
   FileCheck2,
+  GraduationCap,
   KeyRound,
+  Layers3,
   Loader2,
+  LockKeyhole,
+  Rocket,
   ScanText,
+  Server,
   ShieldCheck,
   Sparkles,
   TimerReset,
   UploadCloud,
+  UsersRound,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -39,6 +47,7 @@ import {
   getDemoStatus,
   getHealth,
   getLecture,
+  getProductionStatus,
   getProcessingJob,
   listProcessingJobs,
   listLectures,
@@ -54,6 +63,7 @@ import type {
   LectureTimeline,
   OutputMode,
   ProcessingJob,
+  ProductionStatusResponse,
 } from "@/lib/types";
 
 const modeLabels: Record<OutputMode, string> = {
@@ -76,6 +86,7 @@ export default function Home() {
   const [output, setOutput] = useState<GenerateResponse | null>(null);
   const [recentLectures, setRecentLectures] = useState<LectureSummary[]>([]);
   const [demoStatus, setDemoStatus] = useState<DemoStatusResponse | null>(null);
+  const [productionStatus, setProductionStatus] = useState<ProductionStatusResponse | null>(null);
   const [processingJob, setProcessingJob] = useState<ProcessingJob | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +108,7 @@ export default function Home() {
       .then(setCapabilities)
       .catch(() => setCapabilities(null));
     void refreshDemoStatus();
+    void refreshProductionStatus();
     refreshRecentLectures();
     void resumeActiveProcessingJob();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,6 +138,15 @@ export default function Home() {
       setDemoStatus(status);
     } catch {
       setDemoStatus(null);
+    }
+  }
+
+  async function refreshProductionStatus() {
+    try {
+      const status = await getProductionStatus();
+      setProductionStatus(status);
+    } catch {
+      setProductionStatus(null);
     }
   }
 
@@ -259,15 +280,15 @@ export default function Home() {
         <div className="mx-auto grid min-w-0 max-w-[1500px] gap-8 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-center lg:px-8 lg:py-12">
           <div className="min-w-0">
             <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-50">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-              Azure-ready accessibility
+              <BrainCircuit className="h-4 w-4" aria-hidden="true" />
+              Microsoft IQ intelligence layer
             </Badge>
             <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
               Turn lecture materials into accessible study systems
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
               Upload permitted recordings, slides, or transcripts and generate source-grounded notes, captions,
-              screen-reader summaries, and review reports with local fallback or Azure AI providers.
+              screen-reader summaries, and review reports with Azure AI providers or local fallback.
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -305,7 +326,7 @@ export default function Home() {
               />
               <HeroBenefit
                 icon={<Cloud className="h-4 w-4" aria-hidden="true" />}
-                title="Connect Azure"
+                title="Microsoft IQ ready"
                 detail="Use Azure Speech, Vision, and OpenAI with local fallback."
               />
             </div>
@@ -325,7 +346,9 @@ export default function Home() {
       </section>
 
       <SafetyBanner />
+      <MicrosoftIqStrip capabilities={capabilities} productionStatus={productionStatus} />
       <WorkflowSection />
+      <UseCasesSection />
 
       <section id="workbench" className="mx-auto max-w-[1500px] px-5 py-6 lg:px-8 lg:py-8">
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -410,8 +433,10 @@ export default function Home() {
               onSaved={async () => {
                 await refreshCapabilities();
                 await refreshDemoStatus();
+                await refreshProductionStatus();
               }}
             />
+            <ProductionStatusPanel status={productionStatus} />
             <div id="demo">
               <DemoReadinessPanel status={demoStatus} />
             </div>
@@ -511,6 +536,191 @@ function WorkflowSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+function MicrosoftIqStrip({
+  capabilities,
+  productionStatus,
+}: {
+  capabilities: CapabilityResponse | null;
+  productionStatus: ProductionStatusResponse | null;
+}) {
+  const providers = capabilities?.providers ?? {};
+  const selectedAzureProviders = Object.values(providers).filter((provider) => provider.name.startsWith("azure"));
+  const configuredAzureProviders = selectedAzureProviders.filter((provider) => provider.configured);
+  const productionLabel = productionStatus ? (productionStatus.ready ? "Production ready" : "Production checks") : "Checking";
+
+  return (
+    <section id="microsoft-iq" className="border-b border-zinc-200 bg-zinc-950 text-white">
+      <div className="mx-auto grid max-w-[1500px] gap-5 px-5 py-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-center lg:px-8">
+        <div className="min-w-0">
+          <Badge className="inline-flex min-h-9 gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-100 hover:bg-emerald-400/10">
+            <BrainCircuit className="h-4 w-4" aria-hidden="true" />
+            Required Microsoft IQ integration
+          </Badge>
+          <h2 className="mt-4 max-w-2xl text-2xl font-semibold tracking-normal text-white">
+            Azure intelligence is part of the lecture pipeline, not a hidden add-on.
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300">
+            AccessiNote can route transcription, OCR, and grounded generation through Microsoft services while keeping
+            local fallback available for a stable demo.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <IqModule
+            icon={<Captions className="h-4 w-4" aria-hidden="true" />}
+            title="Azure Speech"
+            detail="Caption generation and timed transcript segments."
+            status={providerState(providers.transcription)}
+          />
+          <IqModule
+            icon={<ScanText className="h-4 w-4" aria-hidden="true" />}
+            title="Azure AI Vision"
+            detail="OCR from slides, screenshots, and selected frames."
+            status={providerState(providers.ocr)}
+          />
+          <IqModule
+            icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
+            title="Azure OpenAI"
+            detail="Accessible notes generated from source evidence."
+            status={providerState(providers.generation)}
+          />
+          <IqModule
+            icon={<Server className="h-4 w-4" aria-hidden="true" />}
+            title={productionLabel}
+            detail={`${configuredAzureProviders.length}/${Math.max(3, selectedAzureProviders.length || 3)} Azure routes configured.`}
+            status={productionStatus?.ready ? "Ready" : "Review"}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function IqModule({
+  icon,
+  title,
+  detail,
+  status,
+}: {
+  icon: ReactNode;
+  title: string;
+  detail: string;
+  status: string;
+}) {
+  const isReady = status === "Configured" || status === "Ready";
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/10 text-emerald-200">
+          {icon}
+        </span>
+        <span
+          className={`rounded-full px-2 py-1 text-xs font-semibold ${
+            isReady ? "bg-emerald-300/15 text-emerald-100" : "bg-amber-300/15 text-amber-100"
+          }`}
+        >
+          {status}
+        </span>
+      </div>
+      <h3 className="mt-3 text-sm font-semibold text-white">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-zinc-300">{detail}</p>
+    </div>
+  );
+}
+
+function providerState(provider: CapabilityResponse["providers"][string] | undefined): string {
+  if (!provider) {
+    return "Checking";
+  }
+  if (provider.name === "local") {
+    return "Local";
+  }
+  return provider.configured ? "Configured" : "Needs keys";
+}
+
+function UseCasesSection() {
+  return (
+    <section id="use-cases" className="border-b border-zinc-200 bg-[#f7f9fb]">
+      <div className="mx-auto grid max-w-[1500px] gap-5 px-5 py-7 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-8">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-emerald-800">Use cases</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-normal text-zinc-950">
+            A review system for people who need lecture material to be usable.
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-zinc-700">
+            The app is built around evidence, accessible exports, and human review so it works for real study and
+            support workflows instead of producing one generic summary.
+          </p>
+          <Button
+            asChild
+            variant="outline"
+            className="mt-5 min-h-10 rounded-md border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 active:translate-y-px"
+          >
+            <Link href="/settings">
+              Open provider setup
+              <KeyRound className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <UseCaseCard
+            icon={<GraduationCap className="h-4 w-4" aria-hidden="true" />}
+            title="Students catching up"
+            detail="Convert a missed or confusing lecture into a short path, timestamps, captions, and plain-language checkpoints."
+            accent="emerald"
+          />
+          <UseCaseCard
+            icon={<UsersRound className="h-4 w-4" aria-hidden="true" />}
+            title="Accessibility support teams"
+            detail="Inspect weak chunks, OCR coverage, caption source, and review warnings before sharing learning materials."
+            accent="sky"
+          />
+          <UseCaseCard
+            icon={<Layers3 className="h-4 w-4" aria-hidden="true" />}
+            title="Educators preparing resources"
+            detail="Generate structured notes, exam prep, and screen-reader notes while keeping source evidence close."
+            accent="zinc"
+          />
+          <UseCaseCard
+            icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />}
+            title="Hosted hackathon demo"
+            detail="Run the frontend publicly, keep Azure keys on the backend, and show readiness checks without exposing secrets."
+            accent="emerald"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function UseCaseCard({
+  icon,
+  title,
+  detail,
+  accent,
+}: {
+  icon: ReactNode;
+  title: string;
+  detail: string;
+  accent: "emerald" | "sky" | "zinc";
+}) {
+  const color =
+    accent === "emerald"
+      ? "bg-emerald-50 text-emerald-800 ring-emerald-100"
+      : accent === "sky"
+        ? "bg-sky-50 text-sky-800 ring-sky-100"
+        : "bg-zinc-100 text-zinc-800 ring-zinc-200";
+
+  return (
+    <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-none">
+      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-md ring-1 ${color}`}>{icon}</span>
+      <h3 className="mt-4 text-base font-semibold text-zinc-950">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-zinc-700">{detail}</p>
+    </Card>
   );
 }
 
@@ -632,6 +842,69 @@ function WorkbenchStat({
       </p>
       <p className="mt-2 text-sm font-semibold text-zinc-950">{value}</p>
       <p className="mt-1 text-xs leading-5 text-zinc-600">{detail}</p>
+    </Card>
+  );
+}
+
+function ProductionStatusPanel({ status }: { status: ProductionStatusResponse | null }) {
+  const checks = status?.checks ?? [];
+  const blockingChecks = checks.filter((check) => check.status === "fail");
+  const warningChecks = checks.filter((check) => check.status === "warn");
+  const topChecks = [...blockingChecks, ...warningChecks, ...checks.filter((check) => check.status === "pass")].slice(0, 4);
+
+  return (
+    <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
+          <Rocket className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+          Production launch
+        </h2>
+        <Badge
+          className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+            status?.ready
+              ? "bg-emerald-50 text-emerald-900 ring-emerald-100 hover:bg-emerald-50"
+              : "bg-amber-50 text-amber-950 ring-amber-200 hover:bg-amber-50"
+          }`}
+        >
+          {status ? (status.ready ? "Ready" : "Configure") : "Checking"}
+        </Badge>
+      </div>
+
+      <p className="mt-3 text-sm leading-6 text-zinc-700">
+        Public demos should run the frontend on Vercel, the media backend on Azure, and keep Microsoft IQ keys
+        server-side.
+      </p>
+
+      {topChecks.length > 0 ? (
+        <div className="mt-3 space-y-2">
+          {topChecks.map((check) => (
+            <div key={check.id} className="flex items-start gap-2 rounded-lg bg-zinc-50 p-2 ring-1 ring-zinc-200">
+              <ReadinessIcon status={check.status} />
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold text-zinc-950">{check.label}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-zinc-600">{check.detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 space-y-2 text-sm text-zinc-700">
+          <SafetyItem label="Vercel frontend points at backend" />
+          <SafetyItem label="Azure provider secrets stay server-side" />
+          <SafetyItem label="Runtime key edits disabled for public visitors" />
+        </div>
+      )}
+
+      <Button
+        asChild
+        variant="outline"
+        className="mt-3 min-h-10 w-full rounded-md border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 active:translate-y-px"
+      >
+        <Link href="/settings#production">
+          Review deployment checks
+          <Server className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </Button>
     </Card>
   );
 }

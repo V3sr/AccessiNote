@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     "ADHD study tools",
     "screen reader notes",
     "Azure AI",
+    "Microsoft IQ",
   ],
   openGraph: {
     title: "AccessiNote",

@@ -1,6 +1,7 @@
 # Azure Integration
 
-AccessiNote can run as an Azure-first demo while preserving local fallbacks.
+AccessiNote can run as an Azure-first demo while preserving local fallbacks. For the Microsoft Agents
+League submission, these Azure providers are the Microsoft IQ intelligence layer.
 
 ## Providers
 
@@ -39,7 +40,7 @@ AZURE_OPENAI_DEPLOYMENT=<deployment-name>
 Do not commit `.env`. The repository only includes `.env.example` with blank values. UI-entered keys
 are runtime overrides and are not written to `.env`.
 
-## What Azure Does
+## What Microsoft IQ Does
 
 - Azure Speech transcribes uploaded video audio when no captions are supplied.
 - Azure AI Vision Read OCR extracts text from uploaded images and selected video frames.

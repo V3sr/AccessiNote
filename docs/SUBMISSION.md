@@ -2,9 +2,10 @@
 
 ## Project Description
 
-AccessiNote is a lecture accessibility workbench with local fallback and optional Azure AI providers. It turns permitted lecture videos,
-slides, screenshots, captions, or transcripts into reviewable evidence timelines and accessible
-learning outputs for different study needs.
+AccessiNote is a lecture accessibility workbench with local fallback and a Microsoft IQ intelligence
+layer powered by Azure AI providers. It turns permitted lecture videos, slides, screenshots, captions,
+or transcripts into reviewable evidence timelines and accessible learning outputs for different study
+needs.
 
 The app focuses on the Microsoft Agents League Creative Apps + Accessibility path and the
 Accessibility Award: it prioritizes multimodal extraction quality, transparent source grounding,
@@ -21,7 +22,7 @@ Use this section to fill the contest platform submission.
 | Demo video link on YouTube or Vimeo | Record with `docs/DEMO.md`, then paste the URL here | Pending: add URL before submission |
 | Public GitHub repository | Make the repo public, then paste the URL here | Pending: add URL before submission |
 | Architecture diagram | `docs/ARCHITECTURE.md` Mermaid diagram | Ready |
-| Microsoft tool usage | Azure AI Speech, Azure AI Vision, Azure OpenAI; GitHub Copilot if actually used by the team | Ready, with Copilot truthfulness note |
+| Microsoft IQ usage | Azure AI Speech, Azure AI Vision, Azure OpenAI; GitHub Copilot if actually used by the team | Ready, with Copilot truthfulness note |
 | Team member information | Add Microsoft Learn usernames in the contest platform if submitting as a team | Pending if applicable |
 
 Demo video URL: `TODO`
@@ -51,8 +52,20 @@ Team / Microsoft Learn usernames: `TODO if applicable`
 - Media processing: ffmpeg or imageio-ffmpeg.
 - Local transcription: faster-whisper.
 - Local OCR: RapidOCR, ONNX Runtime, optional Tesseract OCR.
-- Microsoft/Azure providers: Azure AI Speech, Azure AI Vision Read OCR, and Azure OpenAI generation with local fallbacks.
+- Microsoft IQ providers: Azure AI Speech, Azure AI Vision Read OCR, and Azure OpenAI generation with local fallbacks.
 - AI-assisted development: name GitHub Copilot in the final contest submission only if the team used it during the submitted build.
+
+## Microsoft IQ Requirement
+
+AccessiNote integrates the required Microsoft IQ intelligence layer in three places:
+
+- Azure AI Speech transcribes uploaded lecture audio into timed caption and transcript segments.
+- Azure AI Vision scans uploaded images and selected video frames for OCR evidence.
+- Azure OpenAI generates accessible learning outputs from grounded timeline evidence.
+
+These providers are visible in `/settings`, `/api/capabilities`, `/api/demo/status`, and the main
+page Microsoft IQ section. The app can run Azure-first for the public hackathon demo while preserving
+local fallback behavior if a provider is unavailable.
 
 ## Microsoft Integration Story
 
