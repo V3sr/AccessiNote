@@ -2,83 +2,199 @@
 
 AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 
-Before recording, run through `docs/DEMO_PREP.md`, review `docs/SUBMISSION.md`, and fill in the
-public GitHub repository URL plus YouTube/Vimeo demo URL after upload. The official demo limit is 5
-minutes.
+Aim for a clear 3 to 4 minute recording. The official limit is 5 minutes, but the demo does not need
+to fill the full time. Before recording, run through `docs/DEMO_PREP.md`, review
+`docs/SUBMISSION.md`, and add the public GitHub plus YouTube/Vimeo links after upload.
 
-## Five-Minute Flow
+## Core Message
 
-0:00-0:30 - Local readiness
+Say this near the beginning:
 
-1. Open the local frontend URL.
-2. Click **API keys** or open `/settings` briefly and show the optional key slots.
-3. Point out that AccessiNote works locally without API keys and can also use your own Azure keys
-   if you want cloud-backed transcription, OCR, or generation.
-4. Return to the workspace and point to the demo readiness panel.
-5. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status,
-   and optional provider configuration before the demo starts.
+> AccessiNote helps students, notetakers, and accessibility support staff turn permitted lecture
+> materials into reviewable accessible study notes. It creates drafts for screen-reader notes,
+> ADHD/focus support, plain-language review, visual descriptions, captions, and notetaker quality
+> checks. Every output stays tied to timestamps and evidence, and every draft requires human review.
 
-0:30-1:10 - Baseline sample
+## Must-Hit Points
 
-1. Click **Load sample lecture**.
-2. Scroll to the Evidence timeline.
-3. Show timestamped transcript chunks, concepts, OCR/visual evidence slots, and source confidence.
-4. Say: every generated format is grounded in the same reviewable timeline.
+- Accessibility-first product: not a generic summarizer.
+- Permitted materials only; no private student data, exams, or unauthorized recordings.
+- Local-first workflow, with optional user-provided Azure keys through **API keys**.
+- Microsoft IQ layer: Azure Speech, Azure AI Vision, and Azure OpenAI can be used when configured.
+- Evidence timeline: transcript, captions, OCR, keyframes, warnings, and confidence stay reviewable.
+- Outputs are drafts: the user reviews before exporting.
 
-1:10-2:15 - Video processing
+## Recommended 3-4 Minute Flow
 
-1. In the upload desk, click the **Video** tab.
-2. Choose a short permitted lecture clip.
-3. Optionally attach `.vtt`, `.srt`, or `.txt` captions; otherwise allow local faster-whisper captions.
-4. Click **Upload video**.
-5. Narrate the staged job flow: upload received, extracting audio, transcribing locally or with your
-   own provider keys, finding visual changes, running OCR, aligning timeline, ready for review.
+### 0:00-0:25 - What AccessiNote Is
 
-2:15-3:10 - Evidence review
+Click: open `http://localhost:3000`.
 
-1. In **Scan report**, show candidate frames, selected frames, OCR frames, caption source, weak chunks, and warnings.
-2. In **Evidence timeline**, expand one OCR details drawer and one visual review drawer.
-3. Point out review flags for low-confidence or missing evidence.
-4. Say: raw evidence stays available for audit, while student-facing outputs stay concise.
+Show: homepage headline, upload panel, safety banner.
 
-3:10-4:20 - Accessibility outputs
+Say:
 
-1. Select **ADHD Study Pack** and click **Generate output**.
-2. Show the start path, must-know ideas, quick checks, and overwhelm-recovery section.
-3. Select **Screen Reader Notes** and click **Generate output**.
-4. Show linear reading order, visual descriptions, OCR review notes, and compact source coverage.
-5. Select **Quality Report** and click **Generate output**.
-6. Show transcript, OCR, source-confidence, and weak-evidence scores.
+> AccessiNote turns permitted lecture recordings, transcripts, slides, and notes into accessible
+> study formats. The key idea is not just generating notes. The key idea is creating reviewable
+> drafts with timestamps, warnings, and source evidence so a student, notetaker, or support staff
+> member can check the material before using it.
 
-4:20-5:00 - Exports and safety
+Point out:
 
-1. Select **WebVTT Captions**, click **Generate output**, then click **Download .vtt**.
-2. Select **Evidence JSON**, click **Generate output**, and show the transparent source trail.
-3. Close on the safety posture: permitted materials only, generated captions and OCR need human
-   review, local storage is explicit, and local fallback protects the demo.
+- **Draft - human review required**
+- Safety banner
+- Supported sources in the upload panel
 
-## Judging Alignment
+### 0:25-0:55 - Optional API Keys And Microsoft IQ
 
-- Accuracy and relevance: timeline chunks preserve transcript, OCR, keyframes, and confidence.
-- Reasoning and multi-step thinking: local pipeline extracts audio, detects visual changes, scans OCR, aligns evidence, and flags weak chunks, with optional Microsoft IQ provider routes available for speech, OCR, and generation.
-- Creativity and originality: lecture accessibility is treated as multimodal evidence review, not just summarization.
-- User experience and presentation: the workbench shows progress, scan metrics, concise source grounding, and export controls in one flow.
-- Reliability and safety: demo readiness diagnostics, no required external API keys, explicit warnings, local storage, and human-in-the-loop review.
-- Accessibility: ADHD study packs, screen-reader notes, captions, plain-language output, exam prep, and notetaker quality reporting are first-class outputs.
+Click: **API keys** in the header.
 
-## Demo Data Guidance
+Show: provider dropdowns and key slots. Do not reveal real key values.
 
-Use synthetic or explicitly permitted lecture material. Avoid private student data, exams, accommodation records, or copyrighted lecture recordings without permission.
+Say:
+
+> AccessiNote works locally without API keys, but users can bring their own provider keys here.
+> For the Microsoft IQ layer, Azure Speech can generate captions, Azure AI Vision can scan slides
+> and video frames, and Azure OpenAI can improve the accessible study outputs. Keys are handled
+> through the backend session and are not shown again in the browser.
+
+Click: **Back to workspace**.
+
+Optional cut: If the demo is running long, show this page for only 10 seconds.
+
+### 0:55-1:25 - Load A Reliable Baseline
+
+Click: **Try sample lecture** or **Load sample lecture**.
+
+Show: review workspace, lecture timeline, source chunks.
+
+Say:
+
+> I am starting with a sample lecture so the workflow is easy to see. The app creates a timeline
+> first. That timeline is the source of truth for every output: transcript text, visual evidence,
+> OCR text, concepts, confidence, and warnings all stay attached to timestamps.
+
+Point out:
+
+- Lecture timeline
+- Chunks/timestamps
+- Review checklist
+
+### 1:25-2:05 - Show Upload Or Processing
+
+Option A, fastest: use the sample and briefly show the upload panel.
+
+Say:
+
+> In a live workflow, a user can upload a permitted recording, captions, transcript, slide image, or
+> notes. Video processing runs as staged local jobs: extracting audio, transcribing or using uploaded
+> captions, finding visual changes, running OCR, and aligning the evidence into the timeline.
+
+Option B, if you have a short video ready: click **Recording**, select the file, then click
+**Add recording**.
+
+Say:
+
+> This job view matters for reliability. The user can see what stage is running, and if something
+> fails, the app reports a reviewable warning instead of silently inventing clean notes.
+
+Point out if visible:
+
+- Processing stage
+- OCR/caption warnings
+- Scan report
+
+### 2:05-2:45 - Generate Accessible Outputs
+
+Click: **ADHD/Focus Study Pack**, then **Generate draft**.
+
+Say:
+
+> The ADHD/focus pack is intentionally short and action-oriented. It starts with what to read first,
+> the must-know ideas, quick checks, and recovery steps for when the lecture feels overwhelming.
+> This is different from dumping a long summary onto the learner.
+
+Click: **Screen-reader Notes**, then **Generate draft**.
+
+Say:
+
+> Screen-reader notes use a linear reading order. Visual content and OCR evidence are included in a
+> way that can be reviewed, rather than hidden inside an image or treated as decoration.
+
+Optional: click **Notetaker Quality Review** if you have time.
+
+Say:
+
+> For notetakers or support staff, the quality report highlights weak evidence, missing captions,
+> unclear OCR, and places where a person should verify the output.
+
+### 2:45-3:25 - Evidence And Export
+
+Show: source references, timeline, warnings, and export buttons.
+
+Say:
+
+> The important safety feature is that the output is not detached from the source. The user can
+> inspect evidence, timestamps, OCR, captions, and warnings before exporting. AccessiNote can export
+> notes, WebVTT captions, plain transcript text, or the evidence timeline as JSON.
+
+Click: **WebVTT Captions** or **Source Timeline**, generate if needed, then show download/copy.
+
+Say:
+
+> The final result is a draft package for review, not an accommodation decision or a perfect
+> transcript. The user stays in the loop.
+
+### 3:25-3:45 - Closing Line
+
+Say:
+
+> AccessiNote is built for accessibility workflows: students get study formats that are easier to
+> use, notetakers get quality checks, instructors and support staff get evidence they can review,
+> and the whole process keeps safety warnings visible. It is local-first, Microsoft IQ-ready, and
+> designed around human review.
+
+Stop recording here if everything important has been shown.
+
+## 90-Second Backup Version
+
+Use this if the full video feels too long or if upload processing is slow.
+
+1. Open homepage.
+2. Say the core message.
+3. Click **API keys** and show optional provider slots.
+4. Load sample lecture.
+5. Generate **ADHD/Focus Study Pack**.
+6. Generate **Screen-reader Notes**.
+7. Show evidence timeline and warnings.
+8. Show WebVTT or Evidence JSON export.
+9. Close with: "Every output is a draft, grounded in timestamps and evidence, and requires human review."
+
+## What Not To Show
+
+- Real API keys.
+- Full private endpoints if you want resource names private.
+- `.env` files.
+- Private student data.
+- Exams, accommodation records, or unauthorized recordings.
+- A long wait for video processing. Use sample data or a short pre-tested clip if processing is slow.
+
+## Judging Alignment Talking Points
+
+- Accuracy and relevance: outputs are grounded in transcript, caption, OCR, keyframe, and confidence evidence.
+- Reasoning: the pipeline ingests material, creates or uses captions, detects visual changes, scans OCR, aligns evidence, and flags weak chunks.
+- Creativity: the project treats lecture accessibility as evidence review, not just summarization.
+- UX: the workflow goes from source intake to review, output generation, warnings, and export in one screen.
+- Reliability and safety: local fallback, optional Azure providers, explicit warnings, permitted-use policy, and human review.
+- Accessibility: ADHD/focus packs, screen-reader notes, plain-language output, captions, visual descriptions, and notetaker quality checks are first-class formats.
 
 ## Recording Checklist
 
-- Browser opened to the local frontend URL.
 - Backend running on `http://localhost:8000`.
-- `scripts/check-hackathon-readiness.ps1` run successfully against the recording frontend/backend.
-- `/settings` provider page verified without showing keys.
-- Demo readiness panel visible near the start.
-- One short permitted video available locally.
-- Optional caption file ready if local transcription is slow on the recording machine.
-- Azure resource names, keys, and endpoints redacted if the Azure portal or `.env` is ever shown.
-- Download actions shown for `.vtt` and Evidence JSON.
-- Safety and human-review language stated in the final 20 seconds.
+- Frontend running on `http://localhost:3000`.
+- `scripts/check-hackathon-readiness.ps1` passes with no failures.
+- `/settings` opens from the **API keys** button.
+- Sample lecture loads.
+- At least one output mode generates successfully.
+- Export buttons are visible.
+- Safety/human-review message is visible or stated.
