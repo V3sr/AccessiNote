@@ -37,8 +37,43 @@ function Require-Env($Name) {
   return $value
 }
 
+function Ensure-ProviderRegistered($Namespace) {
+  $state = az provider show --namespace $Namespace --query registrationState -o tsv 2>$null
+  if ($LASTEXITCODE -eq 0 -and $state -eq "Registered") {
+    Write-Host "Azure provider $Namespace is already registered"
+    return
+  }
+
+  if ([string]::IsNullOrWhiteSpace($state)) {
+    Write-Host "Registering Azure provider $Namespace"
+  } else {
+    Write-Host "Azure provider $Namespace is in state '$state'. Registering or refreshing registration..."
+  }
+
+  az provider register --namespace $Namespace --output none
+  if ($LASTEXITCODE -ne 0) {
+    throw "Failed to register Azure provider $Namespace. Make sure your subscription allows provider registration and try again."
+  }
+
+  $deadline = (Get-Date).AddMinutes(10)
+  do {
+    Start-Sleep -Seconds 10
+    $state = az provider show --namespace $Namespace --query registrationState -o tsv 2>$null
+  } until ($state -eq "Registered" -or (Get-Date) -ge $deadline)
+
+  if ($state -ne "Registered") {
+    throw "Azure provider $Namespace did not finish registering within 10 minutes. Current state: $state"
+  }
+
+  Write-Host "Azure provider $Namespace registered"
+}
+
 Require-Command "az"
 Require-Command "docker"
+
+Ensure-ProviderRegistered "Microsoft.ContainerRegistry"
+Ensure-ProviderRegistered "Microsoft.App"
+Ensure-ProviderRegistered "Microsoft.OperationalInsights"
 
 $secrets = @()
 $envVars = @(

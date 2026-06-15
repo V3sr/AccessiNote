@@ -125,6 +125,12 @@ The script builds `Dockerfile.backend` in Azure Container Registry, deploys the 
 Azure Container Apps, configures either BYOK or backend-managed key mode, and prints the backend URL
 for Vercel.
 
+If your subscription has not yet registered the needed Azure resource providers, the script now
+tries to register them automatically before it creates the registry or Container App. The main
+providers it needs are `Microsoft.ContainerRegistry`, `Microsoft.App`, and
+`Microsoft.OperationalInsights`. If registration fails, your Azure account likely does not have
+permission to register providers in that subscription.
+
 Manual container build from the repository root:
 
 ```powershell
@@ -184,6 +190,24 @@ After deployment:
 
 If `/api/production/status` is not ready, it will list the missing CORS origin, provider switch, or
 backend secret without exposing secret values.
+
+## Azure Provider Registration Errors
+
+If Azure reports `MissingSubscriptionRegistration` for `Microsoft.App` or
+`Microsoft.ContainerRegistry`, register the provider once for the subscription and rerun the
+deployment:
+
+```powershell
+az provider register --namespace Microsoft.App
+az provider register --namespace Microsoft.ContainerRegistry
+az provider register --namespace Microsoft.OperationalInsights
+```
+
+You can check the current state with:
+
+```powershell
+az provider show --namespace Microsoft.App --query registrationState -o tsv
+```
 
 You can run the smoke check script after both deployments:
 
