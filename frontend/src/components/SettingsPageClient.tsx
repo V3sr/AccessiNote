@@ -86,14 +86,14 @@ export function SettingsPageClient() {
           <div className="min-w-0">
             <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
-              Microsoft IQ provider setup
+              Hosted demo key setup
             </Badge>
             <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
-              Connect AccessiNote to your Microsoft IQ layer
+              Let each demo user connect their own Azure keys
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
-              Use server-side Azure AI keys for the public demo. Local and bring-your-own-key demo modes can still
-              accept session keys without exposing secrets in the browser.
+              Use this setup page for a public bring-your-own-key demo. Each browser session can choose Azure Speech,
+              Azure AI Vision, and Azure OpenAI, then paste the matching keys without changing other visitors.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button
@@ -110,8 +110,8 @@ export function SettingsPageClient() {
                 variant="outline"
                 className="min-h-11 rounded-md border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 active:translate-y-px"
               >
-                <a href="#production">
-                  Deployment shape
+                <a href="#key-setup">
+                  Key setup slots
                   <ExternalLink className="h-4 w-4" aria-hidden="true" />
                 </a>
               </Button>
@@ -152,14 +152,16 @@ export function SettingsPageClient() {
       <section className="mx-auto grid max-w-[1500px] gap-5 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8 lg:py-8">
         <div className="min-w-0 space-y-5">
           <LaunchCommandCenter capabilities={capabilities} productionStatus={productionStatus} />
-          <ProviderSettingsPanel capabilities={capabilities} onSaved={refreshAll} variant="full" />
+          <div id="key-setup">
+            <ProviderSettingsPanel capabilities={capabilities} onSaved={refreshAll} variant="full" />
+          </div>
         </div>
 
         <aside className="space-y-5">
           <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
             <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
               <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              What Microsoft IQ powers
+              What the keys enable
             </h2>
             <div className="mt-4 space-y-3">
               <ProviderUse label="Azure AI Speech" detail="Captions and transcript segments from uploaded video audio." />
@@ -171,16 +173,16 @@ export function SettingsPageClient() {
           <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
             <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
               <ShieldCheck className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-              Safe key handling
+              Key handling
             </h2>
             <p className="mt-3 text-sm leading-6 text-zinc-700">
-              Production keys belong in backend environment variables. Public deployments should disable runtime
-              provider edits after Azure is configured.
+              Public BYOK mode scopes pasted values to this browser session on the backend. Backend-owned demo keys
+              can still be configured with private environment variables instead.
             </p>
             <div className="mt-4 space-y-2 text-sm text-zinc-700">
               <SafetyRow label="No Azure keys in frontend code" />
               <SafetyRow label="No secret values returned by the API" />
-              <SafetyRow label="Local fallback remains available" />
+              <SafetyRow label="Other browser sessions are not changed" />
             </div>
           </Card>
 
@@ -194,8 +196,8 @@ export function SettingsPageClient() {
                 Deploy the Next.js frontend on Vercel with `NEXT_PUBLIC_API_BASE_URL` pointing to the backend URL.
               </p>
               <p>
-                Deploy the FastAPI backend on Azure App Service or Azure Container Apps with Microsoft IQ keys set as
-                backend secrets.
+                Deploy the FastAPI backend on Azure App Service or Azure Container Apps. For BYOK mode, keep runtime
+                provider settings enabled. For backend-owned demo keys, set keys as backend secrets.
               </p>
               <p>
                 Add the Vercel domain to `ACCESSINOTE_CORS_ORIGINS` on the backend before recording or sharing the app.
@@ -291,14 +293,14 @@ function LaunchCommandCenter({
           title="Microsoft IQ layer"
           detail="Azure AI Speech, Azure AI Vision, and Azure OpenAI are selected and configured."
           ready={microsoftIqReady}
-          fallback="Local demo still works, but public submission should show Azure routes configured."
+          fallback="Use the BYOK slots below or backend environment variables to configure Azure routes."
         />
         <LaunchStep
           icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />}
-          title="Hosted key safety"
-          detail="Runtime provider edits are disabled so visitors cannot change backend-owned keys."
+          title="Hosted key mode"
+          detail="This deployment supports either backend-managed keys or browser-session BYOK keys."
           ready={hostedSafetyReady}
-          fallback="Set ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled before public launch."
+          fallback="Check ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS on the backend host."
         />
         <LaunchStep
           icon={<Server className="h-4 w-4" aria-hidden="true" />}

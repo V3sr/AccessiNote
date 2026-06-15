@@ -120,11 +120,12 @@ AccessiNote uses three Microsoft IQ routes when configured:
 - Azure AI Vision for OCR on slides, screenshots, and selected video frames.
 - Azure OpenAI for grounded accessible study outputs.
 
-Users can paste Azure keys into the **AI provider keys** page at `/settings`. Those keys are stored
-only in the running backend session, never returned to the frontend, and cleared on backend restart or
-when switching back to local-only mode. For production demos, set keys as backend environment secrets
-instead of pasting them in the browser, and set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled` so
-public visitors cannot change backend-owned providers.
+Users can paste Azure keys into the **Bring your own Azure keys** page at `/settings`. Those keys are
+scoped to the current browser session on the backend, never returned to the frontend, and cleared on
+backend restart or when switching back to local-only mode. For production demos, keep
+`ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=enabled` when judges or visitors should bring their own keys.
+Use backend environment secrets plus `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled` only when the
+hosted demo should run on backend-owned Azure resources.
 
 Provider switches:
 
@@ -140,11 +141,10 @@ browser. If Azure fails, the app returns to local fallback behavior.
 
 For a public demo, deploy the Next.js frontend to Vercel and deploy the FastAPI media backend to
 Azure Container Apps or Azure App Service for Containers. Set `NEXT_PUBLIC_API_BASE_URL` on Vercel to
-the backend URL and `NEXT_PUBLIC_SITE_URL` to the frontend URL, then set Azure provider keys only on
-the backend. Use `/api/production/status` and the `/settings` page to verify public launch readiness.
-The helper scripts `scripts/deploy-backend-azure-containerapp.ps1` and `scripts/check-production.ps1`
-cover backend deployment and smoke testing. GitHub Actions workflows are included for CI and manual
-production deploys. See `docs/PRODUCTION.md`.
+the backend URL and `NEXT_PUBLIC_SITE_URL` to the frontend URL. The recommended public demo mode is
+BYOK: visitors open `/settings`, use dropdowns to select Azure routes, paste their own keys, and use
+direct Microsoft Learn links to get the required values. Backend-owned Azure keys are also supported.
+See `docs/PRODUCTION.md`.
 
 Before recording or submitting, run the combined readiness check:
 

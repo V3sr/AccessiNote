@@ -157,6 +157,7 @@ class ProviderSettingsResponse(BaseModel):
     configured_env: list[str] = Field(default_factory=list)
     message: str = ""
     runtime_settings_enabled: bool = True
+    session_id: str = ""
 
 
 class CapabilityResponse(BaseModel):

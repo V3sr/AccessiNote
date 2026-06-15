@@ -10,8 +10,8 @@ YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
 0:00-0:30 - Production readiness
 
 1. Open the deployed frontend URL, or `http://localhost:3000` while recording locally.
-2. Point to the Microsoft IQ section and say: AccessiNote integrates Azure AI Speech, Azure AI Vision, and Azure OpenAI as its required Microsoft IQ layer.
-3. Open `/settings` briefly and show provider readiness without revealing keys.
+2. Open `/settings` briefly and say: AccessiNote integrates Azure AI Speech, Azure AI Vision, and Azure OpenAI as its required Microsoft IQ layer.
+3. Show the bring-your-own-key slots and official setup links without revealing real keys.
 4. Return to the workspace and point to the Demo readiness panel.
 5. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and Microsoft provider configuration before the demo starts.
 

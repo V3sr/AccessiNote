@@ -15,12 +15,18 @@ import type {
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const PROVIDER_SESSION_STORAGE_KEY = "accessinote.providerSessionId";
+const PROVIDER_SESSION_HEADER = "X-AccessiNote-Provider-Session";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   const isFormData = typeof FormData !== "undefined" && options?.body instanceof FormData;
   if (!isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
+  }
+  const providerSessionId = getProviderSessionId();
+  if (providerSessionId && !headers.has(PROVIDER_SESSION_HEADER)) {
+    headers.set(PROVIDER_SESSION_HEADER, providerSessionId);
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -177,6 +183,27 @@ export function assetUrl(path: string): string {
     return path;
   }
   return `${API_BASE_URL}${path}`;
+}
+
+export function getProviderSessionId(): string {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  const existing = window.localStorage.getItem(PROVIDER_SESSION_STORAGE_KEY);
+  if (existing) {
+    return existing;
+  }
+  const next = createProviderSessionId();
+  window.localStorage.setItem(PROVIDER_SESSION_STORAGE_KEY, next);
+  return next;
+}
+
+function createProviderSessionId(): string {
+  const randomId =
+    typeof window.crypto?.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `browser-${randomId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 72)}`;
 }
 
 function readErrorMessage(errorText: string, status: number): string {

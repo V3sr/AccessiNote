@@ -1,7 +1,8 @@
 param(
   [string]$FrontendUrl = "http://127.0.0.1:3000",
   [string]$BackendUrl = "http://127.0.0.1:8000",
-  [switch]$PublicMode
+  [switch]$PublicMode,
+  [switch]$ByokMode
 )
 
 $ErrorActionPreference = "Stop"
@@ -116,6 +117,8 @@ if ($null -ne $capabilities) {
   }
   if ($iqReady) {
     Add-Check "pass" "Microsoft IQ" "Azure Speech, Azure AI Vision, and Azure OpenAI are selected and configured."
+  } elseif ($PublicMode -and $ByokMode) {
+    Add-Check "warn" "Microsoft IQ" "BYOK public mode is waiting for a visitor to paste Azure keys on /settings."
   } elseif ($PublicMode) {
     Add-Check "fail" "Microsoft IQ" "Public mode requires Azure Speech, Azure AI Vision, and Azure OpenAI configured."
   } else {
@@ -136,6 +139,18 @@ $production = Invoke-Json "$backend/api/production/status" "Production readiness
 if ($null -ne $production) {
   if ($production.ready -eq $true) {
     Add-Check "pass" "Production readiness" "Production checks are ready."
+  } elseif ($PublicMode -and $ByokMode) {
+    $blockingChecks = @($production.checks | Where-Object {
+      $_.status -eq "fail" -and $_.id -notin @("production_transcription", "production_ocr", "production_generation")
+    })
+    if ($blockingChecks.Count -eq 0) {
+      Add-Check "warn" "Production readiness" "BYOK public mode is waiting for visitor-provided Azure keys."
+    } else {
+      Add-Check "fail" "Production readiness" "BYOK public mode has production checks that need configuration."
+      $blockingChecks | ForEach-Object {
+        Add-Check $_.status $_.label $_.detail
+      }
+    }
   } elseif ($PublicMode) {
     Add-Check "fail" "Production readiness" "Public mode requires production readiness to pass."
     $production.checks | ForEach-Object {

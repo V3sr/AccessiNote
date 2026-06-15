@@ -128,6 +128,7 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
   const providers = settings?.providers ?? capabilities?.providers ?? {};
   const configuredEnv = settings?.configured_env ?? [];
   const runtimeSettingsEnabled = settings?.runtime_settings_enabled ?? true;
+  const sessionLabel = settings?.session_id ? shortSessionId(settings.session_id) : "Browser";
   const selectedAzureCount = [transcriptionProvider, ocrProvider, generationProvider].filter((name) =>
     name.startsWith("azure"),
   ).length;
@@ -167,7 +168,11 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
       <div className={isFull ? "grid gap-3 xl:grid-cols-3" : "grid gap-3"}>
         <SecretGroup
           title="Azure Speech"
-          description="Required for Azure caption generation from uploaded video audio."
+          description="Use this for caption generation from uploaded lecture recordings."
+          links={[
+            ["Speech quickstart", "https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-speech-to-text"],
+            ["Region list", "https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions"],
+          ]}
         >
           <SecretInput label="Speech key" value={speechKey} onChange={setSpeechKey} />
           <TextInput label="Region" value={speechRegion} onChange={setSpeechRegion} placeholder="eastus" />
@@ -176,7 +181,11 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 
         <SecretGroup
           title="Azure AI Vision"
-          description="Required for Azure OCR on uploaded images and selected video frames."
+          description="Use this for reading text from slides, screenshots, and selected video frames."
+          links={[
+            ["OCR quickstart", "https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/quickstarts-sdk/client-library"],
+            ["OCR overview", "https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview-ocr"],
+          ]}
         >
           <TextInput
             label="Vision endpoint"
@@ -189,7 +198,11 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 
         <SecretGroup
           title="Azure OpenAI"
-          description="Required for Azure-generated study outputs from grounded timeline evidence."
+          description="Use this for higher-quality accessible study outputs from the reviewed source timeline."
+          links={[
+            ["Create resource", "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource"],
+            ["Responses API", "https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses"],
+          ]}
         >
           <TextInput
             label="OpenAI endpoint"
@@ -210,8 +223,8 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
       <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-950">
         <p className="flex items-start gap-2">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Leave a key field blank to keep the existing session or private `.env` value. Use local-only to clear
-          runtime overrides.
+          Leave a key field blank to keep the existing browser session or private `.env` value. Use local-only to clear
+          this browser session.
         </p>
       </div>
 
@@ -255,16 +268,16 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
         <div className="min-w-0">
           <h2 className={isFull ? "flex items-center gap-2 text-xl font-semibold text-zinc-950" : "flex items-center gap-2 text-base font-semibold text-zinc-950"}>
             <KeyRound className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-            AI provider keys
+            Bring your own Azure keys
           </h2>
           <p className={isFull ? "mt-2 max-w-3xl text-sm leading-6 text-zinc-700" : "mt-1 text-sm leading-6 text-zinc-700"}>
             {runtimeSettingsEnabled
-              ? "Add Azure keys for this backend session. Secrets stay server-side, are never shown again, and can be cleared back to local processing."
+              ? "Choose Azure routes, paste the matching keys, and save. Keys stay server-side, are scoped to this browser session, are never shown again, and can be cleared back to local processing."
               : "Azure providers are managed by backend environment secrets on this deployment. Secret values are never returned to the browser."}
           </p>
         </div>
         <Badge className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">
-          {runtimeSettingsEnabled ? "Session only" : "Backend managed"}
+          {runtimeSettingsEnabled ? "Browser session" : "Backend managed"}
         </Badge>
       </div>
 
@@ -272,9 +285,11 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <SetupMetric label="Azure routes selected" value={String(selectedAzureCount)} />
           <SetupMetric label="Configured values" value={String(configuredEnv.length)} />
-          <SetupMetric label="Fallback mode" value="Local ready" />
+          <SetupMetric label="Session scope" value={sessionLabel} />
         </div>
       )}
+
+      {isFull && runtimeSettingsEnabled && <ProviderSetupGuide />}
 
       <div className={isFull ? "mt-4 grid gap-3 sm:grid-cols-3" : "mt-3 grid gap-2"}>
         <ProviderStatusRow label="Speech" status={providers.transcription} />
@@ -288,7 +303,7 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
             <p className="flex items-start gap-2">
               <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               {runtimeSettingsEnabled
-                ? "Use this page for a live hackathon setup. Do not show real keys in recordings or screenshots."
+                ? "Use this page for live setup or public bring-your-own-key testing. Do not show real keys in recordings or screenshots."
                 : "Runtime edits are disabled for this hosted deployment. Configure Azure providers through backend environment variables."}
             </p>
           </div>
@@ -337,6 +352,73 @@ function ReadOnlyProviderNotice() {
     <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm leading-6 text-zinc-700">
       Provider editing is read-only on this deployment. Update Azure keys and provider switches in the backend host
       environment, then redeploy or restart the backend.
+    </div>
+  );
+}
+
+function ProviderSetupGuide() {
+  const steps = [
+    {
+      title: "1. Create or open Azure resources",
+      detail: "Use Microsoft Learn or the Azure portal links below to create Speech, Vision, and Azure OpenAI resources.",
+      linkLabel: "Open Azure portal",
+      href: "https://portal.azure.com/",
+    },
+    {
+      title: "2. Paste keys and endpoints",
+      detail: "Speech needs key plus region. Vision needs endpoint plus key. Azure OpenAI needs endpoint, key, and deployment name.",
+      linkLabel: "Azure OpenAI setup",
+      href: "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource",
+    },
+    {
+      title: "3. Save, then process a sample",
+      detail: "After saving, provider status updates for this browser session. Load the sample or upload permitted material to test.",
+      linkLabel: "Back to workspace",
+      href: "/#source-desk",
+      internal: true,
+    },
+  ];
+
+  return (
+    <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-950">Quick setup guide</h3>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-700">
+            Use the slots below for a hosted demo where each visitor brings their own Azure resources.
+          </p>
+        </div>
+        <Badge className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100 hover:bg-emerald-50">
+          Per-browser keys
+        </Badge>
+      </div>
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        {steps.map((step) => (
+          <div key={step.title} className="rounded-xl bg-white p-3 ring-1 ring-zinc-200">
+            <h4 className="text-sm font-semibold text-zinc-950">{step.title}</h4>
+            <p className="mt-1 text-xs leading-5 text-zinc-600">{step.detail}</p>
+            {step.internal ? (
+              <Link
+                href={step.href}
+                className="mt-3 inline-flex min-h-8 items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              >
+                {step.linkLabel}
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            ) : (
+              <a
+                href={step.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex min-h-8 items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              >
+                {step.linkLabel}
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -400,16 +482,38 @@ function ProviderSelect({
 function SecretGroup({
   title,
   description,
+  links,
   children,
 }: {
   title: string;
   description: string;
+  links?: Array<[string, string]>;
   children: ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-3">
-      <h3 className="text-xs font-semibold text-zinc-950">{title}</h3>
-      <p className="mt-1 text-xs leading-5 text-zinc-600">{description}</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-xs font-semibold text-zinc-950">{title}</h3>
+          <p className="mt-1 text-xs leading-5 text-zinc-600">{description}</p>
+        </div>
+        {links && (
+          <div className="flex shrink-0 flex-wrap gap-1">
+            {links.map(([label, href]) => (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-7 items-center gap-1 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1 text-[11px] font-semibold text-zinc-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              >
+                {label}
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="mt-3 grid gap-2">{children}</div>
     </div>
   );
@@ -473,4 +577,11 @@ function providerLabel(name: string, configured: boolean): string {
     return configured ? "Azure OpenAI" : "Azure OpenAI missing keys";
   }
   return "Local";
+}
+
+function shortSessionId(sessionId: string): string {
+  if (!sessionId || sessionId === "__default__") {
+    return "Browser";
+  }
+  return sessionId.length > 18 ? `${sessionId.slice(0, 10)}...` : sessionId;
 }

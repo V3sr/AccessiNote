@@ -63,9 +63,10 @@ AccessiNote integrates the required Microsoft IQ intelligence layer in three pla
 - Azure AI Vision scans uploaded images and selected video frames for OCR evidence.
 - Azure OpenAI generates accessible learning outputs from grounded timeline evidence.
 
-These providers are visible in `/settings`, `/api/capabilities`, `/api/demo/status`, and the main
-page Microsoft IQ section. The app can run Azure-first for the public hackathon demo while preserving
-local fallback behavior if a provider is unavailable.
+These providers are visible in `/settings`, `/api/capabilities`, `/api/demo/status`, and
+`/api/production/status`. The app can run with backend-managed Azure keys or browser-session BYOK
+keys for the public hackathon demo while preserving local fallback behavior if a provider is
+unavailable.
 
 ## Microsoft Integration Story
 
@@ -80,8 +81,8 @@ demo with Microsoft services:
 environment variables are required. `GET /api/demo/status` surfaces provider readiness without
 exposing keys to the browser. If Azure Speech, Azure AI Vision, or Azure OpenAI fails during the
 demo, AccessiNote falls back to local transcription, local OCR, or deterministic generation.
-The `/settings` page also includes an AI provider keys panel so judges or local users can bring their own
-Azure resources without editing source code.
+The `/settings` page also includes bring-your-own-key slots, provider dropdowns, and official setup
+links so judges or local users can bring their own Azure resources without editing source code.
 
 ## Judging Alignment
 
@@ -90,7 +91,7 @@ Azure resources without editing source code.
 - Creativity and originality: the app treats lecture accessibility as source-grounded multimodal review instead of generic summarization.
 - User experience and presentation: the workbench shows processing progress, readiness, scan metrics, timeline review, and export actions in one flow.
 - Reliability and safety: the demo can use Azure providers without exposing keys, keeps local fallback, stores local timelines explicitly, warns about weak evidence, and keeps humans in the review loop.
-- Hosted production safety: public deployments can disable runtime provider edits so Azure keys are controlled only by backend environment secrets.
+- Hosted production safety: public deployments can use browser-session BYOK keys or disable runtime provider edits so Azure keys are controlled only by backend environment secrets.
 - Community vote: the demo story is easy to understand: upload lecture material, inspect evidence, generate accessible study formats.
 
 ## Accessibility Award Fit

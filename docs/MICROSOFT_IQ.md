@@ -19,7 +19,7 @@ server-side provider secrets.
 - `/api/capabilities` reports selected provider names, configuration status, and required environment variables.
 - `/api/demo/status` includes provider readiness in the demo checklist.
 - `/api/production/status` checks CORS, Azure provider selection, Azure provider configuration, hosted key safety, backend storage, and local fallback tools.
-- The main page has a Microsoft IQ section that shows Azure AI Speech, Azure AI Vision, Azure OpenAI, and production readiness at a glance.
+- The `/settings` page shows Azure AI Speech, Azure AI Vision, Azure OpenAI, production readiness, and bring-your-own-key setup links at a glance.
 
 ## Demo Positioning
 
@@ -35,4 +35,3 @@ Use this phrasing in the submission video:
 - Do not show keys, full endpoints, private resource names, `.env`, or CI secrets in the demo video.
 - Use synthetic or permitted lecture material only.
 - Generated captions, OCR, and study outputs require human review before academic or accessibility use.
-

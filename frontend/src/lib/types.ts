@@ -137,6 +137,7 @@ export interface ProviderSettingsResponse {
   configured_env: string[];
   message: string;
   runtime_settings_enabled: boolean;
+  session_id: string;
 }
 
 export interface CapabilityResponse {

@@ -5,14 +5,16 @@ League submission, these Azure providers are the Microsoft IQ intelligence layer
 
 ## Providers
 
-Use the **AI provider keys** page at `/settings` for the easiest setup. The page lets
-users choose local or Azure providers and paste Azure keys into the running backend session. Session
-keys are not returned to the browser and are cleared when the backend restarts or when **Use local
-only** is clicked.
+Use the **Bring your own Azure keys** page at `/settings` for the easiest setup. The page lets users
+choose local or Azure providers, paste Azure keys into clear slots, and open direct Microsoft Learn
+setup links. Runtime keys are scoped to a browser session on the backend, are not returned to the
+browser, and are cleared when the backend restarts or when **Use local only** is clicked.
 
-For a public hosted demo with your own Azure resources, configure keys as backend environment secrets
-and set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled`. The `/settings` page will remain visible as
-a readiness dashboard, but visitors will not be able to change backend-owned provider settings.
+For a public hosted BYOK demo, set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=enabled` and leave provider
+defaults as `local` until a visitor saves their own keys. For a backend-owned public demo, configure
+keys as backend environment secrets and set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled`. In that
+mode, `/settings` remains visible as a readiness dashboard but visitors cannot change provider
+settings.
 
 For repeatable local demos, set these switches in a private `.env` file instead:
 
@@ -65,8 +67,8 @@ Azure providers are selected and configured.
 - Never show `.env`, Azure keys, or full resource endpoints in the demo video.
 - Do not call Azure directly from the browser. AccessiNote routes provider calls through the FastAPI
   backend so secrets stay server-side.
-- Use the UI key panel for live setup if you want judges to see that any local user can bring their
-  own Azure resources without editing source code.
+- Use the UI key panel for live setup if you want judges to see that each browser session can bring
+  its own Azure resources without editing source code.
 - Redact Azure resource names in screenshots if they appear in portal pages.
 - Use synthetic or permitted lecture material only.
 - Clear `data/uploads` and `data/outputs` before publishing screenshots if they contain private test
@@ -79,7 +81,9 @@ repo, but assume submitted source code is public.
 ## Official References
 
 - Azure OpenAI Responses API: https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses
+- Azure OpenAI resource and deployment setup: https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource
 - Azure OpenAI chat completions: https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/chatgpt
 - Azure AI Vision OCR overview: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview-ocr
-- Azure Image Analysis Python SDK: https://learn.microsoft.com/en-us/python/api/overview/azure/ai-vision-imageanalysis-readme
-- Azure Speech to text: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-to-text
+- Azure Vision OCR quickstart: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/quickstarts-sdk/client-library
+- Azure Speech to text quickstart: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-speech-to-text
+- Azure Speech regions: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions

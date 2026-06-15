@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from threading import Lock
+from contextvars import ContextVar, Token
 from typing import TYPE_CHECKING, Protocol
 
 from dotenv import load_dotenv
@@ -95,7 +96,9 @@ PROVIDER_ENV_TO_REQUEST_FIELD = {
     "AZURE_OPENAI_DEPLOYMENT": "azure_openai_deployment",
 }
 
-RUNTIME_PROVIDER_SETTINGS: dict[str, str] = {}
+DEFAULT_RUNTIME_SESSION = "__default__"
+CURRENT_PROVIDER_SESSION: ContextVar[str] = ContextVar("accessinote_provider_session", default=DEFAULT_RUNTIME_SESSION)
+RUNTIME_PROVIDER_SETTINGS: dict[str, dict[str, str]] = {}
 RUNTIME_PROVIDER_LOCK = Lock()
 
 
@@ -129,13 +132,13 @@ def get_provider_settings() -> ProviderSettingsResponse:
         configured_env=configured_provider_env_names(),
         message="Provider settings loaded. Secret values are never returned.",
         runtime_settings_enabled=runtime_provider_settings_enabled(),
+        session_id=current_provider_session(),
     )
 
 
 def update_provider_settings(request: ProviderSettingsRequest) -> ProviderSettingsResponse:
     if request.clear_existing:
-        with RUNTIME_PROVIDER_LOCK:
-            RUNTIME_PROVIDER_SETTINGS.clear()
+        clear_runtime_provider_session()
 
     updates = request.model_dump(exclude={"clear_existing"}, exclude_none=True)
     provider_updates = {
@@ -156,28 +159,42 @@ def update_provider_settings(request: ProviderSettingsRequest) -> ProviderSettin
         providers=provider_statuses(),
         configured_env=configured_provider_env_names(),
         runtime_settings_enabled=runtime_provider_settings_enabled(),
+        session_id=current_provider_session(),
         message=(
-            "Provider settings saved for this backend session. "
+            "Provider settings saved for this browser session. "
             "Keys are not returned to the browser and are not written to disk."
         ),
     )
 
 
 def provider_value(env_name: str, default: str = "") -> str:
+    session_id = current_provider_session()
     with RUNTIME_PROVIDER_LOCK:
-        runtime_value = RUNTIME_PROVIDER_SETTINGS.get(env_name)
+        session_settings = RUNTIME_PROVIDER_SETTINGS.get(session_id, {})
+        runtime_value = session_settings.get(env_name)
     if runtime_value is not None:
         return runtime_value
+    if session_id != DEFAULT_RUNTIME_SESSION and session_settings and env_name in PROVIDER_ENV_TO_REQUEST_FIELD:
+        return default
     return os.getenv(env_name, default)
 
 
 def set_runtime_provider_value(env_name: str, value: str | None) -> None:
     clean_value = (value or "").strip()
+    session_id = current_provider_session()
     with RUNTIME_PROVIDER_LOCK:
+        session_settings = RUNTIME_PROVIDER_SETTINGS.setdefault(session_id, {})
         if clean_value:
-            RUNTIME_PROVIDER_SETTINGS[env_name] = clean_value
+            session_settings[env_name] = clean_value
         else:
-            RUNTIME_PROVIDER_SETTINGS.pop(env_name, None)
+            session_settings.pop(env_name, None)
+        if not session_settings:
+            RUNTIME_PROVIDER_SETTINGS.pop(session_id, None)
+
+
+def clear_runtime_provider_session() -> None:
+    with RUNTIME_PROVIDER_LOCK:
+        RUNTIME_PROVIDER_SETTINGS.pop(current_provider_session(), None)
 
 
 def configured_provider_env_names() -> list[str]:
@@ -188,3 +205,24 @@ def configured_provider_env_names() -> list[str]:
 def runtime_provider_settings_enabled() -> bool:
     value = os.getenv("ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS", "enabled").strip().lower()
     return value not in {"0", "false", "no", "off", "disabled"}
+
+
+def current_provider_session() -> str:
+    return CURRENT_PROVIDER_SESSION.get() or DEFAULT_RUNTIME_SESSION
+
+
+def set_current_provider_session(session_id: str | None) -> Token[str]:
+    return CURRENT_PROVIDER_SESSION.set(normalize_provider_session(session_id))
+
+
+def reset_current_provider_session(token: Token[str]) -> None:
+    CURRENT_PROVIDER_SESSION.reset(token)
+
+
+def normalize_provider_session(session_id: str | None) -> str:
+    clean_value = "".join(
+        char for char in (session_id or "").strip() if char.isalnum() or char in {"_", "-"}
+    )
+    if not clean_value:
+        return DEFAULT_RUNTIME_SESSION
+    return clean_value[:80]

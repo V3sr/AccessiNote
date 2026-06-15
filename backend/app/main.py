@@ -8,7 +8,7 @@ from queue import Queue
 from threading import Lock, Thread
 import uuid
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -31,7 +31,15 @@ from .models import (
     ProviderSettingsResponse,
     VideoUploadResponse,
 )
-from .providers import get_provider_settings, provider_statuses, runtime_provider_settings_enabled, update_provider_settings
+from .providers import (
+    current_provider_session,
+    get_provider_settings,
+    provider_statuses,
+    reset_current_provider_session,
+    runtime_provider_settings_enabled,
+    set_current_provider_session,
+    update_provider_settings,
+)
 from .retrieval import create_timeline_from_transcript
 from .storage import (
     OUTPUTS_DIR,
@@ -68,6 +76,7 @@ class MediaJobPayload:
     title: str
     upload_path: Path
     transcript_text: str
+    provider_session_id: str = ""
 
 
 class JobCanceled(Exception):
@@ -99,6 +108,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def provider_session_middleware(request: Request, call_next):
+    token = set_current_provider_session(request.headers.get("X-AccessiNote-Provider-Session"))
+    try:
+        return await call_next(request)
+    finally:
+        reset_current_provider_session(token)
 
 
 @app.get("/health")
@@ -314,6 +332,7 @@ async def create_media_job(
         title=title,
         upload_path=upload_path,
         transcript_text=transcript_text,
+        provider_session_id=current_provider_session(),
     )
     with MEDIA_JOB_LOCK:
         MEDIA_JOBS[job.job_id] = job
@@ -634,15 +653,15 @@ def production_runtime_settings_check() -> DemoCheck:
     if not runtime_provider_settings_enabled():
         return DemoCheck(
             id="production_runtime_settings",
-            label="Hosted settings safety",
+            label="Production key mode",
             status="pass",
-            detail="Runtime provider edits are disabled. Azure providers are controlled by backend environment secrets.",
+            detail="Backend-managed mode is enabled. Azure providers are controlled by backend environment secrets.",
         )
     return DemoCheck(
         id="production_runtime_settings",
-        label="Hosted settings safety",
-        status="fail",
-        detail="Set ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled before sharing a production deployment.",
+        label="Production key mode",
+        status="pass",
+        detail="Bring-your-own-key mode is enabled. Runtime provider keys are scoped to each browser session.",
     )
 
 
@@ -721,62 +740,66 @@ def media_job_worker() -> None:
 
 
 def run_media_job(payload: MediaJobPayload) -> None:
-    update_job(payload.job_id, status="running", stage="starting", progress=8)
+    token = set_current_provider_session(payload.provider_session_id)
     try:
-        ensure_job_can_continue(payload.job_id)
+        update_job(payload.job_id, status="running", stage="starting", progress=8)
+        try:
+            ensure_job_can_continue(payload.job_id)
 
-        if payload.kind == "video":
-            result = process_video_to_timeline(
+            if payload.kind == "video":
+                result = process_video_to_timeline(
+                    title=payload.title,
+                    video_path=payload.upload_path,
+                    outputs_dir=OUTPUTS_DIR,
+                    transcript_hint=payload.transcript_text,
+                    stage_callback=lambda stage, progress: update_job_checked(payload.job_id, stage, progress),
+                )
+                ensure_job_can_continue(payload.job_id)
+                save_timeline(result.timeline)
+                update_job(
+                    payload.job_id,
+                    status="complete",
+                    stage="ready for review",
+                    progress=100,
+                    lecture_id=result.timeline.lecture_id,
+                    warnings=result.warnings,
+                    metrics=result.metrics,
+                )
+                return
+
+            update_job_checked(payload.job_id, "running OCR", 55)
+            image_result = process_image_to_timeline(
                 title=payload.title,
-                video_path=payload.upload_path,
+                image_path=payload.upload_path,
                 outputs_dir=OUTPUTS_DIR,
-                transcript_hint=payload.transcript_text,
-                stage_callback=lambda stage, progress: update_job_checked(payload.job_id, stage, progress),
+                notes_hint=payload.transcript_text,
             )
             ensure_job_can_continue(payload.job_id)
-            save_timeline(result.timeline)
+            save_timeline(image_result.timeline)
             update_job(
                 payload.job_id,
                 status="complete",
                 stage="ready for review",
                 progress=100,
-                lecture_id=result.timeline.lecture_id,
-                warnings=result.warnings,
-                metrics=result.metrics,
+                lecture_id=image_result.timeline.lecture_id,
+                warnings=image_result.warnings,
+                metrics=image_result.timeline.processing_metadata.metrics,
             )
+        except JobCanceled:
+            update_job(
+                payload.job_id,
+                status="canceled",
+                stage="canceled",
+                progress=100,
+                error="Processing canceled.",
+                cancel_requested=True,
+            )
+        except JobStopped:
             return
-
-        update_job_checked(payload.job_id, "running OCR", 55)
-        image_result = process_image_to_timeline(
-            title=payload.title,
-            image_path=payload.upload_path,
-            outputs_dir=OUTPUTS_DIR,
-            notes_hint=payload.transcript_text,
-        )
-        ensure_job_can_continue(payload.job_id)
-        save_timeline(image_result.timeline)
-        update_job(
-            payload.job_id,
-            status="complete",
-            stage="ready for review",
-            progress=100,
-            lecture_id=image_result.timeline.lecture_id,
-            warnings=image_result.warnings,
-            metrics=image_result.timeline.processing_metadata.metrics,
-        )
-    except JobCanceled:
-        update_job(
-            payload.job_id,
-            status="canceled",
-            stage="canceled",
-            progress=100,
-            error="Processing canceled.",
-            cancel_requested=True,
-        )
-    except JobStopped:
-        return
-    except Exception as error:
-        update_job(payload.job_id, status="failed", stage="failed", progress=100, error=str(error))
+        except Exception as error:
+            update_job(payload.job_id, status="failed", stage="failed", progress=100, error=str(error))
+    finally:
+        reset_current_provider_session(token)
 
 
 def update_job_checked(job_id: str, stage: str, progress: int) -> None:

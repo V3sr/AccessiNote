@@ -3,7 +3,9 @@ param(
   [string]$FrontendUrl,
 
   [Parameter(Mandatory = $true)]
-  [string]$BackendUrl
+  [string]$BackendUrl,
+
+  [switch]$ByokMode
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,6 +43,19 @@ Assert-Condition ($capabilities.image_upload_enabled -eq $true) "Image upload is
 Write-Host "Checking production readiness"
 $production = Invoke-RestMethod "$backend/api/production/status" -TimeoutSec 30
 if ($production.ready -ne $true) {
+  if ($ByokMode) {
+    $blockingChecks = @($production.checks | Where-Object {
+      $_.status -eq "fail" -and $_.id -notin @("production_transcription", "production_ocr", "production_generation")
+    })
+    if ($blockingChecks.Count -eq 0) {
+      Write-Host "Production readiness is waiting for visitor-provided Azure keys. BYOK deployment checks passed."
+      $production.checks | ForEach-Object {
+        Write-Host ("[{0}] {1}: {2}" -f $_.status, $_.label, $_.detail)
+      }
+      Write-Host "Production smoke check passed."
+      exit 0
+    }
+  }
   $production.checks | ForEach-Object {
     Write-Host ("[{0}] {1}: {2}" -f $_.status, $_.label, $_.detail)
   }

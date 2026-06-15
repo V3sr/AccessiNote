@@ -8,11 +8,25 @@ jobs need a long-running Python process.
 
 - Frontend: Next.js on Vercel from the `frontend` project root.
 - Backend: FastAPI container on Azure Container Apps or Azure App Service for Containers.
-- AI services: Azure Speech, Azure AI Vision, and Azure OpenAI configured as backend secrets.
+- AI services: Azure Speech, Azure AI Vision, and Azure OpenAI either provided by each visitor on
+  `/settings` or configured as backend secrets.
 - Storage for a short demo: local container filesystem is acceptable if you clear uploads regularly.
 - Storage for a real public product: move `data/uploads` and `data/outputs` to durable Azure storage.
 
 Do not deploy Azure keys to Vercel. Vercel only needs `NEXT_PUBLIC_API_BASE_URL`.
+
+## Key Modes
+
+AccessiNote supports two hosted demo modes:
+
+- **BringYourOwnKey**: public visitors open `/settings`, choose Azure providers from dropdowns, and
+  paste their own Azure keys. Keys are scoped to that browser session on the backend, never returned
+  to the frontend, and cleared when the session is reset or the backend restarts.
+- **BackendManaged**: the deployed backend owns the Azure keys through private host secrets.
+  `/settings` becomes read-only and visitors cannot change provider settings.
+
+Use **BringYourOwnKey** when you want judges or interviewers to try their own Azure resources. Use
+**BackendManaged** when you want the public demo to work immediately with your own Azure resources.
 
 ## Frontend on Vercel
 
@@ -39,10 +53,18 @@ The repository includes:
 - `.github/workflows/production-deploy.yml` for a manual production deploy to Azure Container Apps
   and Vercel, followed by the smoke check script.
 
-Required GitHub repository secrets:
+Required GitHub repository secrets for all production deploys:
 
 ```text
 AZURE_CREDENTIALS
+VERCEL_TOKEN
+VERCEL_ORG_ID
+VERCEL_PROJECT_ID
+```
+
+Additional GitHub repository secrets for `BackendManaged` key mode:
+
+```text
 AZURE_SPEECH_KEY
 AZURE_SPEECH_REGION
 AZURE_VISION_ENDPOINT
@@ -50,9 +72,6 @@ AZURE_VISION_KEY
 AZURE_OPENAI_ENDPOINT
 AZURE_OPENAI_API_KEY
 AZURE_OPENAI_DEPLOYMENT
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
 ```
 
 Optional GitHub variable:
@@ -62,33 +81,30 @@ AZURE_SPEECH_LANGUAGE=en-US
 ```
 
 `AZURE_CREDENTIALS` should be a service-principal JSON value accepted by `azure/login`. Run the
-manual **Production Deploy** workflow with your Vercel frontend URL as `frontend_origin`.
+manual **Production Deploy** workflow with your Vercel frontend URL as `frontend_origin`. Select
+`BringYourOwnKey` if users will paste their own keys on `/settings`, or `BackendManaged` if GitHub
+secrets should power the hosted demo.
 
 ## Backend on Azure Container Apps
 
 The quickest repeatable backend path is the deployment script:
 
 ```powershell
-$env:AZURE_SPEECH_KEY="<secret>"
-$env:AZURE_SPEECH_REGION="<region>"
-$env:AZURE_SPEECH_LANGUAGE="en-US"
-$env:AZURE_VISION_ENDPOINT="https://<resource>.cognitiveservices.azure.com/"
-$env:AZURE_VISION_KEY="<secret>"
-$env:AZURE_OPENAI_ENDPOINT="https://<resource>.openai.azure.com/"
-$env:AZURE_OPENAI_API_KEY="<secret>"
-$env:AZURE_OPENAI_DEPLOYMENT="<deployment-name>"
-
 .\scripts\deploy-backend-azure-containerapp.ps1 `
   -ResourceGroup "<resource-group>" `
   -AcrName "<unique-acr-name>" `
   -ContainerAppName "accessinote-api" `
   -EnvironmentName "accessinote-env" `
-  -FrontendOrigin "https://<your-vercel-domain>"
+  -FrontendOrigin "https://<your-vercel-domain>" `
+  -KeyMode BringYourOwnKey
 ```
 
+For backend-managed keys, set the Azure key environment variables before running the script and pass
+`-KeyMode BackendManaged`.
+
 The script builds `Dockerfile.backend` in Azure Container Registry, deploys the FastAPI backend to
-Azure Container Apps, stores Azure keys as container app secrets, disables runtime provider edits,
-and prints the backend URL for Vercel.
+Azure Container Apps, configures either BYOK or backend-managed key mode, and prints the backend URL
+for Vercel.
 
 Manual container build from the repository root:
 
@@ -100,6 +116,17 @@ Push that image to Azure Container Registry, then run it in Azure Container Apps
 for Containers with port `8000`.
 
 Set these backend environment variables or secrets:
+
+```text
+ACCESSINOTE_CORS_ORIGINS=https://<your-vercel-domain>
+ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=enabled
+
+TRANSCRIPTION_PROVIDER=local
+OCR_PROVIDER=local
+GENERATION_PROVIDER=local
+```
+
+For backend-managed keys, use:
 
 ```text
 ACCESSINOTE_CORS_ORIGINS=https://<your-vercel-domain>
@@ -124,16 +151,14 @@ AZURE_OPENAI_DEPLOYMENT=<deployment-name>
 Azure Container Apps supports runtime environment variables and app-level secrets that can be
 referenced by environment variables.
 
-`ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled` keeps `/settings` read-only for public visitors.
-Use `enabled` only for a controlled bring-your-own-key demo.
-
 ## Smoke Test
 
 After deployment:
 
 1. Open `https://<backend-domain>/health` and confirm `{"status":"ok"}`.
-2. Open `https://<backend-domain>/api/capabilities` and confirm Azure providers are selected and configured.
-3. Open `https://<backend-domain>/api/production/status` and confirm `ready` is `true`.
+2. Open `https://<backend-domain>/api/capabilities` and confirm upload APIs are enabled.
+3. Open `https://<backend-domain>/api/production/status`. In BYOK mode, provider checks will wait
+   for the current browser session to paste keys on `/settings`.
 4. Open the Vercel frontend.
 5. Open `/settings` and confirm runtime and production readiness.
 6. Upload a short permitted video and verify captions, OCR, generated notes, and exports.
@@ -146,7 +171,8 @@ You can run the smoke check script after both deployments:
 ```powershell
 .\scripts\check-production.ps1 `
   -FrontendUrl "https://<your-vercel-domain>" `
-  -BackendUrl "https://<backend-domain>"
+  -BackendUrl "https://<backend-domain>" `
+  -ByokMode
 ```
 
 Run the full hackathon readiness check before recording or submitting:
@@ -155,12 +181,14 @@ Run the full hackathon readiness check before recording or submitting:
 .\scripts\check-hackathon-readiness.ps1 `
   -FrontendUrl "https://<your-vercel-domain>" `
   -BackendUrl "https://<backend-domain>" `
-  -PublicMode
+  -PublicMode `
+  -ByokMode
 ```
 
 ## Public Demo Safety
 
 - Never show `.env`, Azure keys, or full secret values in the demo video.
+- In BYOK mode, make clear that visitors need their own Azure resources for Azure-backed processing.
 - Use permitted or synthetic lecture material only.
 - Clear uploaded private media before making screenshots.
 - Keep local fallback enabled so the app remains usable if one Azure service is unavailable.
