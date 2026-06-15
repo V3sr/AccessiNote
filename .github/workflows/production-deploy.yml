@@ -70,14 +70,22 @@ jobs:
             --admin-enabled true \
             --output none
 
-      - name: Build backend image in ACR
+      - name: Log into Azure Container Registry
         run: |
-          az acr build \
-            --registry "${{ inputs.acr_name }}" \
-            --image "accessinote-backend:${{ github.sha }}" \
-            --file Dockerfile.backend \
-            . \
+          az acr login \
+            --name "${{ inputs.acr_name }}" \
             --output none
+
+      - name: Build backend image locally
+        run: |
+          docker build \
+            -f Dockerfile.backend \
+            -t "${{ inputs.acr_name }}.azurecr.io/accessinote-backend:${{ github.sha }}" \
+            .
+
+      - name: Push backend image to ACR
+        run: |
+          docker push "${{ inputs.acr_name }}.azurecr.io/accessinote-backend:${{ github.sha }}"
 
       - name: Create Container Apps environment
         run: |

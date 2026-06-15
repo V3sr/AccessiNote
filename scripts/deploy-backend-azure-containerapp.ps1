@@ -129,8 +129,23 @@ az group create --name $ResourceGroup --location $Location --output none
 Write-Host "Creating or updating Azure Container Registry $AcrName"
 az acr create --resource-group $ResourceGroup --name $AcrName --sku Basic --admin-enabled true --output none
 
-Write-Host "Building backend image in ACR: $imageRef"
-az acr build --registry $AcrName --image $imageName --file Dockerfile.backend . --output none
+Write-Host "Logging into Azure Container Registry $AcrName"
+az acr login --name $AcrName --output none
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to log into Azure Container Registry $AcrName."
+}
+
+Write-Host "Building backend image locally: $imageRef"
+docker build -f Dockerfile.backend -t $imageRef .
+if ($LASTEXITCODE -ne 0) {
+  throw "Docker build failed for $imageRef."
+}
+
+Write-Host "Pushing backend image to ACR: $imageRef"
+docker push $imageRef
+if ($LASTEXITCODE -ne 0) {
+  throw "Docker push failed for $imageRef."
+}
 
 Write-Host "Creating Container Apps environment $EnvironmentName"
 $environmentExists = az containerapp env show --name $EnvironmentName --resource-group $ResourceGroup --query name -o tsv 2>$null
