@@ -45,6 +45,25 @@ NEXT_PUBLIC_SITE_URL=https://<your-vercel-domain>
 Vercel environment variables are configured outside source code and can be scoped by deployment
 environment. See the official Vercel environment variable documentation.
 
+### Vercel Import Troubleshooting
+
+If Vercel shows the repository tree with both `frontend` and `backend`, click **Edit** beside
+**Root Directory** and choose `frontend`. Do not leave the root directory as `./`.
+
+Use these Vercel settings for the frontend project:
+
+```text
+Root Directory: frontend
+Framework Preset: Next.js
+Install Command: npm install
+Build Command: npm run build
+Output Directory: .next
+```
+
+If the deployed URL shows `404: NOT_FOUND`, the most likely cause is that Vercel deployed the repo
+root instead of the `frontend` Next.js app. Change the project root directory to `frontend`, add the
+environment variables above, and redeploy.
+
 ## GitHub Actions Deployment
 
 The repository includes:
