@@ -23,12 +23,46 @@ Do not deploy Azure keys to Vercel. Vercel only needs `NEXT_PUBLIC_API_BASE_URL`
 
 ```text
 NEXT_PUBLIC_API_BASE_URL=https://<your-backend-domain>
+NEXT_PUBLIC_SITE_URL=https://<your-vercel-domain>
 ```
 
 5. Deploy the frontend.
 
 Vercel environment variables are configured outside source code and can be scoped by deployment
 environment. See the official Vercel environment variable documentation.
+
+## GitHub Actions Deployment
+
+The repository includes:
+
+- `.github/workflows/ci.yml` for backend compile plus frontend typecheck, lint, and build.
+- `.github/workflows/production-deploy.yml` for a manual production deploy to Azure Container Apps
+  and Vercel, followed by the smoke check script.
+
+Required GitHub repository secrets:
+
+```text
+AZURE_CREDENTIALS
+AZURE_SPEECH_KEY
+AZURE_SPEECH_REGION
+AZURE_VISION_ENDPOINT
+AZURE_VISION_KEY
+AZURE_OPENAI_ENDPOINT
+AZURE_OPENAI_API_KEY
+AZURE_OPENAI_DEPLOYMENT
+VERCEL_TOKEN
+VERCEL_ORG_ID
+VERCEL_PROJECT_ID
+```
+
+Optional GitHub variable:
+
+```text
+AZURE_SPEECH_LANGUAGE=en-US
+```
+
+`AZURE_CREDENTIALS` should be a service-principal JSON value accepted by `azure/login`. Run the
+manual **Production Deploy** workflow with your Vercel frontend URL as `frontend_origin`.
 
 ## Backend on Azure Container Apps
 

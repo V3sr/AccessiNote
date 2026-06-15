@@ -1,0 +1,206 @@
+name: Production Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      frontend_origin:
+        description: "Public Vercel frontend URL, for example https://accessinote.vercel.app"
+        required: true
+        type: string
+      azure_resource_group:
+        description: "Azure resource group"
+        required: true
+        type: string
+      azure_location:
+        description: "Azure region"
+        required: true
+        default: "eastus"
+        type: string
+      acr_name:
+        description: "Azure Container Registry name, globally unique, lowercase alphanumeric"
+        required: true
+        type: string
+      container_app_name:
+        description: "Azure Container App name"
+        required: true
+        default: "accessinote-api"
+        type: string
+      container_app_environment:
+        description: "Azure Container Apps environment name"
+        required: true
+        default: "accessinote-env"
+        type: string
+
+jobs:
+  deploy-backend:
+    name: Deploy backend to Azure Container Apps
+    runs-on: ubuntu-latest
+    outputs:
+      backend_url: ${{ steps.backend-url.outputs.backend_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create resource group
+        run: |
+          az group create \
+            --name "${{ inputs.azure_resource_group }}" \
+            --location "${{ inputs.azure_location }}" \
+            --output none
+
+      - name: Create Azure Container Registry
+        run: |
+          az acr create \
+            --resource-group "${{ inputs.azure_resource_group }}" \
+            --name "${{ inputs.acr_name }}" \
+            --sku Basic \
+            --admin-enabled true \
+            --output none
+
+      - name: Build backend image in ACR
+        run: |
+          az acr build \
+            --registry "${{ inputs.acr_name }}" \
+            --image "accessinote-backend:${{ github.sha }}" \
+            --file Dockerfile.backend \
+            . \
+            --output none
+
+      - name: Create Container Apps environment
+        run: |
+          if ! az containerapp env show \
+            --name "${{ inputs.container_app_environment }}" \
+            --resource-group "${{ inputs.azure_resource_group }}" \
+            --query name -o tsv >/dev/null 2>&1; then
+            az containerapp env create \
+              --name "${{ inputs.container_app_environment }}" \
+              --resource-group "${{ inputs.azure_resource_group }}" \
+              --location "${{ inputs.azure_location }}" \
+              --output none
+          fi
+
+      - name: Deploy or update backend
+        env:
+          IMAGE_REF: ${{ inputs.acr_name }}.azurecr.io/accessinote-backend:${{ github.sha }}
+        run: |
+          SECRETS=(
+            "azure-speech-key=${{ secrets.AZURE_SPEECH_KEY }}"
+            "azure-vision-key=${{ secrets.AZURE_VISION_KEY }}"
+            "azure-openai-key=${{ secrets.AZURE_OPENAI_API_KEY }}"
+          )
+
+          ENV_VARS=(
+            "ACCESSINOTE_CORS_ORIGINS=${{ inputs.frontend_origin }}"
+            "ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled"
+            "TRANSCRIPTION_PROVIDER=azure_speech"
+            "OCR_PROVIDER=azure_vision"
+            "GENERATION_PROVIDER=azure_openai"
+            "AZURE_SPEECH_KEY=secretref:azure-speech-key"
+            "AZURE_SPEECH_REGION=${{ secrets.AZURE_SPEECH_REGION }}"
+            "AZURE_SPEECH_LANGUAGE=${{ vars.AZURE_SPEECH_LANGUAGE || 'en-US' }}"
+            "AZURE_VISION_ENDPOINT=${{ secrets.AZURE_VISION_ENDPOINT }}"
+            "AZURE_VISION_KEY=secretref:azure-vision-key"
+            "AZURE_OPENAI_ENDPOINT=${{ secrets.AZURE_OPENAI_ENDPOINT }}"
+            "AZURE_OPENAI_API_KEY=secretref:azure-openai-key"
+            "AZURE_OPENAI_DEPLOYMENT=${{ secrets.AZURE_OPENAI_DEPLOYMENT }}"
+          )
+
+          if az containerapp show \
+            --name "${{ inputs.container_app_name }}" \
+            --resource-group "${{ inputs.azure_resource_group }}" \
+            --query name -o tsv >/dev/null 2>&1; then
+            az containerapp update \
+              --name "${{ inputs.container_app_name }}" \
+              --resource-group "${{ inputs.azure_resource_group }}" \
+              --image "$IMAGE_REF" \
+              --secrets "${SECRETS[@]}" \
+              --set-env-vars "${ENV_VARS[@]}" \
+              --output none
+          else
+            az containerapp create \
+              --name "${{ inputs.container_app_name }}" \
+              --resource-group "${{ inputs.azure_resource_group }}" \
+              --environment "${{ inputs.container_app_environment }}" \
+              --image "$IMAGE_REF" \
+              --registry-server "${{ inputs.acr_name }}.azurecr.io" \
+              --target-port 8000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --cpu 2 \
+              --memory 4Gi \
+              --secrets "${SECRETS[@]}" \
+              --env-vars "${ENV_VARS[@]}" \
+              --output none
+          fi
+
+      - name: Export backend URL
+        id: backend-url
+        run: |
+          FQDN=$(az containerapp show \
+            --name "${{ inputs.container_app_name }}" \
+            --resource-group "${{ inputs.azure_resource_group }}" \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          echo "backend_url=https://$FQDN" >> "$GITHUB_OUTPUT"
+          echo "Backend URL: https://$FQDN"
+
+  deploy-frontend:
+    name: Deploy frontend to Vercel
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Pull Vercel project settings
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+
+      - name: Build frontend
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ needs.deploy-backend.outputs.backend_url }}
+          NEXT_PUBLIC_SITE_URL: ${{ inputs.frontend_origin }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+
+      - name: Deploy frontend
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
+
+  smoke-check:
+    name: Smoke check production
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check deployed app
+        shell: pwsh
+        run: |
+          ./scripts/check-production.ps1 `
+            -FrontendUrl "${{ inputs.frontend_origin }}" `
+            -BackendUrl "${{ needs.deploy-backend.outputs.backend_url }}"
