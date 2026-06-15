@@ -109,6 +109,22 @@ manual **Production Deploy** workflow with your Vercel frontend URL as `frontend
 `BringYourOwnKey` if users will paste their own keys on `/settings`, or `BackendManaged` if GitHub
 secrets should power the hosted demo.
 
+The `AZURE_CREDENTIALS` secret must include all four fields required by `azure/login`:
+
+```json
+{
+  "clientSecret": "…",
+  "subscriptionId": "…",
+  "tenantId": "…",
+  "clientId": "…"
+}
+```
+
+If any of those values are missing, the workflow stops at Azure login before any deployment work
+starts. For a secretless setup, you can switch the workflow to GitHub OIDC later; that path uses
+`client-id`, `tenant-id`, and `subscription-id` inputs plus a federated credential on the Azure app
+registration.
+
 ## Backend on Azure Container Apps
 
 The quickest repeatable backend path is the deployment script:
