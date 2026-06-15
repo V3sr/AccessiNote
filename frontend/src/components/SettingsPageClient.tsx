@@ -9,11 +9,7 @@ import {
   ExternalLink,
   FileText,
   KeyRound,
-  LockKeyhole,
-  Rocket,
-  Server,
   ShieldCheck,
-  SquareTerminal,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -25,15 +21,8 @@ import { ProviderSettingsPanel } from "@/components/ProviderSettingsPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getCapabilities, getDemoStatus, getHealth, getProductionStatus } from "@/lib/api";
-import type {
-  CapabilityResponse,
-  DemoCheck,
-  DemoCheckStatus,
-  DemoStatusResponse,
-  ProductionStatusResponse,
-  ProviderStatus,
-} from "@/lib/types";
+import { getCapabilities, getDemoStatus, getHealth } from "@/lib/api";
+import type { CapabilityResponse, DemoCheck, DemoCheckStatus, DemoStatusResponse, ProviderStatus } from "@/lib/types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -41,7 +30,6 @@ export function SettingsPageClient() {
   const [apiStatus, setApiStatus] = useState<"checking" | "ok" | "offline">("checking");
   const [capabilities, setCapabilities] = useState<CapabilityResponse | null>(null);
   const [demoStatus, setDemoStatus] = useState<DemoStatusResponse | null>(null);
-  const [productionStatus, setProductionStatus] = useState<ProductionStatusResponse | null>(null);
 
   useEffect(() => {
     void refreshAll();
@@ -66,12 +54,6 @@ export function SettingsPageClient() {
     } catch {
       setDemoStatus(null);
     }
-
-    try {
-      setProductionStatus(await getProductionStatus());
-    } catch {
-      setProductionStatus(null);
-    }
   }
 
   const providers = capabilities?.providers ?? {};
@@ -81,19 +63,20 @@ export function SettingsPageClient() {
     <main className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
       <Header />
 
-      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f3faf6_62%,#f7f9fb_100%)]">
+      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_62%,#f7f9fb_100%)]">
         <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:px-8">
           <div className="min-w-0">
             <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
-              Hosted demo key setup
+              Local key setup
             </Badge>
             <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
-              Let each demo user connect their own Azure keys
+              Bring your own keys for local processing
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
-              Use this setup page for a public bring-your-own-key demo. Each browser session can choose Azure Speech,
-              Azure AI Vision, and Azure OpenAI, then paste the matching keys without changing other visitors.
+              Use this page when you want AccessiNote to call your own transcription, OCR, or generation
+              providers. The values stay scoped to this browser session on the backend, and you can switch back
+              to local-only at any time.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button
@@ -120,12 +103,12 @@ export function SettingsPageClient() {
 
           <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
             <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
-              <Server className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              Runtime status
+              <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
+              Local status
             </h2>
             <div className="mt-4 grid gap-3">
               <StatusLine
-                label="Frontend target"
+                label="Backend target"
                 value={apiBaseUrl}
                 status={apiStatus === "ok" ? "pass" : apiStatus === "offline" ? "fail" : "warn"}
               />
@@ -135,14 +118,9 @@ export function SettingsPageClient() {
                 status={demoStatus?.ready ? "pass" : demoStatus ? "warn" : "warn"}
               />
               <StatusLine
-                label="Microsoft IQ routes"
+                label="Optional keys"
                 value={providerStatusText}
                 status={providerStatusText.includes("configured") ? "pass" : "warn"}
-              />
-              <StatusLine
-                label="Production readiness"
-                value={productionStatus ? (productionStatus.ready ? "Ready" : "Needs config") : "Checking"}
-                status={productionStatus?.ready ? "pass" : productionStatus ? "warn" : "warn"}
               />
             </div>
           </Card>
@@ -151,7 +129,7 @@ export function SettingsPageClient() {
 
       <section className="mx-auto grid max-w-[1500px] gap-5 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8 lg:py-8">
         <div className="min-w-0 space-y-5">
-          <LaunchCommandCenter capabilities={capabilities} productionStatus={productionStatus} />
+          <LocalWorkflowCard capabilities={capabilities} demoStatus={demoStatus} />
           <div id="key-setup">
             <ProviderSettingsPanel capabilities={capabilities} onSaved={refreshAll} variant="full" />
           </div>
@@ -164,9 +142,9 @@ export function SettingsPageClient() {
               What the keys enable
             </h2>
             <div className="mt-4 space-y-3">
-              <ProviderUse label="Azure AI Speech" detail="Captions and transcript segments from uploaded video audio." />
-              <ProviderUse label="Azure AI Vision" detail="Readable text from slides, screenshots, and selected frames." />
-              <ProviderUse label="Azure OpenAI" detail="Higher-quality accessible notes from grounded evidence." />
+              <ProviderUse label="Speech transcription" detail="Captions and transcript segments from uploaded video audio." />
+              <ProviderUse label="OCR" detail="Readable text from slides, screenshots, and selected frames." />
+              <ProviderUse label="Output generation" detail="Higher-quality accessible notes from grounded evidence." />
             </div>
           </Card>
 
@@ -176,50 +154,31 @@ export function SettingsPageClient() {
               Key handling
             </h2>
             <p className="mt-3 text-sm leading-6 text-zinc-700">
-              Public BYOK mode scopes pasted values to this browser session on the backend. Backend-owned demo keys
-              can still be configured with private environment variables instead.
+              Keys are scoped to the current browser session on the backend. The API never returns secret
+              values, and you can clear everything back to local-only mode at any time.
             </p>
             <div className="mt-4 space-y-2 text-sm text-zinc-700">
-              <SafetyRow label="No Azure keys in frontend code" />
+              <SafetyRow label="No keys in frontend code" />
               <SafetyRow label="No secret values returned by the API" />
               <SafetyRow label="Other browser sessions are not changed" />
             </div>
           </Card>
 
-          <Card id="production" className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
-            <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
-              <FileText className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-              Production launch shape
-            </h2>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-700">
-              <p>
-                Deploy the Next.js frontend on Vercel with `NEXT_PUBLIC_API_BASE_URL` pointing to the backend URL.
-              </p>
-              <p>
-                Deploy the FastAPI backend on Azure App Service or Azure Container Apps. For BYOK mode, keep runtime
-                provider settings enabled. For backend-owned demo keys, set keys as backend secrets.
-              </p>
-              <p>
-                Add the Vercel domain to `ACCESSINOTE_CORS_ORIGINS` on the backend before recording or sharing the app.
-              </p>
-            </div>
-          </Card>
-
-          <ProductionChecklist status={productionStatus} />
+          <DemoChecklist status={demoStatus} />
         </aside>
       </section>
     </main>
   );
 }
 
-function ProductionChecklist({ status }: { status: ProductionStatusResponse | null }) {
+function DemoChecklist({ status }: { status: DemoStatusResponse | null }) {
   const checks = status?.checks ?? [];
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-950">
-          <Server className="h-4 w-4 text-sky-700" aria-hidden="true" />
-          Production checklist
+          <ClipboardCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
+          Demo readiness
         </h2>
         <Badge
           className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
@@ -235,104 +194,101 @@ function ProductionChecklist({ status }: { status: ProductionStatusResponse | nu
       {checks.length > 0 ? (
         <div className="mt-4 space-y-2">
           {checks.map((check) => (
-            <ProductionCheckRow key={check.id} check={check} />
+            <DemoCheckRow key={check.id} check={check} />
           ))}
         </div>
       ) : (
         <p className="mt-3 text-sm leading-6 text-zinc-700">
-          Checking CORS, Azure providers, backend storage, and fallback tools.
+          Checking sample data, local tools, exports, recent jobs, and optional provider configuration.
         </p>
       )}
     </Card>
   );
 }
 
-function LaunchCommandCenter({
+function LocalWorkflowCard({
   capabilities,
-  productionStatus,
+  demoStatus,
 }: {
   capabilities: CapabilityResponse | null;
-  productionStatus: ProductionStatusResponse | null;
+  demoStatus: DemoStatusResponse | null;
 }) {
   const providers = capabilities?.providers ?? {};
-  const microsoftIqReady = ["transcription", "ocr", "generation"].every((kind) => {
+  const azureConfigured = ["transcription", "ocr", "generation"].some((kind) => {
     const provider = providers[kind];
     return Boolean(provider?.name.startsWith("azure") && provider.configured);
   });
-  const hostedSafetyReady = findProductionCheck(productionStatus, "production_runtime_settings")?.status === "pass";
-  const corsReady = findProductionCheck(productionStatus, "production_cors")?.status === "pass";
-  const productionReady = Boolean(productionStatus?.ready);
 
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white p-5 shadow-soft lg:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-xl font-semibold text-zinc-950">
-            <Rocket className="h-5 w-5 text-emerald-700" aria-hidden="true" />
-            Launch command center
+            <FileText className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+            Local workflow
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-700">
-            Use this page before sharing AccessiNote publicly. It tracks the Microsoft IQ requirement, hosted safety
-            lock, public frontend origin, and final submission package.
+            Use this page before a local recording or when you want to plug in your own keys. AccessiNote
+            still works without API keys, and optional Azure routes can be switched on only when you want
+            them.
           </p>
         </div>
         <Badge
           className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-            productionReady
+            demoStatus?.ready
               ? "bg-emerald-50 text-emerald-900 ring-emerald-100 hover:bg-emerald-50"
               : "bg-amber-50 text-amber-950 ring-amber-200 hover:bg-amber-50"
           }`}
         >
-          {productionReady ? "Shareable" : "Needs launch config"}
+          {demoStatus?.ready ? "Local-ready" : "Needs review"}
         </Badge>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2">
-        <LaunchStep
+        <LocalStep
           icon={<Cloud className="h-4 w-4" aria-hidden="true" />}
-          title="Microsoft IQ layer"
-          detail="Azure AI Speech, Azure AI Vision, and Azure OpenAI are selected and configured."
-          ready={microsoftIqReady}
-          fallback="Use the BYOK slots below or backend environment variables to configure Azure routes."
+          title="Optional keys"
+          detail="Paste your own transcription, OCR, or generation keys when you want cloud-backed processing."
+          ready={azureConfigured}
+          fallback="You can stay local-only and still load samples, upload material, and export output."
         />
-        <LaunchStep
-          icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />}
-          title="Hosted key mode"
-          detail="This deployment supports either backend-managed keys or browser-session BYOK keys."
-          ready={hostedSafetyReady}
-          fallback="Check ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS on the backend host."
+        <LocalStep
+          icon={<ShieldCheck className="h-4 w-4" aria-hidden="true" />}
+          title="Review first"
+          detail="Keep timestamps, OCR, warnings, and source coverage visible before export."
+          ready={Boolean(demoStatus?.ready)}
+          fallback="Run the demo readiness checks so missing tools show up before you record."
         />
-        <LaunchStep
-          icon={<Server className="h-4 w-4" aria-hidden="true" />}
-          title="Frontend and backend link"
-          detail="The deployed frontend origin is allowed by the Azure-hosted backend CORS policy."
-          ready={corsReady}
-          fallback="Set ACCESSINOTE_CORS_ORIGINS to the Vercel URL on the backend."
-        />
-        <LaunchStep
-          icon={<ClipboardCheck className="h-4 w-4" aria-hidden="true" />}
-          title="Submission package"
-          detail="README, architecture, demo script, safety, attribution, production, and Microsoft IQ docs are present."
+        <LocalStep
+          icon={<FileText className="h-4 w-4" aria-hidden="true" />}
+          title="Accessible outputs"
+          detail="Generate study packs, screen-reader notes, plain-language output, captions, and evidence JSON."
           ready
-          fallback="Add the final public GitHub URL and demo video URL before submission."
+          fallback="Accessible outputs stay grounded in the lecture timeline."
+        />
+        <LocalStep
+          icon={<ClipboardCheck className="h-4 w-4" aria-hidden="true" />}
+          title="Export pack"
+          detail="Copy or download markdown, WebVTT, JSON, or transcript output from the generated draft."
+          ready
+          fallback="Exports stay close to the output panel so they are easy to find."
         />
       </div>
 
       <div className="mt-5 rounded-xl bg-zinc-50 p-3 ring-1 ring-zinc-200">
         <p className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
-          <SquareTerminal className="h-4 w-4 text-zinc-700" aria-hidden="true" />
+          <XCircle className="h-4 w-4 text-zinc-700" aria-hidden="true" />
           Final verification command
         </p>
         <code className="mt-2 block overflow-x-auto rounded-md bg-zinc-950 px-3 py-2 text-xs leading-5 text-zinc-50">
-          .\scripts\check-hackathon-readiness.ps1 -FrontendUrl https://your-vercel-url -BackendUrl
-          https://your-azure-backend
+          .\scripts\check-hackathon-readiness.ps1 -FrontendUrl http://localhost:3000 -BackendUrl http://localhost:8000
         </code>
       </div>
     </Card>
   );
 }
 
-function LaunchStep({
+function LocalStep({
   icon,
   title,
   detail,
@@ -367,11 +323,19 @@ function LaunchStep({
   );
 }
 
-function findProductionCheck(status: ProductionStatusResponse | null, id: string): DemoCheck | undefined {
-  return status?.checks.find((check) => check.id === id);
+function providerSummary(providers: Record<string, ProviderStatus>): string {
+  const configured = Object.values(providers).filter((provider) => provider.name !== "local" && provider.configured);
+  if (configured.length > 0) {
+    return `${configured.length} configured`;
+  }
+  const selected = Object.values(providers).filter((provider) => provider.name !== "local");
+  if (selected.length > 0) {
+    return `${selected.length} selected`;
+  }
+  return "Local fallback";
 }
 
-function ProductionCheckRow({ check }: { check: DemoCheck }) {
+function DemoCheckRow({ check }: { check: DemoCheck }) {
   const Icon = check.status === "pass" ? CheckCircle2 : check.status === "fail" ? XCircle : AlertTriangle;
   const tone =
     check.status === "pass"
@@ -427,16 +391,4 @@ function StatusLine({ label, value, status }: { label: string; value: string; st
       </span>
     </div>
   );
-}
-
-function providerSummary(providers: Record<string, ProviderStatus>): string {
-  const configured = Object.values(providers).filter((provider) => provider.name !== "local" && provider.configured);
-  if (configured.length > 0) {
-    return `${configured.length} configured`;
-  }
-  const selected = Object.values(providers).filter((provider) => provider.name !== "local");
-  if (selected.length > 0) {
-    return `${selected.length} selected`;
-  }
-  return "Local fallback";
 }

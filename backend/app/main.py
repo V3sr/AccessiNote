@@ -586,15 +586,15 @@ def production_cors_check() -> DemoCheck:
     if public_origins:
         return DemoCheck(
             id="production_cors",
-            label="Production frontend origin",
+            label="Frontend origin",
             status="pass",
             detail=f"{len(public_origins)} public origin(s) allowed. Secret values are not exposed.",
         )
     return DemoCheck(
         id="production_cors",
-        label="Production frontend origin",
+        label="Frontend origin",
         status="fail",
-        detail="Set ACCESSINOTE_CORS_ORIGINS to the deployed Vercel URL before sharing the public app.",
+        detail="Set ACCESSINOTE_CORS_ORIGINS to match your frontend origin before sharing the app.",
     )
 
 
@@ -612,7 +612,7 @@ def production_provider_check(kind: str, expected_name: str, label: str) -> Demo
             id=f"production_{kind}",
             label=label,
             status="fail",
-            detail=f"Set {provider_env_name(kind)}={expected_name} for the production demo.",
+            detail=f"Set {provider_env_name(kind)}={expected_name} for the demo.",
         )
     if status.configured:
         return DemoCheck(
@@ -645,7 +645,7 @@ def production_storage_check() -> DemoCheck:
         id="production_storage",
         label="Upload and output storage",
         status="pass",
-        detail="Backend can write uploads and generated timelines. Use durable Azure storage for longer public operation.",
+        detail="Backend can write uploads and generated timelines. Use durable storage if you want longer retention.",
     )
 
 
@@ -653,13 +653,13 @@ def production_runtime_settings_check() -> DemoCheck:
     if not runtime_provider_settings_enabled():
         return DemoCheck(
             id="production_runtime_settings",
-            label="Production key mode",
+            label="Key mode",
             status="pass",
             detail="Backend-managed mode is enabled. Azure providers are controlled by backend environment secrets.",
         )
     return DemoCheck(
         id="production_runtime_settings",
-        label="Production key mode",
+        label="Key mode",
         status="pass",
         detail="Bring-your-own-key mode is enabled. Runtime provider keys are scoped to each browser session.",
     )

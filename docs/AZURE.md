@@ -1,20 +1,16 @@
 # Azure Integration
 
-AccessiNote can run as an Azure-first demo while preserving local fallbacks. For the Microsoft Agents
-League submission, these Azure providers are the Microsoft IQ intelligence layer.
+AccessiNote can optionally use Azure providers while still keeping the local demo available without
+keys. For the Microsoft Agents League submission, these Azure providers are the Microsoft IQ
+intelligence layer.
 
 ## Providers
 
-Use the **Bring your own Azure keys** page at `/settings` for the easiest setup. The page lets users
-choose local or Azure providers, paste Azure keys into clear slots, and open direct Microsoft Learn
-setup links. Runtime keys are scoped to a browser session on the backend, are not returned to the
-browser, and are cleared when the backend restarts or when **Use local only** is clicked.
-
-For a public hosted BYOK demo, set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=enabled` and leave provider
-defaults as `local` until a visitor saves their own keys. For a backend-owned public demo, configure
-keys as backend environment secrets and set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled`. In that
-mode, `/settings` remains visible as a readiness dashboard but visitors cannot change provider
-settings.
+Use the **Bring your own Azure keys** page at `/settings` when you want to try your own provider
+values. The page lets users choose local or Azure providers, paste Azure keys into clear slots, and
+open direct Microsoft Learn setup links. Runtime keys are scoped to a browser session on the backend,
+are not returned to the browser, and are cleared when the backend restarts or when **Use local
+only** is clicked.
 
 For repeatable local demos, set these switches in a private `.env` file instead:
 
@@ -59,17 +55,14 @@ AccessiNote keeps local fallback for demo reliability:
 - If Azure AI Vision OCR fails or finds no text, the backend falls back to local RapidOCR/Tesseract.
 - If Azure OpenAI generation fails, the backend returns the deterministic local output.
 
-The frontend Demo readiness panel, `/settings` page, and `/api/production/status` report whether
-Azure providers are selected and configured.
+The frontend `/settings` page and `/api/capabilities` report whether Azure providers are selected
+and configured.
 
 ## Safe Demo Guidance
 
 - Never show `.env`, Azure keys, or full resource endpoints in the demo video.
 - Do not call Azure directly from the browser. AccessiNote routes provider calls through the FastAPI
   backend so secrets stay server-side.
-- Use the UI key panel for live setup if you want judges to see that each browser session can bring
-  its own Azure resources without editing source code.
-- Redact Azure resource names in screenshots if they appear in portal pages.
 - Use synthetic or permitted lecture material only.
 - Clear `data/uploads` and `data/outputs` before publishing screenshots if they contain private test
   material.

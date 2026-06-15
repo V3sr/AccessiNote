@@ -1,13 +1,12 @@
 # AccessiNote
 
-AccessiNote is a lecture accessibility workbench. It turns a permitted lecture
-timeline or pasted transcript into timestamped learning formats such as structured notes,
-ADHD-friendly study packs, screen-reader notes, plain-language explanations, exam prep, and
-notetaker quality reports.
+AccessiNote is a lecture accessibility workbench. It turns permitted lecture timelines, pasted
+transcripts, slides, screenshots, and local video into timestamped learning formats such as
+structured notes, ADHD-friendly study packs, screen-reader notes, plain-language explanations, exam
+prep, captions, and notetaker quality reports.
 
-The app runs locally without API keys and can also run as an Azure-backed production demo. The
-Microsoft IQ intelligence layer is implemented through Azure AI Speech, Azure AI Vision, and Azure
-OpenAI provider routes while local fallbacks keep the workflow reliable.
+The app runs locally without API keys. If you want to use your own transcription, OCR, or generation
+services, open `/settings` and paste your keys into the session-scoped slots.
 
 ## Run Locally
 
@@ -65,7 +64,7 @@ grounding concise and move long evidence trails into the timeline and Evidence J
 - Notetaker Quality Report scores transcript, OCR, confidence, and weak-evidence coverage so a
   human reviewer can decide what needs attention before sharing.
 
-## Local Video/OCR
+## Local Video And OCR
 
 Image and video upload work without cloud services. Still-image uploads are treated as one visual
 timeline chunk and scanned directly with local OCR when an OCR engine is available. If OCR is not
@@ -100,19 +99,19 @@ continues with visual frame scanning after `ACCESSINOTE_TRANSCRIPTION_TIMEOUT_SE
 `ACCESSINOTE_JOB_STALE_SECONDS` seconds (default: 900), and the frontend will resume active jobs
 after a page reload.
 
-RapidOCR runs locally through ONNX Runtime and is installed with the backend requirements. Tesseract
-is optional and can be used as a fallback local OCR engine:
+RapidOCR runs locally through ONNX Runtime and is installed with the backend requirements.
+Tesseract is optional and can be used as a fallback local OCR engine:
 
 ```powershell
 winget install UB-Mannheim.TesseractOCR
 ```
 
-## Microsoft IQ / Azure Provider Configuration
+## Optional Microsoft IQ / Azure Setup
 
 The demo path stays local by default. `/api/capabilities` reports optional provider status for
-Microsoft IQ services, and `/api/demo/status` shows whether the selected providers are configured. No
-keys are required to load samples, scan media locally, generate captions locally, run local OCR, or
-export notes.
+Microsoft IQ services, and `/api/demo/status` shows whether the selected providers are configured.
+No keys are required to load samples, scan media locally, generate captions locally, run local OCR,
+or export notes.
 
 AccessiNote uses three Microsoft IQ routes when configured:
 
@@ -120,12 +119,9 @@ AccessiNote uses three Microsoft IQ routes when configured:
 - Azure AI Vision for OCR on slides, screenshots, and selected video frames.
 - Azure OpenAI for grounded accessible study outputs.
 
-Users can paste Azure keys into the **Bring your own Azure keys** page at `/settings`. Those keys are
-scoped to the current browser session on the backend, never returned to the frontend, and cleared on
-backend restart or when switching back to local-only mode. For production demos, keep
-`ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=enabled` when judges or visitors should bring their own keys.
-Use backend environment secrets plus `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled` only when the
-hosted demo should run on backend-owned Azure resources.
+Users can paste Azure keys into the **Bring your own Azure keys** page at `/settings`. Those keys
+are scoped to the current browser session on the backend, never returned to the frontend, and
+cleared on backend restart or when switching back to local-only mode.
 
 Provider switches:
 
@@ -137,30 +133,12 @@ When an Azure provider is selected, AccessiNote reports whether the required env
 are configured. Provider calls are made from the FastAPI backend so keys are never exposed to the
 browser. If Azure fails, the app returns to local fallback behavior.
 
-## Production Deployment
-
-For a public demo, deploy the Next.js frontend to Vercel and deploy the FastAPI media backend to
-Azure Container Apps or Azure App Service for Containers. Set `NEXT_PUBLIC_API_BASE_URL` on Vercel to
-the backend URL and `NEXT_PUBLIC_SITE_URL` to the frontend URL. The recommended public demo mode is
-BYOK: visitors open `/settings`, use dropdowns to select Azure routes, paste their own keys, and use
-direct Microsoft Learn links to get the required values. Backend-owned Azure keys are also supported.
-See `docs/PRODUCTION.md`.
-
-Before recording or submitting, run the combined readiness check:
-
-```powershell
-.\scripts\check-hackathon-readiness.ps1 -FrontendUrl http://localhost:3000 -BackendUrl http://localhost:8000
-```
-
-For a public hosted demo, add `-PublicMode` and pass the Vercel and Azure backend URLs.
-
 ## Hackathon Docs
 
 - `docs/DEMO.md`: five-minute recording flow and checklist.
 - `docs/ARCHITECTURE.md`: local pipeline, API surface, Mermaid diagram, and provider seams.
 - `docs/MICROSOFT_IQ.md`: required Microsoft IQ integration story and demo talking points.
-- `docs/AZURE.md`: Azure setup, fallback behavior, and safe demo guidance.
-- `docs/PRODUCTION.md`: Vercel plus Azure backend launch guide.
+- `docs/AZURE.md`: optional Azure setup, fallback behavior, and safe demo guidance.
 - `docs/SAFETY.md`: permitted-use policy, human review, OCR/caption limitations, and optional provider notes.
 - `docs/ATTRIBUTION.md`: demo content and dependency attribution.
 - `docs/SUBMISSION.md`: project description, required submission checklist, judging alignment, Microsoft integration notes, and screenshot checklist.

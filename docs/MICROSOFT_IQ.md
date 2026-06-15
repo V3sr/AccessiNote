@@ -1,8 +1,8 @@
 # Microsoft IQ Integration
 
-AccessiNote satisfies the Microsoft IQ requirement through an optional Azure-backed intelligence layer.
-The local demo remains available without keys, but a hosted hackathon demo can run Azure-first with
-server-side provider secrets.
+AccessiNote satisfies the Microsoft IQ requirement through an optional Azure-backed intelligence
+layer. The app still works locally without keys, but users can enter their own Azure provider values
+through the settings page when they want cloud-backed processing.
 
 ## IQ Routes
 
@@ -15,11 +15,9 @@ server-side provider secrets.
 ## How The App Exposes It
 
 - `/settings` lets local users select Azure providers and enter session-only keys.
-- Hosted deployments can disable runtime key edits with `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled`.
 - `/api/capabilities` reports selected provider names, configuration status, and required environment variables.
 - `/api/demo/status` includes provider readiness in the demo checklist.
-- `/api/production/status` checks CORS, Azure provider selection, Azure provider configuration, hosted key safety, backend storage, and local fallback tools.
-- The `/settings` page shows Azure AI Speech, Azure AI Vision, Azure OpenAI, production readiness, and bring-your-own-key setup links at a glance.
+- The `/settings` page shows Azure AI Speech, Azure AI Vision, Azure OpenAI, and bring-your-own-key setup links at a glance.
 
 ## Demo Positioning
 
@@ -27,7 +25,7 @@ Use this phrasing in the submission video:
 
 > AccessiNote integrates Microsoft IQ through Azure AI Speech for captions, Azure AI Vision for OCR,
 > and Azure OpenAI for grounded accessible output generation. The app keeps local fallbacks so the
-> demo is reliable, but the public production configuration keeps Azure keys server-side.
+> demo is reliable, and users can add their own Azure keys when they want cloud-backed processing.
 
 ## Safety Notes
 

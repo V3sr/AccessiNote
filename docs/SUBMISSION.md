@@ -2,10 +2,9 @@
 
 ## Project Description
 
-AccessiNote is a lecture accessibility workbench with local fallback and a Microsoft IQ intelligence
-layer powered by Azure AI providers. It turns permitted lecture videos, slides, screenshots, captions,
-or transcripts into reviewable evidence timelines and accessible learning outputs for different study
-needs.
+AccessiNote is a local-first lecture accessibility workbench with optional Microsoft IQ provider
+support. It turns permitted lecture videos, slides, screenshots, captions, or transcripts into
+reviewable evidence timelines and accessible learning outputs for different study needs.
 
 The app focuses on the Microsoft Agents League Creative Apps + Accessibility path and the
 Accessibility Award: it prioritizes multimodal extraction quality, transparent source grounding,
@@ -63,15 +62,14 @@ AccessiNote integrates the required Microsoft IQ intelligence layer in three pla
 - Azure AI Vision scans uploaded images and selected video frames for OCR evidence.
 - Azure OpenAI generates accessible learning outputs from grounded timeline evidence.
 
-These providers are visible in `/settings`, `/api/capabilities`, `/api/demo/status`, and
-`/api/production/status`. The app can run with backend-managed Azure keys or browser-session BYOK
-keys for the public hackathon demo while preserving local fallback behavior if a provider is
-unavailable.
+These providers are visible in `/settings`, `/api/capabilities`, and `/api/demo/status`. The app can
+run with backend-managed Azure keys or browser-session BYOK keys for the local demo while preserving
+local fallback behavior if a provider is unavailable.
 
 ## Microsoft Integration Story
 
-AccessiNote keeps local fallback for reliability and safety, but can run an Azure-first hackathon
-demo with Microsoft services:
+AccessiNote keeps local fallback for reliability and safety, but can use Azure-backed provider routes
+when configured:
 
 - `TRANSCRIPTION_PROVIDER=local|azure_speech`
 - `OCR_PROVIDER=local|azure_vision`
@@ -91,7 +89,6 @@ links so judges or local users can bring their own Azure resources without editi
 - Creativity and originality: the app treats lecture accessibility as source-grounded multimodal review instead of generic summarization.
 - User experience and presentation: the workbench shows processing progress, readiness, scan metrics, timeline review, and export actions in one flow.
 - Reliability and safety: the demo can use Azure providers without exposing keys, keeps local fallback, stores local timelines explicitly, warns about weak evidence, and keeps humans in the review loop.
-- Hosted production safety: public deployments can use browser-session BYOK keys or disable runtime provider edits so Azure keys are controlled only by backend environment secrets.
 - Community vote: the demo story is easy to understand: upload lecture material, inspect evidence, generate accessible study formats.
 
 ## Accessibility Award Fit
@@ -116,18 +113,18 @@ AccessiNote supports multiple access needs directly:
 - WebVTT caption export.
 - Evidence JSON export.
 - Safety/human-review message.
-- Azure provider readiness with endpoints and keys redacted.
+- Optional provider readiness with endpoints and keys redacted.
 
 ## Final Verification
 
-Final tested commit: record the final public submission SHA after the last deployment commit.
+Final tested commit: record the final public submission SHA after the last release-ready commit.
 
 Checks completed on June 14, 2026:
 
 - Backend compile: `python -m compileall backend/app`.
 - Frontend typecheck: `npm run typecheck`.
 - Frontend lint: `npm run lint`.
-- Frontend production build: `npm run build`.
-- Hackathon readiness script: `.\scripts\check-hackathon-readiness.ps1` for local recording, then rerun with `-PublicMode` after public deployment.
+- Frontend build: `npm run build`.
+- Hackathon readiness script: `.\scripts\check-hackathon-readiness.ps1` for local recording.
 - Backend smoke tests: health, capabilities, demo status, sample lecture, transcript creation, ADHD/screen-reader generation, WebVTT generation, image media job, video media job with uploaded captions, and job cancellation.
 - Provider settings API: session-only Azure key settings save, report configured status without returning secrets, and clear back to local providers.

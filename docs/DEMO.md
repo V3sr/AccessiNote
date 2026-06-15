@@ -7,13 +7,15 @@ YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
 
 ## Five-Minute Flow
 
-0:00-0:30 - Production readiness
+0:00-0:30 - Local readiness
 
-1. Open the deployed frontend URL, or `http://localhost:3000` while recording locally.
-2. Open `/settings` briefly and say: AccessiNote integrates Azure AI Speech, Azure AI Vision, and Azure OpenAI as its required Microsoft IQ layer.
-3. Show the bring-your-own-key slots and official setup links without revealing real keys.
-4. Return to the workspace and point to the Demo readiness panel.
-5. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status, and Microsoft provider configuration before the demo starts.
+1. Open the local frontend URL.
+2. Open `/settings` briefly and show the optional key slots.
+3. Point out that AccessiNote works locally without API keys and can also use your own Azure keys
+   if you want cloud-backed transcription, OCR, or generation.
+4. Return to the workspace and point to the demo readiness panel.
+5. Say: AccessiNote checks sample data, ffmpeg, OCR, transcription, exports, recent video status,
+   and optional provider configuration before the demo starts.
 
 0:30-1:10 - Baseline sample
 
@@ -28,7 +30,8 @@ YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
 2. Choose a short permitted lecture clip.
 3. Optionally attach `.vtt`, `.srt`, or `.txt` captions; otherwise allow local faster-whisper captions.
 4. Click **Upload video**.
-5. Narrate the staged job flow: upload received, extracting audio, transcribing with Azure Speech or local fallback, finding visual changes, running Azure Vision OCR or local fallback, aligning timeline, ready for review.
+5. Narrate the staged job flow: upload received, extracting audio, transcribing locally or with your
+   own provider keys, finding visual changes, running OCR, aligning timeline, ready for review.
 
 2:15-3:10 - Evidence review
 
@@ -50,12 +53,13 @@ YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
 
 1. Select **WebVTT Captions**, click **Generate output**, then click **Download .vtt**.
 2. Select **Evidence JSON**, click **Generate output**, and show the transparent source trail.
-3. Close on the safety posture: permitted materials only, generated captions and OCR need human review, local storage is explicit, Azure keys stay server-side, and local fallback protects the demo.
+3. Close on the safety posture: permitted materials only, generated captions and OCR need human
+   review, local storage is explicit, and local fallback protects the demo.
 
 ## Judging Alignment
 
 - Accuracy and relevance: timeline chunks preserve transcript, OCR, keyframes, and confidence.
-- Reasoning and multi-step thinking: local pipeline extracts audio, detects visual changes, scans OCR, aligns evidence, and flags weak chunks, with Microsoft IQ provider routes available for speech, OCR, and generation.
+- Reasoning and multi-step thinking: local pipeline extracts audio, detects visual changes, scans OCR, aligns evidence, and flags weak chunks, with optional Microsoft IQ provider routes available for speech, OCR, and generation.
 - Creativity and originality: lecture accessibility is treated as multimodal evidence review, not just summarization.
 - User experience and presentation: the workbench shows progress, scan metrics, concise source grounding, and export controls in one flow.
 - Reliability and safety: demo readiness diagnostics, no required external API keys, explicit warnings, local storage, and human-in-the-loop review.
@@ -67,8 +71,8 @@ Use synthetic or explicitly permitted lecture material. Avoid private student da
 
 ## Recording Checklist
 
-- Browser opened to the deployed frontend URL, or `http://localhost:3000` for local recording.
-- Backend running on Azure or `http://localhost:8000`.
+- Browser opened to the local frontend URL.
+- Backend running on `http://localhost:8000`.
 - `scripts/check-hackathon-readiness.ps1` run successfully against the recording frontend/backend.
 - `/settings` provider page verified without showing keys.
 - Demo readiness panel visible near the start.

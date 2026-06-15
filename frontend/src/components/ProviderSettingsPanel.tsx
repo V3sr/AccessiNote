@@ -268,12 +268,12 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
         <div className="min-w-0">
           <h2 className={isFull ? "flex items-center gap-2 text-xl font-semibold text-zinc-950" : "flex items-center gap-2 text-base font-semibold text-zinc-950"}>
             <KeyRound className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-            Bring your own Azure keys
+            Optional key setup
           </h2>
           <p className={isFull ? "mt-2 max-w-3xl text-sm leading-6 text-zinc-700" : "mt-1 text-sm leading-6 text-zinc-700"}>
             {runtimeSettingsEnabled
-              ? "Choose Azure routes, paste the matching keys, and save. Keys stay server-side, are scoped to this browser session, are never shown again, and can be cleared back to local processing."
-              : "Azure providers are managed by backend environment secrets on this deployment. Secret values are never returned to the browser."}
+              ? "Choose the provider routes you want, paste the matching keys, and save. Keys stay server-side, are scoped to this browser session, are never shown again, and can be cleared back to local processing."
+              : "Provider values are managed by backend environment secrets in this local environment. Secret values are never returned to the browser."}
           </p>
         </div>
         <Badge className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">
@@ -303,8 +303,8 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
             <p className="flex items-start gap-2">
               <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               {runtimeSettingsEnabled
-                ? "Use this page for live setup or public bring-your-own-key testing. Do not show real keys in recordings or screenshots."
-                : "Runtime edits are disabled for this hosted deployment. Configure Azure providers through backend environment variables."}
+                ? "Use this page for local setup or session-scoped testing. Do not show real keys in recordings or screenshots."
+                : "Runtime edits are disabled in this environment. Configure providers through backend environment variables or local .env values."}
             </p>
           </div>
           {runtimeSettingsEnabled ? formBody : <ReadOnlyProviderNotice />}
@@ -350,8 +350,8 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 function ReadOnlyProviderNotice() {
   return (
     <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm leading-6 text-zinc-700">
-      Provider editing is read-only on this deployment. Update Azure keys and provider switches in the backend host
-      environment, then redeploy or restart the backend.
+      Provider editing is read-only in this environment. Update your backend environment variables or local
+      `.env` values, then restart the backend.
     </div>
   );
 }
@@ -359,7 +359,7 @@ function ReadOnlyProviderNotice() {
 function ProviderSetupGuide() {
   const steps = [
     {
-      title: "1. Create or open Azure resources",
+      title: "1. Choose the providers you want",
       detail: "Use Microsoft Learn or the Azure portal links below to create Speech, Vision, and Azure OpenAI resources.",
       linkLabel: "Open Azure portal",
       href: "https://portal.azure.com/",
@@ -371,7 +371,7 @@ function ProviderSetupGuide() {
       href: "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource",
     },
     {
-      title: "3. Save, then process a sample",
+      title: "3. Save, then test locally",
       detail: "After saving, provider status updates for this browser session. Load the sample or upload permitted material to test.",
       linkLabel: "Back to workspace",
       href: "/#source-desk",
@@ -385,7 +385,7 @@ function ProviderSetupGuide() {
         <div>
           <h3 className="text-sm font-semibold text-zinc-950">Quick setup guide</h3>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-700">
-            Use the slots below for a hosted demo where each visitor brings their own Azure resources.
+            Use the slots below when you want to test your own keys in this browser session.
           </p>
         </div>
         <Badge className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100 hover:bg-emerald-50">
