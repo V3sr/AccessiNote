@@ -65,6 +65,7 @@ $requiredDocs = @(
   "docs/ARCHITECTURE.md",
   "docs/AZURE.md",
   "docs/DEMO.md",
+  "docs/DEMO_PREP.md",
   "docs/SAFETY.md",
   "docs/ATTRIBUTION.md",
   "docs/MICROSOFT_IQ.md",

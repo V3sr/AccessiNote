@@ -218,7 +218,7 @@ export default function Home() {
           <div className="min-w-0">
             <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
               <FileCheck2 className="h-4 w-4" aria-hidden="true" />
-              Draft — human review required
+              Draft - human review required
             </Badge>
             <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
               Turn lecture materials into accessible study notes.
@@ -280,7 +280,7 @@ export default function Home() {
           </div>
           <Badge className="w-fit rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />
-            Draft — human review required
+            Draft - human review required
           </Badge>
         </div>
 

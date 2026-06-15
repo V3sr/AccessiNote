@@ -2,15 +2,16 @@
 
 AccessiNote demo target: Microsoft Agents League Creative Apps + Accessibility.
 
-Before recording, review `docs/SUBMISSION.md` and fill in the public GitHub repository URL and
-YouTube/Vimeo demo URL after upload. The official demo limit is 5 minutes.
+Before recording, run through `docs/DEMO_PREP.md`, review `docs/SUBMISSION.md`, and fill in the
+public GitHub repository URL plus YouTube/Vimeo demo URL after upload. The official demo limit is 5
+minutes.
 
 ## Five-Minute Flow
 
 0:00-0:30 - Local readiness
 
 1. Open the local frontend URL.
-2. Open `/settings` briefly and show the optional key slots.
+2. Click **API keys** or open `/settings` briefly and show the optional key slots.
 3. Point out that AccessiNote works locally without API keys and can also use your own Azure keys
    if you want cloud-backed transcription, OCR, or generation.
 4. Return to the workspace and point to the demo readiness panel.

@@ -136,6 +136,7 @@ browser. If Azure fails, the app returns to local fallback behavior.
 ## Hackathon Docs
 
 - `docs/DEMO.md`: five-minute recording flow and checklist.
+- `docs/DEMO_PREP.md`: quick local setup and API-key checklist before recording.
 - `docs/ARCHITECTURE.md`: local pipeline, API surface, Mermaid diagram, and provider seams.
 - `docs/MICROSOFT_IQ.md`: required Microsoft IQ integration story and demo talking points.
 - `docs/AZURE.md`: optional Azure setup, fallback behavior, and safe demo guidance.

@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   FileText,
   ImageIcon,
+  KeyRound,
   Layers,
   Loader2,
   PlusCircle,
@@ -13,6 +14,7 @@ import {
   Video,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { FormEvent, useState } from "react";
 
@@ -108,7 +110,7 @@ export function UploadPanel({
               </p>
               <Badge className="mt-4 inline-flex min-h-9 gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
                 <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-                Draft — human review required
+                Draft - human review required
               </Badge>
             </div>
 
@@ -125,6 +127,23 @@ export function UploadPanel({
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm leading-6 text-sky-950 sm:flex-row sm:items-center sm:justify-between">
+            <p className="min-w-0">
+              <span className="font-semibold">Using your own API keys?</span> Add optional Speech, Vision, or Azure
+              OpenAI keys before processing.
+            </p>
+            <Button
+              asChild
+              variant="outline"
+              className="min-h-10 shrink-0 rounded-md border-sky-300 bg-white px-3 py-2 text-sm font-semibold text-sky-950 hover:bg-sky-100 active:translate-y-px"
+            >
+              <Link href="/settings">
+                <KeyRound className="h-4 w-4" aria-hidden="true" />
+                Open key setup
+              </Link>
+            </Button>
           </div>
 
           <TabsList className="mt-4 grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4">

@@ -84,7 +84,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
       <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
         <p className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          Draft — human review required. Check timestamps, visual details, and warnings before sharing or using this
+          Draft - human review required. Check timestamps, visual details, and warnings before sharing or using this
           material.
         </p>
       </div>

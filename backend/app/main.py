@@ -155,7 +155,7 @@ def save_provider_settings(request: ProviderSettingsRequest) -> ProviderSettings
         raise HTTPException(
             status_code=403,
             detail=(
-                "Runtime provider settings are disabled on this deployment. "
+                "Runtime provider settings are disabled in this environment. "
                 "Configure Azure providers with backend environment secrets."
             ),
         )
