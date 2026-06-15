@@ -123,8 +123,13 @@ For backend-managed keys, set the Azure key environment variables before running
 
 The script builds `Dockerfile.backend` in Azure Container Registry, deploys the FastAPI backend to
 Azure Container Apps, configures either BYOK or backend-managed key mode, and prints the backend URL
-for Vercel. It logs into ACR, builds the image locally, and pushes it to the registry instead of
-depending on ACR Tasks, which avoids the registry-task permissions issue some subscriptions hit.
+for Vercel. It gets an ACR access token with `--expose-token`, builds the image locally, and pushes
+it to the registry instead of depending on ACR Tasks, which avoids the registry-task permissions
+issue some subscriptions hit.
+
+The manual script still needs Docker Desktop or another running Docker engine for the local build
+and push step. If Docker is installed but stopped, the script now fails with a direct message before
+the build starts.
 
 If your subscription has not yet registered the needed Azure resource providers, the script now
 tries to register them automatically before it creates the registry or Container App. The main

@@ -37,6 +37,13 @@ function Require-Env($Name) {
   return $value
 }
 
+function Assert-DockerDaemonReady() {
+  docker info --format "{{.ServerVersion}}" *> $null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Docker is installed but the daemon is not running. Start Docker Desktop and rerun this script, or use the GitHub Actions production deploy workflow instead."
+  }
+}
+
 function Ensure-ProviderRegistered($Namespace) {
   $state = az provider show --namespace $Namespace --query registrationState -o tsv 2>$null
   if ($LASTEXITCODE -eq 0 -and $state -eq "Registered") {
@@ -129,11 +136,19 @@ az group create --name $ResourceGroup --location $Location --output none
 Write-Host "Creating or updating Azure Container Registry $AcrName"
 az acr create --resource-group $ResourceGroup --name $AcrName --sku Basic --admin-enabled true --output none
 
-Write-Host "Logging into Azure Container Registry $AcrName"
-az acr login --name $AcrName --output none
+Write-Host "Fetching Azure Container Registry access token for $AcrName"
+$acrLogin = az acr login --name $AcrName --expose-token --output json | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($acrLogin.accessToken)) {
+  throw "Failed to get an Azure Container Registry access token for $AcrName."
+}
+
+Write-Host "Logging into Azure Container Registry $AcrName with token"
+Write-Output $acrLogin.accessToken | docker login $acrLogin.loginServer -u 00000000-0000-0000-0000-000000000000 --password-stdin
 if ($LASTEXITCODE -ne 0) {
   throw "Failed to log into Azure Container Registry $AcrName."
 }
+
+Assert-DockerDaemonReady
 
 Write-Host "Building backend image locally: $imageRef"
 docker build -f Dockerfile.backend -t $imageRef .
