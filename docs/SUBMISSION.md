@@ -18,7 +18,7 @@ Use this section to fill the contest platform submission.
 | --- | --- | --- |
 | Project description | This file, `README.md`, and the "Project Description" section above | Ready |
 | Features, functionality, problem solved, technologies used | "What It Does" and "Technologies Used" below | Ready |
-| Demo video link on YouTube or Vimeo | Record with `docs/DEMO.md`, then paste the URL here | Pending: add URL before submission |
+| Demo video link on YouTube or Vimeo | Record a short private demo, then paste the URL here | Pending: add URL before submission |
 | Public GitHub repository | Make the repo public, then paste the URL here | Pending: add URL before submission |
 | Architecture diagram | `docs/ARCHITECTURE.md` Mermaid diagram | Ready |
 | Microsoft IQ usage | Azure AI Speech, Azure AI Vision, Azure OpenAI; GitHub Copilot if actually used by the team | Ready, with Copilot truthfulness note |
@@ -125,7 +125,6 @@ Checks completed on June 14, 2026:
 - Frontend typecheck: `npm run typecheck`.
 - Frontend lint: `npm run lint`.
 - Frontend build: `npm run build`.
-- Demo prep checklist: `docs/DEMO_PREP.md`.
 - Hackathon readiness script: `.\scripts\check-hackathon-readiness.ps1` for local recording.
 - Backend smoke tests: health, capabilities, demo status, sample lecture, transcript creation, ADHD/screen-reader generation, WebVTT generation, image media job, video media job with uploaded captions, and job cancellation.
 - Provider settings API: session-only Azure key settings save, report configured status without returning secrets, and clear back to local providers.

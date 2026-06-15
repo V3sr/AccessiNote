@@ -222,6 +222,7 @@ __marimo__/
 .agents/
 .impeccable/
 .private/
+docs/DEMO*.md
 *_handoff*
 PROMPTS.md
 HANDOFF.md
