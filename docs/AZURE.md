@@ -35,6 +35,11 @@ AZURE_OPENAI_API_KEY=...
 AZURE_OPENAI_DEPLOYMENT=<deployment-name>
 ```
 
+For Azure OpenAI, `AZURE_OPENAI_DEPLOYMENT` must be the deployment name shown in Azure AI Foundry
+or the Azure portal for that resource. It is often similar to the model name, but it is not guaranteed
+to be the same. For example, if you deployed `gpt-4o-mini` as `accessinote-gpt-4o-mini`, use
+`accessinote-gpt-4o-mini`.
+
 Do not commit `.env`. The repository only includes `.env.example` with blank values. UI-entered keys
 are runtime overrides and are not written to `.env`.
 

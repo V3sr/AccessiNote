@@ -198,7 +198,7 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 
         <SecretGroup
           title="Azure OpenAI"
-          description="Use this for higher-quality accessible study outputs from the reviewed source timeline."
+          description="Use this for higher-quality accessible study outputs from the reviewed source timeline. Azure requires the deployment name you created, not just the model name."
           links={[
             ["Create resource", "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource"],
             ["Responses API", "https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses"],
@@ -212,10 +212,10 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
           />
           <SecretInput label="OpenAI key" value={openaiKey} onChange={setOpenaiKey} />
           <TextInput
-            label="Deployment"
+            label="Deployment name"
             value={openaiDeployment}
             onChange={setOpenaiDeployment}
-            placeholder="gpt-4.1-mini"
+            placeholder="accessinote-gpt-4o-mini"
           />
         </SecretGroup>
       </div>
