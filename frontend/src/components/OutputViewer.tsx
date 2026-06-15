@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Clipboard, Download, FileDown } from "lucide-react";
+import { AlertTriangle, ChevronDown, Clipboard, Download, FileDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -41,7 +41,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
       <Card className="rounded-2xl border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700 shadow-none">
         <p className="font-semibold text-zinc-950">Generated output preview</p>
         <p className="mt-1 max-w-2xl">
-          Choose a format and generate an accessible draft. Source evidence will stay available without crowding
+          Choose a format and generate an accessible draft. Source checkpoints will stay available without crowding
           the student-facing material.
         </p>
       </Card>
@@ -57,7 +57,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-emerald-800">Generated output</p>
+          <p className="text-sm font-semibold text-emerald-800">Generated draft</p>
           <h2 className="text-lg font-semibold tracking-normal text-zinc-950">{output.title}</h2>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -79,6 +79,14 @@ export function OutputViewer({ output }: OutputViewerProps) {
             Download .{fileType.extension}
           </Button>
         </div>
+      </div>
+
+      <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+        <p className="flex items-start gap-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          Draft — human review required. Check timestamps, visual details, and warnings before sharing or using this
+          material.
+        </p>
       </div>
 
       {output.warnings.length > 0 && (
@@ -104,12 +112,12 @@ export function OutputViewer({ output }: OutputViewerProps) {
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
               <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
                 <FileDown className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-                Evidence used
+                Source used
               </span>
               <ChevronDown className="h-4 w-4 shrink-0 text-zinc-600 transition group-open:rotate-180" aria-hidden="true" />
             </summary>
             <p className="mt-2 text-xs leading-5 text-zinc-600">
-              Top checkpoints used for this draft. Open the timeline or Evidence JSON for the full source trail.
+              Top checkpoints used for this draft. Open the timeline or source timeline export for the full trail.
             </p>
 
             {topSources.length > 0 ? (
@@ -124,7 +132,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
                 ))}
                 {hiddenSourceCount > 0 && (
                   <p className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
-                    {hiddenSourceCount} more checkpoint(s) available in the timeline and Evidence JSON.
+                    {hiddenSourceCount} more checkpoint(s) available in the timeline and source timeline export.
                   </p>
                 )}
               </div>
@@ -145,7 +153,7 @@ function outputFileType(mode: GenerateResponse["mode"]): { extension: string; mi
     return { extension: "vtt", mime: "text/vtt;charset=utf-8", label: "VTT" };
   }
   if (mode === "timeline_json") {
-    return { extension: "json", mime: "application/json;charset=utf-8", label: "JSON" };
+    return { extension: "json", mime: "application/json;charset=utf-8", label: "source timeline" };
   }
   if (mode === "transcript_txt") {
     return { extension: "txt", mime: "text/plain;charset=utf-8", label: "text" };

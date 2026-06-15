@@ -17,10 +17,10 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 h-5 w-5 text-emerald-700" aria-hidden="true" />
           <div>
-            <h2 className="font-semibold text-zinc-950">No evidence timeline yet</h2>
+            <h2 className="font-semibold text-zinc-950">No source timeline yet</h2>
             <p className="mt-1 max-w-2xl">
-              Load a sample lecture, paste a transcript, or upload permitted media to inspect transcript,
-              OCR, visual review notes, and source confidence.
+              Load a sample lecture, paste a transcript, or upload permitted media to inspect timestamps, captions,
+              slide text, visual notes, and review confidence.
             </p>
           </div>
         </div>
@@ -38,13 +38,13 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold text-emerald-800">Evidence timeline</p>
+          <p className="text-sm font-semibold text-emerald-800">Source timeline</p>
           <h2 className="mt-1 text-xl font-semibold tracking-normal text-zinc-950">{lecture.title}</h2>
           <p className="mt-1 text-sm text-zinc-600">{lecture.source.attribution || lecture.source.type}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
           <SummaryPill icon={<Clock className="h-3.5 w-3.5" />} label={`${lecture.chunks.length} chunks`} />
-          <SummaryPill icon={<ScanText className="h-3.5 w-3.5" />} label={`${ocrChunks} with OCR`} />
+          <SummaryPill icon={<ScanText className="h-3.5 w-3.5" />} label={`${ocrChunks} with slide text`} />
           <SummaryPill
             icon={<Captions className="h-3.5 w-3.5" />}
             label={lecture.caption_segments.length ? `${lecture.caption_segments.length} captions` : "No captions"}
@@ -52,10 +52,10 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
           <SummaryPill icon={<FileText className="h-3.5 w-3.5" />} label={formatCaptionSource(captionSource)} />
           <SummaryPill
             icon={<Gauge className="h-3.5 w-3.5" />}
-            label={`${percent(averageSourceConfidence)} avg source`}
+            label={`${percent(averageSourceConfidence)} avg confidence`}
           />
           {weakChunks > 0 && (
-            <SummaryPill icon={<Eye className="h-3.5 w-3.5" />} label={`${weakChunks} weak`} />
+            <SummaryPill icon={<Eye className="h-3.5 w-3.5" />} label={`${weakChunks} need review`} />
           )}
         </div>
       </div>
@@ -65,8 +65,8 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
           lecture.chunks.map((chunk) => <TimelineChunkCard key={chunk.chunk_id} chunk={chunk} />)
         ) : (
           <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm leading-6 text-zinc-700">
-            This lecture has no timeline chunks yet. Try a shorter source, attach captions, or check local OCR and
-            transcription readiness before processing again.
+            This lecture has no timeline chunks yet. Try a shorter source, attach captions, or add clearer slides before
+            processing again.
           </div>
         )}
       </div>
@@ -89,7 +89,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={assetUrl(chunk.keyframe_path)}
-                alt={`Video keyframe for ${chunk.start}-${chunk.end}`}
+                alt={`Lecture source image for ${chunk.start}-${chunk.end}`}
                 loading="lazy"
                 className="aspect-video w-full object-contain"
               />
@@ -97,14 +97,16 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="inline-flex items-center gap-1 font-semibold text-zinc-700">
                 <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                Keyframe
+                Source image
               </span>
               <Badge
                 className={`rounded-md px-2 py-1 font-semibold ${
                   ocrDetected ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-950"
                 }`}
               >
-                OCR {chunk.ocr_confidence > 0 ? percent(chunk.ocr_confidence) : ocrDetected ? "text" : "none"}
+                {ocrDetected
+                  ? `Slide text ${chunk.ocr_confidence > 0 ? percent(chunk.ocr_confidence) : "found"}`
+                  : "Slide text needs review"}
               </Badge>
             </div>
           </div>
@@ -119,7 +121,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
             <Badge className="rounded-md bg-zinc-950 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-950">{chunk.chunk_id}</Badge>
             <Badge className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100 hover:bg-emerald-50">
               <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
-              {percent(chunk.source_confidence)} source
+              {percent(chunk.source_confidence)} confidence
             </Badge>
             {reviewNeeded && (
               <Badge className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
@@ -133,8 +135,8 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
 
           <div className="mt-3 flex flex-wrap gap-2">
             <EvidenceBadge active={Boolean(chunk.transcript.trim())} label="Transcript" />
-            <EvidenceBadge active={hasFrame} label="Keyframe" />
-            <EvidenceBadge active={ocrDetected} label={ocrDetected ? "OCR text" : "OCR empty"} />
+            <EvidenceBadge active={hasFrame} label="Source image" />
+            <EvidenceBadge active={ocrDetected} label={ocrDetected ? "Slide text found" : "Slide text missing"} />
             <EvidenceBadge active={chunk.visual_description.trim().length > 0} label="Visual note" />
           </div>
 
@@ -167,7 +169,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
                   }`}
                 >
                   {isReviewFlag(flag) && <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />}
-                  {flag}
+                  {formatEvidenceFlag(flag)}
                 </span>
               ))}
             </div>
@@ -178,8 +180,8 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <EvidencePanel
           icon={<ScanText className="h-4 w-4 text-emerald-700" aria-hidden="true" />}
-          title="OCR details"
-          summary={ocrDetected ? `${chunk.ocr.length} readable item(s)` : "No readable text detected"}
+          title="Slide text"
+          summary={ocrDetected ? `${chunk.ocr.length} readable item(s)` : "No readable text found"}
           tone={ocrDetected ? "strong" : "quiet"}
         >
           {chunk.ocr.length > 0 ? (
@@ -189,14 +191,14 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               ))}
             </ul>
           ) : (
-            <p className="text-sm leading-6">OCR did not return readable text for this frame.</p>
+            <p className="text-sm leading-6">No readable slide text was found for this source image.</p>
           )}
         </EvidencePanel>
 
         <EvidencePanel
           icon={<Eye className="h-4 w-4 text-zinc-600" aria-hidden="true" />}
           title="Visual review"
-          summary={hasFrame ? "Keyframe and layout note" : "No keyframe attached"}
+          summary={hasFrame ? "Source image note" : "No source image attached"}
           tone="quiet"
         >
           <p className="text-sm leading-6">{chunk.visual_description}</p>
@@ -273,7 +275,7 @@ function chunkTitle(chunk: TimelineChunk): string {
   if (firstSentence) {
     return trimToWords(firstSentence.trim(), 9);
   }
-  return `Evidence checkpoint ${chunk.chunk_id}`;
+  return `Source checkpoint ${chunk.chunk_id}`;
 }
 
 function trimToWords(text: string, wordLimit: number): string {
@@ -306,12 +308,32 @@ function isReviewFlag(flag: string): boolean {
   );
 }
 
+function formatEvidenceFlag(flag: string): string {
+  const normalized = flag.toLowerCase();
+  if (normalized.includes("no readable") || normalized.includes("ocr")) {
+    return "Slide text needs review";
+  }
+  if (normalized.includes("missing")) {
+    return "Source information missing";
+  }
+  if (normalized.includes("weak") || normalized.includes("low-confidence")) {
+    return "Check before using";
+  }
+  if (normalized.includes("transcript")) {
+    return "Transcript matched";
+  }
+  if (normalized.includes("keyframe") || normalized.includes("visual")) {
+    return "Visual source available";
+  }
+  return flag.replaceAll("_", " ");
+}
+
 function formatCaptionSource(value: string): string {
   if (!value || value === "none") {
-    return "No caption source";
+    return "No captions";
   }
   if (value === "faster-whisper") {
-    return "Local captions";
+    return "Generated captions";
   }
   if (value === "uploaded captions") {
     return "Uploaded captions";

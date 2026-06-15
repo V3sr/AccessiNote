@@ -79,7 +79,7 @@ export function SettingsPageClient() {
 
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
-      <Header apiStatus={apiStatus} />
+      <Header />
 
       <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f3faf6_62%,#f7f9fb_100%)]">
         <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:px-8">
