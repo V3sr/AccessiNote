@@ -131,6 +131,10 @@ The manual script still needs Docker Desktop or another running Docker engine fo
 and push step. If Docker is installed but stopped, the script now fails with a direct message before
 the build starts.
 
+If you do not want to run Docker locally, use the repository's manual **Production Deploy** GitHub
+workflow instead. That path builds and pushes the backend image on a GitHub runner and does not
+depend on your machine's Docker daemon.
+
 If your subscription has not yet registered the needed Azure resource providers, the script now
 tries to register them automatically before it creates the registry or Container App. The main
 providers it needs are `Microsoft.ContainerRegistry`, `Microsoft.App`, and

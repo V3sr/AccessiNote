@@ -77,6 +77,7 @@ function Ensure-ProviderRegistered($Namespace) {
 
 Require-Command "az"
 Require-Command "docker"
+Assert-DockerDaemonReady
 
 Ensure-ProviderRegistered "Microsoft.ContainerRegistry"
 Ensure-ProviderRegistered "Microsoft.App"
@@ -147,8 +148,6 @@ Write-Output $acrLogin.accessToken | docker login $acrLogin.loginServer -u 00000
 if ($LASTEXITCODE -ne 0) {
   throw "Failed to log into Azure Container Registry $AcrName."
 }
-
-Assert-DockerDaemonReady
 
 Write-Host "Building backend image locally: $imageRef"
 docker build -f Dockerfile.backend -t $imageRef .
