@@ -117,7 +117,8 @@ export notes.
 Users can paste Azure keys into the **AI provider keys** page at `/settings`. Those keys are stored
 only in the running backend session, never returned to the frontend, and cleared on backend restart or
 when switching back to local-only mode. For production demos, set keys as backend environment secrets
-instead of pasting them in the browser.
+instead of pasting them in the browser, and set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled` so
+public visitors cannot change backend-owned providers.
 
 Provider switches:
 

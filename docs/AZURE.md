@@ -9,6 +9,10 @@ users choose local or Azure providers and paste Azure keys into the running back
 keys are not returned to the browser and are cleared when the backend restarts or when **Use local
 only** is clicked.
 
+For a public hosted demo with your own Azure resources, configure keys as backend environment secrets
+and set `ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled`. The `/settings` page will remain visible as
+a readiness dashboard, but visitors will not be able to change backend-owned provider settings.
+
 For repeatable local demos, set these switches in a private `.env` file instead:
 
 ```powershell

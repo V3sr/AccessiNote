@@ -45,6 +45,7 @@ Set these backend environment variables or secrets:
 
 ```text
 ACCESSINOTE_CORS_ORIGINS=https://<your-vercel-domain>
+ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled
 
 TRANSCRIPTION_PROVIDER=azure_speech
 OCR_PROVIDER=azure_vision
@@ -64,6 +65,9 @@ AZURE_OPENAI_DEPLOYMENT=<deployment-name>
 
 Azure Container Apps supports runtime environment variables and app-level secrets that can be
 referenced by environment variables.
+
+`ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled` keeps `/settings` read-only for public visitors.
+Use `enabled` only for a controlled bring-your-own-key demo.
 
 ## Smoke Test
 

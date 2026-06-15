@@ -136,6 +136,7 @@ export interface ProviderSettingsResponse {
   providers: Record<string, ProviderStatus>;
   configured_env: string[];
   message: string;
+  runtime_settings_enabled: boolean;
 }
 
 export interface CapabilityResponse {

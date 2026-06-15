@@ -156,6 +156,7 @@ class ProviderSettingsResponse(BaseModel):
     providers: dict[str, ProviderStatus] = Field(default_factory=dict)
     configured_env: list[str] = Field(default_factory=list)
     message: str = ""
+    runtime_settings_enabled: bool = True
 
 
 class CapabilityResponse(BaseModel):

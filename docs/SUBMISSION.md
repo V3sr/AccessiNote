@@ -77,6 +77,7 @@ Azure resources without editing source code.
 - Creativity and originality: the app treats lecture accessibility as source-grounded multimodal review instead of generic summarization.
 - User experience and presentation: the workbench shows processing progress, readiness, scan metrics, timeline review, and export actions in one flow.
 - Reliability and safety: the demo can use Azure providers without exposing keys, keeps local fallback, stores local timelines explicitly, warns about weak evidence, and keeps humans in the review loop.
+- Hosted production safety: public deployments can disable runtime provider edits so Azure keys are controlled only by backend environment secrets.
 - Community vote: the demo story is easy to understand: upload lecture material, inspect evidence, generate accessible study formats.
 
 ## Accessibility Award Fit

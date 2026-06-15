@@ -31,7 +31,7 @@ from .models import (
     ProviderSettingsResponse,
     VideoUploadResponse,
 )
-from .providers import get_provider_settings, provider_statuses, update_provider_settings
+from .providers import get_provider_settings, provider_statuses, runtime_provider_settings_enabled, update_provider_settings
 from .retrieval import create_timeline_from_transcript
 from .storage import (
     OUTPUTS_DIR,
@@ -133,6 +133,14 @@ def read_provider_settings() -> ProviderSettingsResponse:
 
 @app.post("/api/provider-settings", response_model=ProviderSettingsResponse)
 def save_provider_settings(request: ProviderSettingsRequest) -> ProviderSettingsResponse:
+    if not runtime_provider_settings_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Runtime provider settings are disabled on this deployment. "
+                "Configure Azure providers with backend environment secrets."
+            ),
+        )
     return update_provider_settings(request)
 
 
@@ -158,6 +166,7 @@ def get_production_status() -> ProductionStatusResponse:
         production_provider_check("transcription", "azure_speech", "Azure Speech"),
         production_provider_check("ocr", "azure_vision", "Azure AI Vision"),
         production_provider_check("generation", "azure_openai", "Azure OpenAI"),
+        production_runtime_settings_check(),
         production_storage_check(),
         production_fallback_check(),
     ]
@@ -618,6 +627,22 @@ def production_storage_check() -> DemoCheck:
         label="Upload and output storage",
         status="pass",
         detail="Backend can write uploads and generated timelines. Use durable Azure storage for longer public operation.",
+    )
+
+
+def production_runtime_settings_check() -> DemoCheck:
+    if not runtime_provider_settings_enabled():
+        return DemoCheck(
+            id="production_runtime_settings",
+            label="Hosted settings safety",
+            status="pass",
+            detail="Runtime provider edits are disabled. Azure providers are controlled by backend environment secrets.",
+        )
+    return DemoCheck(
+        id="production_runtime_settings",
+        label="Hosted settings safety",
+        status="fail",
+        detail="Set ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled before sharing a production deployment.",
     )
 
 

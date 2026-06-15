@@ -128,6 +128,7 @@ def get_provider_settings() -> ProviderSettingsResponse:
         providers=provider_statuses(),
         configured_env=configured_provider_env_names(),
         message="Provider settings loaded. Secret values are never returned.",
+        runtime_settings_enabled=runtime_provider_settings_enabled(),
     )
 
 
@@ -154,6 +155,7 @@ def update_provider_settings(request: ProviderSettingsRequest) -> ProviderSettin
     return ProviderSettingsResponse(
         providers=provider_statuses(),
         configured_env=configured_provider_env_names(),
+        runtime_settings_enabled=runtime_provider_settings_enabled(),
         message=(
             "Provider settings saved for this backend session. "
             "Keys are not returned to the browser and are not written to disk."
@@ -181,3 +183,8 @@ def set_runtime_provider_value(env_name: str, value: str | None) -> None:
 def configured_provider_env_names() -> list[str]:
     names = sorted(PROVIDER_ENV_TO_REQUEST_FIELD)
     return [name for name in names if provider_value(name, "").strip()]
+
+
+def runtime_provider_settings_enabled() -> bool:
+    value = os.getenv("ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS", "enabled").strip().lower()
+    return value not in {"0", "false", "no", "off", "disabled"}

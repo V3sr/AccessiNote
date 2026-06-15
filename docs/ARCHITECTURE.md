@@ -45,7 +45,7 @@ Generation defaults to deterministic local output and can use Azure OpenAI when 
 - If video frames cannot be extracted, the backend returns a fallback timeline with explicit warnings.
 - Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
 - Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Microsoft provider configuration.
-- Production readiness checks public CORS origin configuration, Azure Speech, Azure AI Vision, Azure OpenAI, writable backend storage, and fallback media tools.
+- Production readiness checks public CORS origin configuration, Azure Speech, Azure AI Vision, Azure OpenAI, hosted settings safety, writable backend storage, and fallback media tools.
 
 No auth, database, or Azure storage is required for the hackathon demo. The app can run with local
 fallbacks, or it can use Azure providers when selected through environment variables. For a public

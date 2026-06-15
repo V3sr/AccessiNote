@@ -127,6 +127,7 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 
   const providers = settings?.providers ?? capabilities?.providers ?? {};
   const configuredEnv = settings?.configured_env ?? [];
+  const runtimeSettingsEnabled = settings?.runtime_settings_enabled ?? true;
   const selectedAzureCount = [transcriptionProvider, ocrProvider, generationProvider].filter((name) =>
     name.startsWith("azure"),
   ).length;
@@ -257,12 +258,13 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
             AI provider keys
           </h2>
           <p className={isFull ? "mt-2 max-w-3xl text-sm leading-6 text-zinc-700" : "mt-1 text-sm leading-6 text-zinc-700"}>
-            Add Azure keys for this backend session. Secrets stay server-side, are never shown again, and can be
-            cleared back to local processing.
+            {runtimeSettingsEnabled
+              ? "Add Azure keys for this backend session. Secrets stay server-side, are never shown again, and can be cleared back to local processing."
+              : "Azure providers are managed by backend environment secrets on this deployment. Secret values are never returned to the browser."}
           </p>
         </div>
         <Badge className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">
-          Session only
+          {runtimeSettingsEnabled ? "Session only" : "Backend managed"}
         </Badge>
       </div>
 
@@ -285,10 +287,12 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
           <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
             <p className="flex items-start gap-2">
               <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              Use this page for a live hackathon setup. Do not show real keys in recordings or screenshots.
+              {runtimeSettingsEnabled
+                ? "Use this page for a live hackathon setup. Do not show real keys in recordings or screenshots."
+                : "Runtime edits are disabled for this hosted deployment. Configure Azure providers through backend environment variables."}
             </p>
           </div>
-          {formBody}
+          {runtimeSettingsEnabled ? formBody : <ReadOnlyProviderNotice />}
         </>
       ) : (
         <>
@@ -302,16 +306,20 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>
-          <details className="group mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
-              <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
-                <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
-                Quick configure
-              </span>
-              <span className="text-xs font-semibold text-zinc-600">{configuredEnv.length} value(s)</span>
-            </summary>
-            {formBody}
-          </details>
+          {runtimeSettingsEnabled ? (
+            <details className="group mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
+                <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+                  <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
+                  Quick configure
+                </span>
+                <span className="text-xs font-semibold text-zinc-600">{configuredEnv.length} value(s)</span>
+              </summary>
+              {formBody}
+            </details>
+          ) : (
+            <ReadOnlyProviderNotice />
+          )}
         </>
       )}
     </Card>
@@ -322,6 +330,15 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
     setVisionKey("");
     setOpenaiKey("");
   }
+}
+
+function ReadOnlyProviderNotice() {
+  return (
+    <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm leading-6 text-zinc-700">
+      Provider editing is read-only on this deployment. Update Azure keys and provider switches in the backend host
+      environment, then redeploy or restart the backend.
+    </div>
+  );
 }
 
 function SetupMetric({ label, value }: { label: string; value: string }) {

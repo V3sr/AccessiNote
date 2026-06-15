@@ -87,8 +87,8 @@ export function SettingsPageClient() {
               Connect AccessiNote to your Azure AI services
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
-              Use server-side Azure keys for the public demo, or let judges paste their own keys into this session
-              without exposing secrets in the browser.
+              Use server-side Azure keys for the public demo. Local and bring-your-own-key demo modes can still accept
+              session keys without exposing secrets in the browser.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button
@@ -166,8 +166,8 @@ export function SettingsPageClient() {
               Safe key handling
             </h2>
             <p className="mt-3 text-sm leading-6 text-zinc-700">
-              Production keys belong in backend environment variables. Session keys are for demos and are cleared on
-              backend restart.
+              Production keys belong in backend environment variables. Public deployments should disable runtime
+              provider edits after Azure is configured.
             </p>
             <div className="mt-4 space-y-2 text-sm text-zinc-700">
               <SafetyRow label="No Azure keys in frontend code" />
