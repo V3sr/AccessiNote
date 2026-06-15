@@ -1,0 +1,123 @@
+param(
+  [Parameter(Mandatory = $true)]
+  [string]$ResourceGroup,
+
+  [Parameter(Mandatory = $true)]
+  [string]$AcrName,
+
+  [Parameter(Mandatory = $true)]
+  [string]$ContainerAppName,
+
+  [Parameter(Mandatory = $true)]
+  [string]$EnvironmentName,
+
+  [Parameter(Mandatory = $true)]
+  [string]$FrontendOrigin,
+
+  [string]$Location = "eastus",
+  [string]$ImageTag = "latest"
+)
+
+$ErrorActionPreference = "Stop"
+
+function Require-Command($Name) {
+  if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
+    throw "$Name is required. Install it and sign in before running this script."
+  }
+}
+
+function Require-Env($Name) {
+  $value = [Environment]::GetEnvironmentVariable($Name)
+  if ([string]::IsNullOrWhiteSpace($value)) {
+    throw "Missing required environment variable: $Name"
+  }
+  return $value
+}
+
+Require-Command "az"
+Require-Command "docker"
+
+$azureSpeechKey = Require-Env "AZURE_SPEECH_KEY"
+$azureSpeechRegion = Require-Env "AZURE_SPEECH_REGION"
+$azureVisionEndpoint = Require-Env "AZURE_VISION_ENDPOINT"
+$azureVisionKey = Require-Env "AZURE_VISION_KEY"
+$azureOpenAiEndpoint = Require-Env "AZURE_OPENAI_ENDPOINT"
+$azureOpenAiKey = Require-Env "AZURE_OPENAI_API_KEY"
+$azureOpenAiDeployment = Require-Env "AZURE_OPENAI_DEPLOYMENT"
+$azureSpeechLanguage = [Environment]::GetEnvironmentVariable("AZURE_SPEECH_LANGUAGE")
+if ([string]::IsNullOrWhiteSpace($azureSpeechLanguage)) {
+  $azureSpeechLanguage = "en-US"
+}
+
+$imageName = "accessinote-backend:$ImageTag"
+$imageRef = "$AcrName.azurecr.io/$imageName"
+
+Write-Host "Creating resource group $ResourceGroup in $Location"
+az group create --name $ResourceGroup --location $Location --output none
+
+Write-Host "Creating or updating Azure Container Registry $AcrName"
+az acr create --resource-group $ResourceGroup --name $AcrName --sku Basic --admin-enabled true --output none
+
+Write-Host "Building backend image in ACR: $imageRef"
+az acr build --registry $AcrName --image $imageName --file Dockerfile.backend . --output none
+
+Write-Host "Creating Container Apps environment $EnvironmentName"
+$environmentExists = az containerapp env show --name $EnvironmentName --resource-group $ResourceGroup --query name -o tsv 2>$null
+if (-not $environmentExists) {
+  az containerapp env create --name $EnvironmentName --resource-group $ResourceGroup --location $Location --output none
+}
+
+$secrets = @(
+  "azure-speech-key=$azureSpeechKey",
+  "azure-vision-key=$azureVisionKey",
+  "azure-openai-key=$azureOpenAiKey"
+)
+
+$envVars = @(
+  "ACCESSINOTE_CORS_ORIGINS=$FrontendOrigin",
+  "ACCESSINOTE_RUNTIME_PROVIDER_SETTINGS=disabled",
+  "TRANSCRIPTION_PROVIDER=azure_speech",
+  "OCR_PROVIDER=azure_vision",
+  "GENERATION_PROVIDER=azure_openai",
+  "AZURE_SPEECH_KEY=secretref:azure-speech-key",
+  "AZURE_SPEECH_REGION=$azureSpeechRegion",
+  "AZURE_SPEECH_LANGUAGE=$azureSpeechLanguage",
+  "AZURE_VISION_ENDPOINT=$azureVisionEndpoint",
+  "AZURE_VISION_KEY=secretref:azure-vision-key",
+  "AZURE_OPENAI_ENDPOINT=$azureOpenAiEndpoint",
+  "AZURE_OPENAI_API_KEY=secretref:azure-openai-key",
+  "AZURE_OPENAI_DEPLOYMENT=$azureOpenAiDeployment"
+)
+
+$appExists = az containerapp show --name $ContainerAppName --resource-group $ResourceGroup --query name -o tsv 2>$null
+if ($appExists) {
+  Write-Host "Updating Container App $ContainerAppName"
+  az containerapp update `
+    --name $ContainerAppName `
+    --resource-group $ResourceGroup `
+    --image $imageRef `
+    --secrets $secrets `
+    --set-env-vars $envVars `
+    --output none
+} else {
+  Write-Host "Creating Container App $ContainerAppName"
+  az containerapp create `
+    --name $ContainerAppName `
+    --resource-group $ResourceGroup `
+    --environment $EnvironmentName `
+    --image $imageRef `
+    --registry-server "$AcrName.azurecr.io" `
+    --target-port 8000 `
+    --ingress external `
+    --min-replicas 1 `
+    --max-replicas 1 `
+    --cpu 2 `
+    --memory 4Gi `
+    --secrets $secrets `
+    --env-vars $envVars `
+    --output none
+}
+
+$fqdn = az containerapp show --name $ContainerAppName --resource-group $ResourceGroup --query properties.configuration.ingress.fqdn -o tsv
+Write-Host "Backend deployed: https://$fqdn"
+Write-Host "Set NEXT_PUBLIC_API_BASE_URL=https://$fqdn in Vercel."

@@ -32,7 +32,31 @@ environment. See the official Vercel environment variable documentation.
 
 ## Backend on Azure Container Apps
 
-Build the backend container from the repository root:
+The quickest repeatable backend path is the deployment script:
+
+```powershell
+$env:AZURE_SPEECH_KEY="<secret>"
+$env:AZURE_SPEECH_REGION="<region>"
+$env:AZURE_SPEECH_LANGUAGE="en-US"
+$env:AZURE_VISION_ENDPOINT="https://<resource>.cognitiveservices.azure.com/"
+$env:AZURE_VISION_KEY="<secret>"
+$env:AZURE_OPENAI_ENDPOINT="https://<resource>.openai.azure.com/"
+$env:AZURE_OPENAI_API_KEY="<secret>"
+$env:AZURE_OPENAI_DEPLOYMENT="<deployment-name>"
+
+.\scripts\deploy-backend-azure-containerapp.ps1 `
+  -ResourceGroup "<resource-group>" `
+  -AcrName "<unique-acr-name>" `
+  -ContainerAppName "accessinote-api" `
+  -EnvironmentName "accessinote-env" `
+  -FrontendOrigin "https://<your-vercel-domain>"
+```
+
+The script builds `Dockerfile.backend` in Azure Container Registry, deploys the FastAPI backend to
+Azure Container Apps, stores Azure keys as container app secrets, disables runtime provider edits,
+and prints the backend URL for Vercel.
+
+Manual container build from the repository root:
 
 ```powershell
 docker build -f Dockerfile.backend -t accessinote-backend:latest .
@@ -82,6 +106,14 @@ After deployment:
 
 If `/api/production/status` is not ready, it will list the missing CORS origin, provider switch, or
 backend secret without exposing secret values.
+
+You can run the smoke check script after both deployments:
+
+```powershell
+.\scripts\check-production.ps1 `
+  -FrontendUrl "https://<your-vercel-domain>" `
+  -BackendUrl "https://<backend-domain>"
+```
 
 ## Public Demo Safety
 

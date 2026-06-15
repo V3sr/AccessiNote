@@ -135,7 +135,9 @@ browser. If Azure fails, the app returns to local fallback behavior.
 For a public demo, deploy the Next.js frontend to Vercel and deploy the FastAPI media backend to
 Azure Container Apps or Azure App Service for Containers. Set `NEXT_PUBLIC_API_BASE_URL` on Vercel to
 the backend URL, then set Azure provider keys only on the backend. Use `/api/production/status` and
-the `/settings` page to verify public launch readiness. See `docs/PRODUCTION.md`.
+the `/settings` page to verify public launch readiness. The helper scripts
+`scripts/deploy-backend-azure-containerapp.ps1` and `scripts/check-production.ps1` cover backend
+deployment and smoke testing. See `docs/PRODUCTION.md`.
 
 ## Hackathon Docs
 
