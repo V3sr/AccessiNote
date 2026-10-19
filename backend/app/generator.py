@@ -132,6 +132,258 @@ GENERIC_CONCEPTS = {
     "you're",
 }
 
+# Words that name no topic: function words, helper verbs, and the verbs lecturers use to talk about
+# ideas. They never become a key phrase or part of one.
+FILLER_WORDS = {
+    "able",
+    "after",
+    "again",
+    "against",
+    "allow",
+    "allows",
+    "almost",
+    "along",
+    "already",
+    "also",
+    "although",
+    "always",
+    "among",
+    "another",
+    "anything",
+    "asked",
+    "became",
+    "because",
+    "become",
+    "becomes",
+    "becoming",
+    "been",
+    "before",
+    "besides",
+    "between",
+    "both",
+    "bunch",
+    "called",
+    "cannot",
+    "capture",
+    "captured",
+    "captures",
+    "certain",
+    "check",
+    "checks",
+    "compare",
+    "compared",
+    "compares",
+    "connect",
+    "connected",
+    "connects",
+    "consider",
+    "considers",
+    "contain",
+    "contains",
+    "could",
+    "cover",
+    "covers",
+    "create",
+    "creates",
+    "define",
+    "defines",
+    "depend",
+    "depends",
+    "describe",
+    "described",
+    "describes",
+    "detect",
+    "detects",
+    "discuss",
+    "discusses",
+    "does",
+    "doing",
+    "done",
+    "during",
+    "either",
+    "else",
+    "enough",
+    "every",
+    "example",
+    "examples",
+    "explain",
+    "explained",
+    "explains",
+    "find",
+    "finds",
+    "focuses",
+    "found",
+    "generate",
+    "generates",
+    "gets",
+    "getting",
+    "given",
+    "gives",
+    "goes",
+    "gone",
+    "good",
+    "have",
+    "having",
+    "help",
+    "helped",
+    "helps",
+    "hence",
+    "here",
+    "however",
+    "include",
+    "included",
+    "includes",
+    "including",
+    "instead",
+    "instructor",
+    "into",
+    "introduce",
+    "introduced",
+    "introduces",
+    "involve",
+    "involves",
+    "itself",
+    "keep",
+    "keeps",
+    "kind",
+    "know",
+    "known",
+    "knows",
+    "lecture",
+    "lectures",
+    "like",
+    "look",
+    "looking",
+    "looks",
+    "lots",
+    "made",
+    "make",
+    "makes",
+    "making",
+    "many",
+    "matters",
+    "mean",
+    "means",
+    "meant",
+    "mention",
+    "mentions",
+    "might",
+    "most",
+    "much",
+    "must",
+    "need",
+    "needs",
+    "never",
+    "notice",
+    "often",
+    "once",
+    "only",
+    "onto",
+    "other",
+    "others",
+    "perhaps",
+    "pretty",
+    "professor",
+    "provide",
+    "provides",
+    "quite",
+    "rather",
+    "refer",
+    "refers",
+    "remember",
+    "represent",
+    "represents",
+    "require",
+    "requires",
+    "said",
+    "same",
+    "saying",
+    "says",
+    "seem",
+    "seems",
+    "shall",
+    "should",
+    "show",
+    "showed",
+    "shown",
+    "shows",
+    "since",
+    "some",
+    "soon",
+    "sort",
+    "start",
+    "started",
+    "starts",
+    "still",
+    "student",
+    "students",
+    "stuff",
+    "such",
+    "sure",
+    "take",
+    "takes",
+    "taking",
+    "talk",
+    "talking",
+    "talks",
+    "tell",
+    "tells",
+    "than",
+    "their",
+    "them",
+    "there",
+    "therefore",
+    "these",
+    "they",
+    "thinks",
+    "those",
+    "though",
+    "through",
+    "thus",
+    "together",
+    "took",
+    "toward",
+    "towards",
+    "turn",
+    "turns",
+    "under",
+    "unless",
+    "until",
+    "upon",
+    "used",
+    "uses",
+    "using",
+    "very",
+    "wants",
+    "welcome",
+    "whatever",
+    "when",
+    "whenever",
+    "whether",
+    "which",
+    "while",
+    "whom",
+    "whose",
+    "within",
+    "without",
+    "worked",
+    "works",
+    "would",
+    "write",
+    "writes",
+    "yeah",
+    "your",
+    "yours",
+}
+
+# A word right after one of these is a verb ("can transform vectors"), so it does not start a phrase.
+HELPER_VERBS = {"can", "could", "may", "might", "must", "should", "will", "would"}
+
+ADVERB_ENDINGS = ("ally", "ately", "antly", "ently", "fully", "ively", "lessly", "ously")
+
+# Two-word phrases stay inside one sentence, clause, or list item.
+PHRASE_BREAK = re.compile(r"[.!?;:,()\[\]{}\"\u201c\u201d]+|\s[-\u2013\u2014]+\s")
+
 
 def generate_output(timeline: LectureTimeline, mode: OutputMode) -> GenerateResponse:
     if mode not in MODE_TITLES:
@@ -715,21 +967,31 @@ def ensure_sentence(text: str) -> str:
 
 def top_concepts(chunks: list[TimelineChunk], limit: int = 8) -> list[str]:
     counts: Counter[str] = Counter()
+    overlapping: set[tuple[str, str]] = set()
     for chunk in chunks:
-        text = chunk.transcript
+        text = concept_text(chunk)
+        if not text:
+            continue
+        for run in phrase_runs(text):
+            overlapping.update(zip(run, run[1:]))
         for phrase in key_phrases(text):
             if phrase in DEFINITIONS:
                 counts[phrase] += 8
             else:
                 counts[phrase] += 3 if " " in phrase else 1
-        for concept in extract_concepts(chunk.transcript, limit=8):
+        for concept in extract_concepts(text, limit=8):
             clean = clean_concept(concept)
-            if clean:
+            if is_concept_word(clean):
                 counts[clean] += 1
 
     selected: list[str] = []
     for concept, _count in counts.most_common(limit * 4):
         if concept in selected:
+            continue
+        # "exam review keywords" gives "exam review" and "review keywords"; keep only the first one picked.
+        if concept not in DEFINITIONS and any(
+            (existing, concept) in overlapping or (concept, existing) in overlapping for existing in selected
+        ):
             continue
         narrower_match = next((existing for existing in selected if concept in existing), "")
         if narrower_match:
@@ -894,17 +1156,54 @@ def adhd_quick_checks(chunks: list[TimelineChunk], concepts: list[str]) -> list[
     return checks[:4]
 
 
+def concept_text(chunk: TimelineChunk) -> str:
+    # Upload placeholders describe the upload, not the lecture, so read the slide or frame text instead.
+    teaching_text = clean_teaching_text(chunk.transcript)
+    if teaching_text and "no audio transcription is attached" not in teaching_text.lower():
+        return chunk.transcript
+    return ". ".join(item for item in chunk.ocr if has_ocr_evidence_text(item))
+
+
 def key_phrases(text: str) -> list[str]:
     lower = text.lower()
     phrases = [term for term in DEFINITIONS if " " in term and term in lower]
-    words = meaningful_words(text)
-    for index in range(0, max(0, len(words) - 1)):
-        phrase_words = words[index : index + 2]
-        phrase = " ".join(phrase_words)
-        if is_useful_phrase(phrase):
-            phrases.append(phrase)
-    phrases.extend(words)
+    for run in phrase_runs(text):
+        phrases.extend(run)
+    phrases.extend(word for word in meaningful_words(text) if is_concept_word(word))
     return phrases
+
+
+def phrase_runs(text: str) -> list[list[str]]:
+    # Two-word phrases, grouped by unbroken run of concept words inside one sentence, clause, or list item.
+    runs: list[list[str]] = []
+    for clause in PHRASE_BREAK.split(text):
+        # Every token counts for adjacency, so a dropped word like "and" splits a phrase instead of vanishing.
+        tokens = re.findall(r"[A-Za-z0-9][A-Za-z0-9'\u2019-]*", clause.lower())
+        run: list[str] = []
+        for index in range(len(tokens) - 1):
+            phrase = f"{concept_word(tokens[index])} {concept_word(tokens[index + 1])}"
+            after_helper_verb = index > 0 and tokens[index - 1] in HELPER_VERBS
+            if is_useful_phrase(phrase) and not after_helper_verb:
+                run.append(phrase)
+            elif run:
+                runs.append(run)
+                run = []
+        if run:
+            runs.append(run)
+    return runs
+
+
+def concept_word(token: str) -> str:
+    if not re.fullmatch(r"[a-z][a-z'\u2019-]{2,}", token):
+        return ""
+    clean = clean_concept(token)
+    return clean if is_concept_word(clean) else ""
+
+
+def is_concept_word(word: str) -> bool:
+    if not word or word in FILLER_WORDS:
+        return False
+    return not (len(word) >= 6 and word.endswith(ADVERB_ENDINGS))
 
 
 def meaningful_words(text: str) -> list[str]:
