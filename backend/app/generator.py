@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 import json
+import logging
 import re
 
 from .azure_clients import generate_markdown_with_azure_openai
@@ -9,6 +10,8 @@ from .models import CaptionSegment, GenerateResponse, LectureTimeline, OutputMod
 from .providers import provider_status, selected_provider
 from .retrieval import extract_concepts
 
+
+logger = logging.getLogger(__name__)
 
 SAFETY_WARNING = (
     "AI-generated content may contain errors. Review before academic or accessibility use."
@@ -418,7 +421,9 @@ def generate_output(timeline: LectureTimeline, mode: OutputMode) -> GenerateResp
                 )
                 warnings.append("Generated with Azure OpenAI using AccessiNote timeline evidence.")
             except Exception as error:
-                warnings.append(f"Azure OpenAI generation failed; local deterministic fallback was used. Detail: {error}")
+                # Provider errors can name the endpoint host, so the detail stays in the server log.
+                logger.warning("Azure OpenAI generation failed for %s; local fallback used. Detail: %s", mode, error)
+                warnings.append("Azure OpenAI generation failed; local deterministic fallback was used.")
         else:
             warnings.append("GENERATION_PROVIDER=azure_openai is selected but not configured; local deterministic fallback was used.")
     return GenerateResponse(

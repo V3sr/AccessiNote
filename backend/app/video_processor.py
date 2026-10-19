@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import math
 import os
 import re
@@ -19,6 +20,8 @@ from .models import CaptionSegment, EvidenceMetrics, FrameEvidence, LectureTimel
 from .providers import provider_status, selected_provider
 from .retrieval import extract_concepts, format_timestamp, normalize_whitespace, split_transcript
 
+
+logger = logging.getLogger(__name__)
 
 EARLY_SAMPLE_SECONDS = [0, 2, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180]
 DEFAULT_MAX_SELECTED_FRAMES = 72
@@ -854,8 +857,10 @@ def transcribe_video_with_azure_speech(
     except Exception as error:
         if error.__class__.__name__ in {"JobCanceled", "JobStopped"}:
             raise
+        # Provider errors can name the endpoint host, so the detail stays in the server log.
+        logger.warning("Azure Speech transcription failed for %s; local fallback used. Detail: %s", video_path.name, error)
         fallback = transcribe_video_with_local_whisper(video_path, frames_dir, ffmpeg_path, stage_callback)
-        fallback.warnings.insert(0, f"Azure Speech transcription failed; local fallback was used. Detail: {error}")
+        fallback.warnings.insert(0, "Azure Speech transcription failed; local fallback was used.")
         return fallback
     finally:
         audio_path.unlink(missing_ok=True)
@@ -1038,8 +1043,10 @@ def run_configured_ocr(
                 return local_result, "Azure AI Vision OCR found no readable text on at least one frame; local OCR fallback found text."
             return OcrResult(lines=[], confidence=result.confidence, engine=result.engine), ""
         except Exception as error:
+            # Provider errors can name the endpoint host, so the detail stays in the server log.
+            logger.warning("Azure AI Vision OCR failed on %s; local OCR fallback used. Detail: %s", frame_path.name, error)
             local_result = run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=prefer_rapidocr)
-            return local_result, f"Azure AI Vision OCR failed on at least one frame; local OCR fallback was used. Detail: {error}"
+            return local_result, "Azure AI Vision OCR failed on at least one frame; local OCR fallback was used."
     return run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=prefer_rapidocr), ""
 
 

@@ -317,7 +317,7 @@ function isReviewFlag(flag: string): boolean {
 function formatEvidenceFlag(flag: string): string {
   const normalized = flag.toLowerCase();
   if (normalized.includes("no readable") || normalized.includes("ocr")) {
-    return "Slide text needs review";
+    return isReviewFlag(flag) ? "Slide text needs review" : "Slide text found";
   }
   if (normalized.includes("missing")) {
     return "Source information missing";
