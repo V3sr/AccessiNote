@@ -178,7 +178,7 @@ export function UploadPanel({
                 disabled={isBusy}
                 className={primaryButtonClass}
               >
-                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <FileText className="h-4 w-4" aria-hidden="true" />}
                 Load sample lecture
               </Button>
             </div>
@@ -203,9 +203,10 @@ export function UploadPanel({
                 className={textareaClass}
               />
               <Button type="submit" disabled={isBusy || transcript.trim().length === 0} className={primaryButtonClass}>
-                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <PlusCircle className="h-4 w-4" aria-hidden="true" />}
                 Add transcript
               </Button>
+              {transcript.trim().length === 0 && <p className="mt-2 text-xs leading-5 text-zinc-600">Paste a transcript first.</p>}
             </form>
           </TabsContent>
 
@@ -237,9 +238,10 @@ export function UploadPanel({
                 className={textareaClass}
               />
               <Button type="submit" disabled={isBusy || !imageFile} className={primaryButtonClass}>
-                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
+                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ScanText className="h-4 w-4" aria-hidden="true" />}
                 Add slide
               </Button>
+              {!imageFile && <p className="mt-2 text-xs leading-5 text-zinc-600">Choose a slide or image file first.</p>}
             </form>
           </TabsContent>
 
@@ -284,9 +286,10 @@ export function UploadPanel({
                 disabled={isBusy || !videoFile}
                 className={primaryButtonClass}
               >
-                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Upload className="h-4 w-4" aria-hidden="true" />}
                 Add recording
               </Button>
+              {!videoFile && <p className="mt-2 text-xs leading-5 text-zinc-600">Choose a recording file first.</p>}
             </form>
           </TabsContent>
         </div>

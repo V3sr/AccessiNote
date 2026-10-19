@@ -1,7 +1,8 @@
 "use client";
 
 import { AlertTriangle, ChevronDown, Clipboard, Download, FileDown } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { useState } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,31 @@ interface OutputViewerProps {
   output: GenerateResponse | null;
 }
 
+// Generated notes start at their own h1. The card title is an h2, so note headings move down two levels.
+const markdownComponents: Components = {
+  h1: ({ children }) => <h3>{children}</h3>,
+  h2: ({ children }) => <h4>{children}</h4>,
+  h3: ({ children }) => <h5>{children}</h5>,
+  h4: ({ children }) => <h6>{children}</h6>,
+  input: ({ type, checked, disabled }) => (
+    <input type={type} checked={checked} disabled={disabled} readOnly aria-label={checked ? "Done" : "To do"} />
+  ),
+};
+
 export function OutputViewer({ output }: OutputViewerProps) {
+  // Keyed to the output it belongs to, so a new set of notes starts with no message.
+  const [copyResult, setCopyResult] = useState<{ output: GenerateResponse; message: string } | null>(null);
+
   async function copyMarkdown() {
     if (!output) {
       return;
     }
-    await navigator.clipboard.writeText(output.content_markdown);
+    try {
+      await navigator.clipboard.writeText(output.content_markdown);
+      setCopyResult({ output, message: `Copied the ${outputFileType(output.mode).label}.` });
+    } catch {
+      setCopyResult({ output, message: "Could not copy. Select the text and copy it yourself." });
+    }
   }
 
   function downloadMarkdown() {
@@ -54,6 +74,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
   const topSources = output.sources.slice(0, 5);
   const hiddenSourceCount = Math.max(0, output.sources.length - topSources.length);
   const warnings = friendlyWarnings(output.warnings);
+  const copyMessage = copyResult?.output === output ? copyResult.message : "";
 
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
@@ -82,6 +103,9 @@ export function OutputViewer({ output }: OutputViewerProps) {
           </Button>
         </div>
       </div>
+      <p role="status" className={copyMessage ? "border-b border-zinc-200 px-4 py-2 text-sm text-zinc-700" : "sr-only"}>
+        {copyMessage}
+      </p>
 
       <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
         <p className="flex items-start gap-2">
@@ -100,13 +124,15 @@ export function OutputViewer({ output }: OutputViewerProps) {
       )}
 
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <article className="prose prose-zinc max-w-none p-4 prose-headings:tracking-normal prose-h1:text-2xl prose-h2:text-lg prose-li:my-1 prose-p:leading-7">
+        <article className="prose prose-zinc max-w-none p-4 prose-headings:tracking-normal prose-h3:text-2xl prose-h4:text-lg prose-h5:text-base prose-h5:font-semibold prose-li:my-1 prose-p:leading-7">
           {isPlainPreview ? (
             <pre className="whitespace-pre-wrap rounded-md bg-zinc-950 p-4 text-sm leading-6 text-zinc-50">
               {output.content_markdown}
             </pre>
           ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{output.content_markdown}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {output.content_markdown}
+            </ReactMarkdown>
           )}
         </article>
         <aside className="border-t border-zinc-200 p-4 lg:border-l lg:border-t-0">
