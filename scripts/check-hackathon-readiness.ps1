@@ -66,7 +66,6 @@ $requiredDocs = @(
   "docs/AZURE.md",
   "docs/SAFETY.md",
   "docs/ATTRIBUTION.md",
-  "docs/MICROSOFT_IQ.md",
   "docs/SUBMISSION.md"
 )
 
@@ -104,17 +103,17 @@ if ($null -ne $capabilities) {
     Add-Check "fail" "Upload APIs" "Image or video upload is disabled."
   }
 
-  $iqReady = $true
+  $azureReady = $true
   foreach ($providerName in @("transcription", "ocr", "generation")) {
     $provider = Get-ProviderStatus $capabilities $providerName
     if ($null -eq $provider -or -not ($provider.name -like "azure*") -or $provider.configured -ne $true) {
-      $iqReady = $false
+      $azureReady = $false
     }
   }
-  if ($iqReady) {
-    Add-Check "pass" "Microsoft IQ" "Azure Speech, Azure AI Vision, and Azure OpenAI are selected and configured."
+  if ($azureReady) {
+    Add-Check "pass" "Optional Azure" "Azure Speech, Azure AI Vision, and Azure OpenAI are selected and configured."
   } else {
-    Add-Check "warn" "Microsoft IQ" "Optional Azure providers are not all configured. Local fallback remains available."
+    Add-Check "warn" "Optional Azure" "Optional Azure providers are not all configured. Local fallback remains available."
   }
 }
 

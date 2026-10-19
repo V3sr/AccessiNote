@@ -8,11 +8,6 @@ AccessiNote currently runs as a local two-process app:
 - `data/outputs/`: ignored local generated timelines.
 - `data/uploads/`: reserved ignored local upload folder.
 
-For the Agents League Creative Apps track, the submission story should also describe the AI-assisted
-development workflow used to build and polish the application. If GitHub Copilot was used by the
-team, name it in the submission form and demo narration; do not claim Copilot usage unless it is
-accurate for the final submitted work.
-
 The backend exposes:
 
 - `GET /health`
@@ -31,9 +26,9 @@ The backend exposes:
 - `POST /api/images/upload`
 - `GET /api/lectures/{lecture_id}/frames/{filename}`
 
-Generation defaults to deterministic local output and can use Azure OpenAI when selected. For the
-Microsoft IQ requirement, the optional Azure-backed routes are Azure AI Speech, Azure AI Vision, and
-Azure OpenAI. Video upload uses local tooling with optional Azure providers:
+Generation defaults to deterministic local output and can use Azure OpenAI when selected. The
+optional Azure-backed routes are Azure AI Speech, Azure AI Vision, and Azure OpenAI. The Azure AI Vision and Azure OpenAI fallbacks were tested locally; none of the three routes has been run against live Azure resources.
+Video upload uses local tooling with optional Azure providers:
 
 - System `ffmpeg` or the Python `imageio-ffmpeg` fallback extracts selected keyframes from the uploaded video.
 - RapidOCR scans original and preprocessed keyframe variants locally when available; Tesseract OCR can be used as a fallback.
@@ -45,7 +40,7 @@ Azure OpenAI. Video upload uses local tooling with optional Azure providers:
 - Timeline JSON includes `processing_metadata` with stages, providers, metrics, warnings, and per-frame evidence.
 - If video frames cannot be extracted, the backend returns a fallback timeline with explicit warnings.
 - Recent local timelines are listed by reading JSON files in `data/outputs`; no database is used.
-- Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Microsoft IQ provider configuration.
+- Demo readiness checks sample data, local output storage, ffmpeg, OCR, transcription, exports, recent video processing, and optional Azure provider configuration.
 
 No auth, database, or Azure storage is required for the hackathon demo. The app can run with local
 fallbacks, or it can use Azure providers when selected through environment variables.

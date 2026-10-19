@@ -1,16 +1,15 @@
 # Azure Integration
 
 AccessiNote can optionally use Azure providers while still keeping the local demo available without
-keys. For the Microsoft Agents League submission, these Azure providers are the Microsoft IQ
-intelligence layer.
+keys. The Azure AI Vision and Azure OpenAI fallbacks were tested locally; none of the three routes has been run against live Azure resources.
 
 ## Providers
 
-Use the **Bring your own Azure keys** page at `/settings` when you want to try your own provider
-values. The page lets users choose local or Azure providers, paste Azure keys into clear slots, and
-open direct Microsoft Learn setup links. Runtime keys are scoped to a browser session on the backend,
-are not returned to the browser, and are cleared when the backend restarts or when **Use local
-only** is clicked.
+Use the settings page at `/settings` ("Add your own Azure keys") when you want to try your own
+provider values. The page lets users choose local or Azure providers, paste Azure keys into clear
+slots, and open direct Microsoft Learn setup links. The backend keeps runtime keys in memory for
+each browser (identified by an ID the page stores), never returns them to the browser, and clears
+them when the backend restarts or when **Use local only** is clicked.
 
 For repeatable local demos, set these switches in a private `.env` file instead:
 
@@ -43,7 +42,7 @@ to be the same. For example, if you deployed `gpt-4o-mini` as `accessinote-gpt-4
 Do not commit `.env`. The repository only includes `.env.example` with blank values. UI-entered keys
 are runtime overrides and are not written to `.env`.
 
-## What Microsoft IQ Does
+## What The Azure Routes Do
 
 - Azure Speech transcribes uploaded video audio when no captions are supplied.
 - Azure AI Vision Read OCR extracts text from uploaded images and selected video frames.

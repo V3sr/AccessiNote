@@ -2,8 +2,8 @@
 
 ## Project Description
 
-AccessiNote is a local-first lecture accessibility workbench with optional Microsoft IQ provider
-support. It turns permitted lecture videos, slides, screenshots, captions, or transcripts into
+AccessiNote is a local-first lecture accessibility workbench with optional Azure AI
+routes. It turns permitted lecture videos, slides, screenshots, captions, or transcripts into
 reviewable evidence timelines and accessible learning outputs for different study needs.
 
 The app focuses on the Microsoft Agents League Creative Apps + Accessibility path and the
@@ -21,7 +21,7 @@ Use this section to fill the contest platform submission.
 | Demo video link on YouTube or Vimeo | Record a short private demo, then paste the URL here | Pending: add URL before submission |
 | Public GitHub repository | Make the repo public, then paste the URL here | Pending: add URL before submission |
 | Architecture diagram | `docs/ARCHITECTURE.md` Mermaid diagram | Ready |
-| Microsoft IQ usage | Azure AI Speech, Azure AI Vision, Azure OpenAI; GitHub Copilot if actually used by the team | Ready, with Copilot truthfulness note |
+| Azure AI usage | Optional Azure AI Speech, Azure AI Vision and Azure OpenAI routes; Vision and OpenAI fallbacks tested locally; not run against live Azure | Pending: check the contest rules for what Microsoft service use they require |
 | Team member information | Add Microsoft Learn usernames in the contest platform if submitting as a team | Pending if applicable |
 
 Demo video URL: `TODO`
@@ -42,7 +42,7 @@ Team / Microsoft Learn usernames: `TODO if applicable`
 - Aligns transcript/caption, OCR, keyframe, concept, confidence, and warning evidence into one timeline.
 - Generates structured notes, ADHD study packs, screen-reader notes, exam prep, plain-language notes, notetaker quality reports, WebVTT captions, Evidence JSON, and plain transcripts.
 - Shows a demo-readiness panel for local tools, recent video processing, exports, and optional Microsoft provider configuration.
-- Lets users enter their own Azure provider keys through a session-only UI without exposing secrets to the browser.
+- Lets users enter their own Azure provider keys through a per-browser settings page without exposing secrets to the browser.
 
 ## Technologies Used
 
@@ -51,12 +51,12 @@ Team / Microsoft Learn usernames: `TODO if applicable`
 - Media processing: ffmpeg or imageio-ffmpeg.
 - Local transcription: faster-whisper.
 - Local OCR: RapidOCR, ONNX Runtime, optional Tesseract OCR.
-- Microsoft IQ providers: Azure AI Speech, Azure AI Vision Read OCR, and Azure OpenAI generation with local fallbacks.
-- AI-assisted development: name GitHub Copilot in the final contest submission only if the team used it during the submitted build.
+- Optional Azure AI routes: Azure AI Speech, Azure AI Vision Read OCR, and Azure OpenAI generation with local fallbacks.
+- AI-assisted development: list only the tools actually used to build the submitted app.
 
-## Microsoft IQ Requirement
+## Optional Azure AI Routes
 
-AccessiNote integrates the required Microsoft IQ intelligence layer in three places:
+When a user adds their own keys, AccessiNote can call Azure in three places. The Azure AI Vision and Azure OpenAI fallbacks were tested locally; none of the three routes has been run against live Azure resources.
 
 - Azure AI Speech transcribes uploaded lecture audio into timed caption and transcript segments.
 - Azure AI Vision scans uploaded images and selected video frames for OCR evidence.
@@ -127,4 +127,4 @@ Checks completed on June 14, 2026:
 - Frontend build: `npm run build`.
 - Hackathon readiness script: `.\scripts\check-hackathon-readiness.ps1` for local recording.
 - Backend smoke tests: health, capabilities, demo status, sample lecture, transcript creation, ADHD/screen-reader generation, WebVTT generation, image media job, video media job with uploaded captions, and job cancellation.
-- Provider settings API: session-only Azure key settings save, report configured status without returning secrets, and clear back to local providers.
+- Provider settings API: per-browser Azure key settings save, report configured status without returning secrets, and clear back to local providers.

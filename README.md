@@ -6,7 +6,7 @@ structured notes, ADHD-friendly study packs, screen-reader notes, plain-language
 prep, captions, and notetaker quality reports.
 
 The app runs locally without API keys. If you want to use your own transcription, OCR, or generation
-services, open `/settings` and paste your keys into the session-scoped slots.
+services, open `/settings` and paste your keys into the per-browser slots.
 
 ## Run Locally
 
@@ -106,22 +106,22 @@ Tesseract is optional and can be used as a fallback local OCR engine:
 winget install UB-Mannheim.TesseractOCR
 ```
 
-## Optional Microsoft IQ / Azure Setup
+## Optional Azure Setup
 
-The demo path stays local by default. `/api/capabilities` reports optional provider status for
-Microsoft IQ services, and `/api/demo/status` shows whether the selected providers are configured.
+The demo path stays local by default. `/api/capabilities` reports the status of the optional Azure
+services, and `/api/demo/status` shows whether the selected providers are configured.
 No keys are required to load samples, scan media locally, generate captions locally, run local OCR,
 or export notes.
 
-AccessiNote uses three Microsoft IQ routes when configured:
+AccessiNote has three optional Azure routes, used only when configured:
 
 - Azure AI Speech for generated captions and timed transcript segments.
 - Azure AI Vision for OCR on slides, screenshots, and selected video frames.
 - Azure OpenAI for grounded accessible study outputs.
 
-Users can paste Azure keys into the **Bring your own Azure keys** page at `/settings`. Those keys
-are scoped to the current browser session on the backend, never returned to the frontend, and
-cleared on backend restart or when switching back to local-only mode.
+Users can paste Azure keys on the settings page at `/settings`. The backend keeps those keys in
+memory for that browser until it restarts, never returns them to the frontend, and clears them
+when the user selects **Use local only**.
 
 Provider switches:
 
@@ -131,12 +131,11 @@ Provider switches:
 
 When an Azure provider is selected, AccessiNote reports whether the required environment variables
 are configured. Provider calls are made from the FastAPI backend so keys are never exposed to the
-browser. If Azure fails, the app returns to local fallback behavior.
+browser. If Azure fails, the app returns to local fallback behavior. The Azure AI Vision and Azure OpenAI fallbacks were tested locally; none of the three routes has been run against live Azure resources.
 
 ## Hackathon Docs
 
 - `docs/ARCHITECTURE.md`: local pipeline, API surface, Mermaid diagram, and provider seams.
-- `docs/MICROSOFT_IQ.md`: required Microsoft IQ integration story and demo talking points.
 - `docs/AZURE.md`: optional Azure setup, fallback behavior, and safe demo guidance.
 - `docs/SAFETY.md`: permitted-use policy, human review, OCR/caption limitations, and optional provider notes.
 - `docs/ATTRIBUTION.md`: demo content and dependency attribution.

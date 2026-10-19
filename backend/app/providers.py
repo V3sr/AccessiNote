@@ -161,8 +161,8 @@ def update_provider_settings(request: ProviderSettingsRequest) -> ProviderSettin
         runtime_settings_enabled=runtime_provider_settings_enabled(),
         session_id=current_provider_session(),
         message=(
-            "Provider settings saved for this browser session. "
-            "Keys are not returned to the browser and are not written to disk."
+            "Provider settings saved for this browser. Keys stay in server memory until a restart, "
+            "are not returned to the browser and are not written to disk."
         ),
     )
 

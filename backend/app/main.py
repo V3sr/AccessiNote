@@ -661,7 +661,7 @@ def production_runtime_settings_check() -> DemoCheck:
         id="production_runtime_settings",
         label="Key mode",
         status="pass",
-        detail="Bring-your-own-key mode is enabled. Runtime provider keys are scoped to each browser session.",
+        detail="Bring-your-own-key mode is enabled. Runtime provider keys stay in server memory per browser until a restart.",
     )
 
 
