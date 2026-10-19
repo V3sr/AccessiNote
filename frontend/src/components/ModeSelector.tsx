@@ -95,7 +95,7 @@ export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelec
               aria-pressed={isSelected}
               disabled={disabled}
               onClick={() => onSelectMode(mode)}
-              className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold shadow-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed ${
+              className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold shadow-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed ${
                 isSelected
                   ? "border-emerald-700 bg-emerald-50 text-emerald-950"
                   : "border-zinc-200 bg-white text-[#27272a] hover:border-zinc-300 hover:bg-zinc-50 disabled:bg-zinc-50 disabled:text-[#52525b]"

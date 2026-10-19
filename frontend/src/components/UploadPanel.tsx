@@ -305,9 +305,9 @@ function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: 
           ? "Queued"
           : "Preparing draft";
   return (
-    <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-950" aria-live="polite">
+    <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-950">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="flex items-center gap-2 font-semibold">
+        <p className="flex items-center gap-2 font-semibold" role="status">
           {job.status === "failed" || job.status === "canceled" ? (
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />
           ) : (
@@ -330,13 +330,24 @@ function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: 
           ) : null}
         </div>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-sky-100">
+      <div
+        className="mt-2 h-2 overflow-hidden rounded-full bg-sky-100"
+        role="progressbar"
+        aria-label="Draft preparation progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={job.progress}
+      >
         <div
           className="h-full rounded-full bg-sky-700 transition-[width]"
           style={{ width: `${Math.max(5, Math.min(100, job.progress))}%` }}
         />
       </div>
-      {job.error && <p className="mt-2 text-xs leading-5 text-rose-900">{friendlyJobError(job.error)}</p>}
+      {job.error && (
+        <p className="mt-2 text-xs leading-5 text-rose-900" role="alert">
+          {friendlyJobError(job.error)}
+        </p>
+      )}
     </div>
   );
 }
@@ -410,10 +421,10 @@ const primaryButtonClass =
   "mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-emerald-50 disabled:text-emerald-900";
 
 const inputClass =
-  "mt-2 min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
+  "mt-2 min-h-11 w-full rounded-md border border-zinc-500 px-3 py-2 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
 
 const textareaClass =
-  "mt-2 w-full resize-y rounded-md border border-zinc-300 px-3 py-2 text-sm leading-6 text-zinc-950 outline-none transition placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
+  "mt-2 w-full resize-y rounded-md border border-zinc-500 px-3 py-2 text-sm leading-6 text-zinc-950 outline-none transition placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
 
 const fileInputClass =
-  "mt-2 min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-950 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white";
+  "mt-2 min-h-11 w-full rounded-md border border-zinc-500 px-3 py-2 text-sm text-zinc-950 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white";

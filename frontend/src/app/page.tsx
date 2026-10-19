@@ -210,142 +210,153 @@ export default function Home() {
   const reviewWarnings = scanReviewMessages(lecture, processingJob);
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-zinc-950 focus:shadow-soft"
+      >
+        Skip to main content
+      </a>
       <Header />
+      <main id="main">
+        <section id="product" className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_64%,#f7fbff_100%)]">
+          <div className="mx-auto grid min-w-0 max-w-[1500px] gap-8 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-center lg:px-8 lg:py-12">
+            <div className="min-w-0">
+              <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
+                <FileCheck2 className="h-4 w-4" aria-hidden="true" />
+                Draft - human review required
+              </Badge>
+              <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
+                Turn lecture materials into accessible study notes.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
+                Upload permitted lecture recordings, transcripts, slides, or notes. AccessiNote creates reviewable
+                formats for screen readers, focus support, plain-language review, visual descriptions, and notetaker
+                workflows.
+              </p>
 
-      <section id="product" className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_64%,#f7fbff_100%)]">
-        <div className="mx-auto grid min-w-0 max-w-[1500px] gap-8 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-center lg:px-8 lg:py-12">
-          <div className="min-w-0">
-            <Badge className="inline-flex min-h-10 gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
-              <FileCheck2 className="h-4 w-4" aria-hidden="true" />
-              Draft - human review required
-            </Badge>
-            <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-5xl">
-              Turn lecture materials into accessible study notes.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
-              Upload permitted lecture recordings, transcripts, slides, or notes. AccessiNote creates reviewable
-              formats for screen readers, focus support, plain-language review, visual descriptions, and notetaker
-              workflows.
-            </p>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button
-                asChild
-                className="min-h-11 rounded-md bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900"
-              >
-                <a href="#source-desk">
-                  Create accessible notes
-                  <ArrowDown className="h-4 w-4" aria-hidden="true" />
-                </a>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleLoadSample}
-                disabled={isBusy}
-                className="min-h-11 rounded-md border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 active:translate-y-px active:bg-zinc-100 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500"
-              >
-                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
-                Try sample lecture
-              </Button>
-            </div>
-
-            <BenefitGrid />
-          </div>
-
-          <UploadPanel
-            onLoadSample={handleLoadSample}
-            onCreateLecture={handleCreateLecture}
-            onUploadVideo={handleUploadVideo}
-            onUploadImage={handleUploadImage}
-            isBusy={isBusy}
-            processingJob={processingJob}
-            onCancelProcessingJob={handleCancelProcessingJob}
-          />
-        </div>
-      </section>
-
-      <SafetyBanner />
-      <WorkflowSection />
-      <FormatsSection />
-
-      <section id="workbench" className="mx-auto max-w-[1500px] px-5 py-6 lg:px-8 lg:py-8">
-        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-emerald-800">Review workspace</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-normal text-zinc-950">
-              Review timestamps, warnings, and draft notes before exporting
-            </h2>
-          </div>
-          <Badge className="w-fit rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
-            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
-            Draft - human review required
-          </Badge>
-        </div>
-
-        <div className="grid min-w-0 gap-5 xl:grid-cols-[320px_minmax(0,1fr)_320px] xl:items-start">
-          <aside className="min-w-0 space-y-5" aria-label="Lecture timeline and source chunks">
-            <LectureOverview lecture={lecture} />
-            <RecentTimelines lectures={recentLectures} onLoad={handleLoadSavedLecture} disabled={isBusy} />
-            <SourceSummary lecture={lecture} />
-          </aside>
-
-          <section className="min-w-0 space-y-5" aria-label="Generated output preview">
-            <ModeSelector selectedMode={selectedMode} onSelectMode={setSelectedMode} disabled={!lecture || isBusy} />
-
-            <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-zinc-950">{modeLabels[selectedMode]}</h3>
-                  <p className="mt-1 text-sm leading-5 text-zinc-600">
-                    Generate a study draft from the reviewed timeline. Keep timestamps and warnings visible.
-                  </p>
-                </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button
+                  asChild
+                  className="min-h-11 rounded-md bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900"
+                >
+                  <a href="#source-desk">
+                    Create accessible notes
+                    <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </Button>
                 <Button
                   type="button"
-                  onClick={handleGenerate}
-                  disabled={!lecture || isBusy}
-                  aria-busy={isBusy}
-                  className="min-h-11 rounded-md bg-zinc-950 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 active:translate-y-px active:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500"
+                  variant="outline"
+                  onClick={handleLoadSample}
+                  disabled={isBusy}
+                  className="min-h-11 rounded-md border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 active:translate-y-px active:bg-zinc-100 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500"
                 >
-                  {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  Generate draft
+                  {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+                  Try sample lecture
                 </Button>
               </div>
 
-              <div className="sr-only" aria-live="polite">
-                {isBusy ? "Preparing draft." : output ? "Draft generated. Human review required." : ""}
-              </div>
+              <BenefitGrid />
+            </div>
 
-              {error && (
-                <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-900">
-                  {friendlyError(error)}
+            <UploadPanel
+              onLoadSample={handleLoadSample}
+              onCreateLecture={handleCreateLecture}
+              onUploadVideo={handleUploadVideo}
+              onUploadImage={handleUploadImage}
+              isBusy={isBusy}
+              processingJob={processingJob}
+              onCancelProcessingJob={handleCancelProcessingJob}
+            />
+          </div>
+        </section>
+
+        <SafetyBanner />
+        <WorkflowSection />
+        <FormatsSection />
+
+        <section id="workbench" className="mx-auto max-w-[1500px] px-5 py-6 lg:px-8 lg:py-8">
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">Review workspace</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-normal text-zinc-950">
+                Review timestamps, warnings, and draft notes before exporting
+              </h2>
+            </div>
+            <Badge className="w-fit rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
+              <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+              Draft - human review required
+            </Badge>
+          </div>
+
+          <div className="grid min-w-0 gap-5 xl:grid-cols-[320px_minmax(0,1fr)_320px] xl:items-start">
+            <aside className="min-w-0 space-y-5" aria-label="Lecture timeline and source chunks">
+              <LectureOverview lecture={lecture} />
+              <RecentTimelines lectures={recentLectures} onLoad={handleLoadSavedLecture} disabled={isBusy} />
+              <SourceSummary lecture={lecture} />
+            </aside>
+
+            <section className="min-w-0 space-y-5" aria-label="Generated output preview">
+              <ModeSelector selectedMode={selectedMode} onSelectMode={setSelectedMode} disabled={!lecture || isBusy} />
+
+              <Card className="rounded-2xl border-zinc-200 bg-white p-4 shadow-soft">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-950">{modeLabels[selectedMode]}</h3>
+                    <p className="mt-1 text-sm leading-5 text-zinc-600">
+                      Generate a study draft from the reviewed timeline. Keep timestamps and warnings visible.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleGenerate}
+                    disabled={!lecture || isBusy}
+                    aria-busy={isBusy}
+                    className="min-h-11 rounded-md bg-zinc-950 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 active:translate-y-px active:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500"
+                  >
+                    {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    Generate draft
+                  </Button>
                 </div>
-              )}
-              {notice && (
-                <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
-                  {notice}
+
+                <div className="sr-only" aria-live="polite">
+                  {isBusy ? "Preparing draft." : output ? "Draft generated. Human review required." : ""}
                 </div>
-              )}
-            </Card>
 
-            <OutputViewer output={output} />
-          </section>
+                <div role="alert">
+                  {error && (
+                    <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-900">
+                      {friendlyError(error)}
+                    </div>
+                  )}
+                </div>
+                <div role="status">
+                  {notice && (
+                    <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
+                      {notice}
+                    </div>
+                  )}
+                </div>
+              </Card>
 
-          <aside className="min-w-0 space-y-5" aria-label="Review checklist, warnings, and export options">
-            <ReviewChecklistPanel lecture={lecture} output={output} warnings={reviewWarnings} />
-            <WarningsPanel warnings={reviewWarnings} job={processingJob} />
-            <ExportOptionsPanel output={output} />
-            <PrivacyPanel />
-          </aside>
-        </div>
+              <OutputViewer output={output} />
+            </section>
 
-        <div className="mt-5">
-          <TimelineViewer lecture={lecture} />
-        </div>
-      </section>
-    </main>
+            <aside className="min-w-0 space-y-5" aria-label="Review checklist, warnings, and export options">
+              <ReviewChecklistPanel lecture={lecture} output={output} warnings={reviewWarnings} />
+              <WarningsPanel warnings={reviewWarnings} job={processingJob} />
+              <ExportOptionsPanel output={output} />
+              <PrivacyPanel />
+            </aside>
+          </div>
+
+          <div className="mt-5">
+            <TimelineViewer lecture={lecture} />
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
 

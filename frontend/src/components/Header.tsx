@@ -52,6 +52,7 @@ export function Header() {
           >
             <Link href="/#source-desk">
               <span className="hidden sm:inline">Create accessible notes</span>
+              <span className="sr-only sm:hidden">Create accessible notes</span>
               <ArrowDown className="h-4 w-4 sm:hidden" aria-hidden="true" />
             </Link>
           </Button>

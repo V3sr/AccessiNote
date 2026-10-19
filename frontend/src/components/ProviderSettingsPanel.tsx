@@ -400,7 +400,7 @@ function ProviderSetupGuide() {
             {step.internal ? (
               <Link
                 href={step.href}
-                className="mt-3 inline-flex min-h-8 items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+                className="mt-3 inline-flex min-h-8 items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
               >
                 {step.linkLabel}
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -410,7 +410,7 @@ function ProviderSetupGuide() {
                 href={step.href}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-3 inline-flex min-h-8 items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+                className="mt-3 inline-flex min-h-8 items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
               >
                 {step.linkLabel}
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -467,7 +467,7 @@ function ProviderSelect({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 min-h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+        className="mt-1 min-h-10 w-full rounded-md border border-zinc-500 bg-white px-3 py-2 text-sm font-semibold text-zinc-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
       >
         {options.map(([optionValue, optionLabel]) => (
           <option key={optionValue} value={optionValue}>
@@ -505,7 +505,7 @@ function SecretGroup({
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-7 items-center gap-1 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1 text-[11px] font-semibold text-zinc-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+                className="inline-flex min-h-7 items-center gap-1 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1 text-[11px] font-semibold text-zinc-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
               >
                 {label}
                 <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -537,7 +537,7 @@ function TextInput({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="mt-1 min-h-10 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+        className="mt-1 min-h-10 w-full rounded-md border border-zinc-500 px-3 py-2 text-sm text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
       />
     </label>
   );
@@ -553,7 +553,7 @@ function SecretInput({ label, value, onChange }: { label: string; value: string;
         onChange={(event) => onChange(event.target.value)}
         placeholder="Paste key"
         autoComplete="off"
-        className="mt-1 min-h-10 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+        className="mt-1 min-h-10 w-full rounded-md border border-zinc-500 px-3 py-2 text-sm text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
       />
     </label>
   );
