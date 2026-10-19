@@ -164,24 +164,18 @@ FILLER_WORDS = {
     "bunch",
     "called",
     "cannot",
-    "capture",
-    "captured",
     "captures",
     "certain",
-    "check",
-    "checks",
     "compare",
     "compared",
     "compares",
     "connect",
-    "connected",
     "connects",
     "consider",
     "considers",
     "contain",
     "contains",
     "could",
-    "cover",
     "covers",
     "create",
     "creates",
@@ -221,10 +215,8 @@ FILLER_WORDS = {
     "gives",
     "goes",
     "gone",
-    "good",
     "have",
     "having",
-    "help",
     "helped",
     "helps",
     "hence",
@@ -259,11 +251,8 @@ FILLER_WORDS = {
     "made",
     "make",
     "makes",
-    "making",
     "many",
     "matters",
-    "mean",
-    "means",
     "meant",
     "mention",
     "mentions",
@@ -271,8 +260,6 @@ FILLER_WORDS = {
     "most",
     "much",
     "must",
-    "need",
-    "needs",
     "never",
     "notice",
     "often",
@@ -303,29 +290,22 @@ FILLER_WORDS = {
     "seems",
     "shall",
     "should",
-    "show",
     "showed",
     "shown",
     "shows",
     "since",
     "some",
     "soon",
-    "sort",
-    "start",
     "started",
     "starts",
     "still",
-    "student",
     "students",
     "stuff",
     "such",
     "sure",
     "take",
     "takes",
-    "taking",
-    "talk",
     "talking",
-    "talks",
     "tell",
     "tells",
     "than",
@@ -344,8 +324,6 @@ FILLER_WORDS = {
     "took",
     "toward",
     "towards",
-    "turn",
-    "turns",
     "under",
     "unless",
     "until",
@@ -366,7 +344,6 @@ FILLER_WORDS = {
     "whose",
     "within",
     "without",
-    "worked",
     "works",
     "would",
     "write",
@@ -376,13 +353,40 @@ FILLER_WORDS = {
     "yours",
 }
 
+# Filler on their own, but part of real terms: "sample mean", "merge sort", "decision making",
+# "public good", "basic needs", "connected graph". They may sit inside a phrase, never stand alone.
+PHRASE_ONLY_WORDS = {
+    "capture",
+    "captured",
+    "check",
+    "checks",
+    "connected",
+    "cover",
+    "good",
+    "help",
+    "making",
+    "mean",
+    "means",
+    "need",
+    "needs",
+    "show",
+    "sort",
+    "student",
+    "taking",
+    "talk",
+    "talks",
+    "turn",
+    "turns",
+    "worked",
+}
+
 # A word right after one of these is a verb ("can transform vectors"), so it does not start a phrase.
 HELPER_VERBS = {"can", "could", "may", "might", "must", "should", "will", "would"}
 
 ADVERB_ENDINGS = ("ally", "ately", "antly", "ently", "fully", "ively", "lessly", "ously")
 
-# Two-word phrases stay inside one sentence, clause, or list item.
-PHRASE_BREAK = re.compile(r"[.!?;:,()\[\]{}\"\u201c\u201d]+|\s[-\u2013\u2014]+\s")
+# Two-word phrases stay inside one sentence, clause, line, or list item.
+PHRASE_BREAK = re.compile(r"[.!?;:,()\[\]{}\"\u201c\u201d\r\n]+|\s[-\u2013\u2014]+\s")
 
 
 def generate_output(timeline: LectureTimeline, mode: OutputMode) -> GenerateResponse:
@@ -1197,11 +1201,13 @@ def concept_word(token: str) -> str:
     if not re.fullmatch(r"[a-z][a-z'\u2019-]{2,}", token):
         return ""
     clean = clean_concept(token)
-    return clean if is_concept_word(clean) else ""
+    return clean if is_concept_word(clean, in_phrase=True) else ""
 
 
-def is_concept_word(word: str) -> bool:
+def is_concept_word(word: str, in_phrase: bool = False) -> bool:
     if not word or word in FILLER_WORDS:
+        return False
+    if word in PHRASE_ONLY_WORDS and not in_phrase:
         return False
     return not (len(word) >= 6 and word.endswith(ADVERB_ENDINGS))
 

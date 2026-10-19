@@ -86,6 +86,25 @@ class TwoWordPhrasesTest(unittest.TestCase):
         self.assertIn("receptor proteins", two_word_phrases("The lecture explains receptor proteins, signal cascades."))
         self.assertIn("fourier transform", two_word_phrases("The Fourier transform splits a signal into waves."))
 
+    def test_domain_terms_that_look_like_verbs_are_kept(self) -> None:
+        text = (
+            "The sample mean estimates the population mean. Merge sort splits the list. "
+            "Student engagement rises. A public good is shared. Decision making under risk. "
+            "Basic needs come first. Every connected graph has a spanning tree."
+        )
+        phrases = two_word_phrases(text)
+        for good in [
+            "sample mean", "population mean", "merge sort", "student engagement", "public good",
+            "decision making", "basic needs", "connected graph",
+        ]:
+            self.assertIn(good, phrases, phrases)
+
+    def test_phrases_do_not_cross_line_breaks(self) -> None:
+        phrases = two_word_phrases("Inputs\nwater\ncarbon dioxide\nOutputs")
+        self.assertNotIn("inputs water", phrases, phrases)
+        self.assertNotIn("dioxide outputs", phrases, phrases)
+        self.assertIn("carbon dioxide", phrases, phrases)
+
 
 class TopConceptsTest(unittest.TestCase):
     def test_demo_slide_names_its_terms(self) -> None:
@@ -117,6 +136,12 @@ class TopConceptsTest(unittest.TestCase):
             self.assertNotIn(bad, concepts, concepts)
         self.assertIn("lottery", concepts, concepts)
         self.assertIn("probability", concepts, concepts)
+
+    def test_words_kept_for_phrases_do_not_stand_alone(self) -> None:
+        text = "I mean, we need to check this. Making the turn worked. I mean it, check again. We need help."
+        concepts = top_concepts([chunk(text)], limit=8)
+        for bad in ["mean", "need", "check", "making", "turn", "worked", "help"]:
+            self.assertNotIn(bad, concepts, concepts)
 
     def test_video_placeholder_is_not_a_concept_source(self) -> None:
         concepts = top_concepts([chunk(VIDEO_PLACEHOLDER, ocr=["Cell signaling", "Receptor proteins and ligands"])], limit=5)
