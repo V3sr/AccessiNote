@@ -1,4 +1,4 @@
-import { Accessibility, ArrowDown, KeyRound } from "lucide-react";
+import { Accessibility, ArrowDown, Settings } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -41,9 +41,9 @@ export function Header() {
             className="min-h-10 rounded-md border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 active:translate-y-px active:bg-zinc-100"
           >
             <Link href="/settings">
-              <KeyRound className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">API keys</span>
-              <span className="sr-only sm:hidden">API keys</span>
+              <Settings className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Settings</span>
+              <span className="sr-only sm:hidden">Settings</span>
             </Link>
           </Button>
           <Button

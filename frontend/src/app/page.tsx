@@ -230,9 +230,9 @@ export default function Home() {
                 Turn lecture materials into accessible study notes.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 lg:text-lg">
-                Upload permitted lecture recordings, transcripts, slides, or notes. AccessiNote creates reviewable
-                formats for screen readers, focus support, plain-language review, visual descriptions, and notetaker
-                workflows.
+                For students who need captions, screen-reader-friendly notes, shorter study steps, or plainer wording.
+                Add a lecture recording, transcript, or slide you are allowed to use, and AccessiNote makes a draft you
+                check before sharing.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">

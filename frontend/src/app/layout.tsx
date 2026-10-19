@@ -11,19 +11,19 @@ export const metadata: Metadata = {
     default: "AccessiNote",
     template: "%s | AccessiNote",
   },
-  description: "Accessible lecture intelligence for multimodal study materials",
+  description: "Turn lecture recordings, slides and transcripts into captions, screen-reader notes and focus-friendly study packs.",
   keywords: [
     "lecture accessibility",
     "OCR notes",
     "caption generation",
     "ADHD study tools",
     "screen reader notes",
-    "Azure AI",
-    "Microsoft IQ",
+    "Deaf and hard of hearing students",
+    "low vision study notes",
   ],
   openGraph: {
     title: "AccessiNote",
-    description: "Turn lecture recordings, slides, and transcripts into accessible study systems.",
+    description: "Turn lecture recordings, slides and transcripts into accessible study notes.",
     url: siteUrl,
     siteName: "AccessiNote",
     type: "website",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "AccessiNote",
-    description: "Source-grounded lecture notes, captions, OCR timelines, and accessibility exports.",
+    description: "Captions, screen-reader notes and focus-friendly study packs from your lecture material.",
   },
   category: "education",
 };

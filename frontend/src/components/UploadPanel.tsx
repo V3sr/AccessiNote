@@ -4,11 +4,11 @@ import {
   AlertTriangle,
   FileText,
   ImageIcon,
-  KeyRound,
   Layers,
   Loader2,
   PlusCircle,
   ScanText,
+  Settings,
   Upload,
   UploadCloud,
   Video,
@@ -131,8 +131,8 @@ export function UploadPanel({
 
           <div className="mt-4 flex flex-col gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm leading-6 text-sky-950 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0">
-              <span className="font-semibold">Using your own API keys?</span> Add optional Speech, Vision, or Azure
-              OpenAI keys before processing.
+              <span className="font-semibold">Runs on this computer.</span> No account or keys needed. Captions,
+              slide text and notes are made locally.
             </p>
             <Button
               asChild
@@ -140,8 +140,8 @@ export function UploadPanel({
               className="min-h-10 shrink-0 rounded-md border-sky-300 bg-white px-3 py-2 text-sm font-semibold text-sky-950 hover:bg-sky-100 active:translate-y-px"
             >
               <Link href="/settings">
-                <KeyRound className="h-4 w-4" aria-hidden="true" />
-                Open key setup
+                <Settings className="h-4 w-4" aria-hidden="true" />
+                Optional settings
               </Link>
             </Button>
           </div>
