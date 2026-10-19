@@ -432,7 +432,9 @@ def sample_lecture_check() -> DemoCheck:
     try:
         sample = load_sample_timeline()
     except Exception as error:
-        return DemoCheck(id="sample_lecture", label="Sample lecture", status="fail", detail=f"Could not load sample: {error}")
+        # The Settings page shows this detail, and the error can name local file paths, so it stays in the server log.
+        logger.warning("Could not load the sample lecture. Detail: %s", error)
+        return DemoCheck(id="sample_lecture", label="Sample lecture", status="fail", detail="Could not load sample.")
     if not sample.chunks:
         return DemoCheck(id="sample_lecture", label="Sample lecture", status="fail", detail="Sample timeline has no chunks.")
     return DemoCheck(
@@ -447,7 +449,9 @@ def local_outputs_check() -> DemoCheck:
     try:
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     except OSError as error:
-        return DemoCheck(id="local_outputs", label="Local outputs", status="fail", detail=f"Cannot write data/outputs: {error}")
+        # The Settings page shows this detail, and the error names local file paths, so it stays in the server log.
+        logger.warning("Cannot write data/outputs. Detail: %s", error)
+        return DemoCheck(id="local_outputs", label="Local outputs", status="fail", detail="Cannot write data/outputs.")
     return DemoCheck(
         id="local_outputs",
         label="Local outputs",

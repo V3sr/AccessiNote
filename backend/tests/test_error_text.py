@@ -65,5 +65,31 @@ class LocalCaptionErrorTest(unittest.TestCase):
         assert_logged(self, logs.output)
 
 
+class SettingsChecksTest(unittest.TestCase):
+    # The Settings page shows each check's detail.
+    def test_sample_check_shows_a_plain_sentence(self) -> None:
+        error = FileNotFoundError(f"[Errno 2] No such file or directory: '{FAKE_PATH}'")
+        with (
+            mock.patch.object(main, "load_sample_timeline", side_effect=error),
+            self.assertLogs("app.main", level="WARNING") as logs,
+        ):
+            check = main.sample_lecture_check()
+
+        self.assertEqual((check.status, check.detail), ("fail", "Could not load sample."))
+        assert_logged(self, logs.output)
+
+    def test_outputs_check_shows_a_plain_sentence(self) -> None:
+        outputs_dir = mock.Mock()
+        outputs_dir.mkdir.side_effect = PermissionError(f"[WinError 5] Access is denied: '{FAKE_PATH}'")
+        with (
+            mock.patch.object(main, "OUTPUTS_DIR", outputs_dir),
+            self.assertLogs("app.main", level="WARNING") as logs,
+        ):
+            check = main.local_outputs_check()
+
+        self.assertEqual((check.status, check.detail), ("fail", "Cannot write data/outputs."))
+        assert_logged(self, logs.output)
+
+
 if __name__ == "__main__":
     unittest.main()
