@@ -334,7 +334,7 @@ function providerSummary(providers: Record<string, ProviderStatus>): { text: str
   if (missing === 0) {
     return { text: `${azure.length} set up`, status: "pass" };
   }
-  return { text: `${missing} need keys`, status: "warn" };
+  return { text: missing === 1 ? "1 needs keys" : `${missing} need keys`, status: "warn" };
 }
 
 function DemoCheckRow({ check }: { check: DemoCheck }) {

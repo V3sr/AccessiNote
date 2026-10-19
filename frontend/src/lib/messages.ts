@@ -1,5 +1,5 @@
 // Plain lines for text the backend writes for developers: errors, job stages, warnings and labels.
-// The raw text still goes to the console so problems can be traced.
+// Callers that catch an error log the raw text once, so problems can still be traced.
 
 const pluralRules = new Intl.PluralRules("en");
 
@@ -31,12 +31,11 @@ export function friendlyError(error: string): string {
     return "AccessiNote lost track of this upload, maybe because the server restarted. Add the file again.";
   }
   if (normalized.includes("processing stalled")) {
-    return "Making captions took too long. Add a captions file with the recording, or try a shorter recording.";
+    return "This upload stopped making progress. Try a shorter recording, or add a captions file with it.";
   }
   if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized.includes("load failed")) {
     return "AccessiNote cannot reach its server on this computer. Start the server, then try again.";
   }
-  console.error("AccessiNote error:", error);
   return "AccessiNote could not finish that. Try again. If it keeps happening, use a shorter file or add a transcript.";
 }
 
@@ -66,7 +65,6 @@ function friendlyWarning(warning: string): string {
     return "Written with Azure OpenAI from your lecture timeline.";
   }
   if (normalized.startsWith("azure openai generation failed")) {
-    console.error("AccessiNote warning:", warning);
     return "Azure OpenAI did not respond, so these notes were made on this computer. Check your Azure keys in Settings to try again.";
   }
   if (normalized.includes("azure_openai is selected but not configured")) {

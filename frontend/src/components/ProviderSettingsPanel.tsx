@@ -371,7 +371,7 @@ function ProviderSetupGuide() {
     {
       title: "3. Save, then try it",
       detail: "Save, then load the sample or add your own lecture to check it works.",
-      linkLabel: "Back to your notes",
+      linkLabel: "Add a lecture",
       href: "/#source-desk",
       internal: true,
     },

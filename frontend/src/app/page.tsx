@@ -82,6 +82,7 @@ export default function Home() {
     try {
       await action();
     } catch (caughtError) {
+      console.error("AccessiNote error:", caughtError);
       setError(friendlyError(caughtError instanceof Error ? caughtError.message : String(caughtError)));
     } finally {
       setIsBusy(false);
@@ -377,7 +378,7 @@ function WorkflowSection() {
     },
     {
       title: "Pick a format",
-      detail: "Choose screen reader notes, an ADHD study pack, a plain-language explanation, structured notes, exam prep or a notetaker report.",
+      detail: "Choose screen reader notes, an ADHD study pack, a plain-language explanation, structured notes, an exam prep pack or a notetaker quality report.",
     },
     {
       title: "Make notes",
@@ -857,7 +858,7 @@ const placeholderTimeline = [
   {
     start: "08:45",
     title: "Pick a format",
-    detail: "Make screen reader notes, an ADHD study pack, a plain-language explanation or a quality report.",
+    detail: "Make screen reader notes, an ADHD study pack, a plain-language explanation or a notetaker quality report.",
   },
   {
     start: "22:10",
