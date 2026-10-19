@@ -306,7 +306,8 @@ function isReviewFlag(flag: string): boolean {
     normalized.includes("missing") ||
     normalized.includes("no readable") ||
     normalized.includes("weak") ||
-    normalized.includes("low-confidence")
+    normalized.includes("low-confidence") ||
+    normalized.includes("fallback")
   );
 }
 
@@ -330,6 +331,15 @@ function formatEvidenceFlag(flag: string): string {
   }
   if (normalized.includes("keyframe") || normalized.includes("visual")) {
     return "Visual source available";
+  }
+  if (normalized.includes("keyword")) {
+    return "Slide picked at key words";
+  }
+  if (normalized.includes("notes")) {
+    return "Your notes added";
+  }
+  if (normalized.includes("fallback")) {
+    return "Made without slide images";
   }
   return flag.replaceAll("_", " ");
 }
