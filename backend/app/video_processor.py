@@ -247,7 +247,6 @@ def process_video_to_timeline(
             title=clean_title,
             video_path=video_path,
             transcript_segments=transcript_result.segments,
-            ocr_message="ffmpeg not available; OCR scan could not run.",
             visual_message=(
                 "The video was saved locally, but AccessiNote could not inspect frames because "
                 "ffmpeg is not available on PATH."
@@ -290,7 +289,6 @@ def process_video_to_timeline(
             title=clean_title,
             video_path=video_path,
             transcript_segments=transcript_result.segments,
-            ocr_message="No keyframes were available for OCR scanning.",
             visual_message="No video frames were extracted. Confirm the file is a readable video.",
             confidence=0.4,
         )
@@ -1291,7 +1289,6 @@ def placeholder_timeline(
     title: str,
     video_path: Path,
     transcript_segments: list[TranscriptSegment],
-    ocr_message: str,
     visual_message: str,
     confidence: float,
 ) -> LectureTimeline:
@@ -1313,7 +1310,9 @@ def placeholder_timeline(
                 start=format_timestamp(start_seconds),
                 end=format_timestamp(max(segment.end_seconds, start_seconds + DEFAULT_FRAME_SPAN_SECONDS)),
                 transcript=segment.text,
-                ocr=[ocr_message],
+                # No slide images means no slide text. A status line here was counted as slide text, so the
+                # reason stays in visual_description and the warnings instead.
+                ocr=[],
                 visual_description=visual_message,
                 concepts=segment.concepts or extract_concepts(segment.text),
                 source_confidence=confidence,
