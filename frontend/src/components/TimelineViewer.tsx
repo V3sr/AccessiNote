@@ -44,21 +44,21 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
           <p className="mt-1 text-sm text-zinc-600">{formatAttribution(lecture.source.attribution, lecture.source.type)}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          <SummaryPill icon={<Clock className="h-3.5 w-3.5" />} label={countOf(lecture.chunks.length, "part", "parts")} />
-          <SummaryPill icon={<ScanText className="h-3.5 w-3.5" />} label={`${ocrChunks} with slide text`} />
+          <SummaryPill icon={<Clock className="h-3.5 w-3.5" aria-hidden="true" />} label={countOf(lecture.chunks.length, "part", "parts")} />
+          <SummaryPill icon={<ScanText className="h-3.5 w-3.5" aria-hidden="true" />} label={`${ocrChunks} with slide text`} />
           <SummaryPill
-            icon={<Captions className="h-3.5 w-3.5" />}
+            icon={<Captions className="h-3.5 w-3.5" aria-hidden="true" />}
             label={lecture.caption_segments.length ? countOf(lecture.caption_segments.length, "caption", "captions") : "No captions"}
           />
           {captionSource && captionSource !== "none" && (
-            <SummaryPill icon={<FileText className="h-3.5 w-3.5" />} label={formatCaptionSource(captionSource)} />
+            <SummaryPill icon={<FileText className="h-3.5 w-3.5" aria-hidden="true" />} label={formatCaptionSource(captionSource)} />
           )}
           <SummaryPill
-            icon={<Gauge className="h-3.5 w-3.5" />}
+            icon={<Gauge className="h-3.5 w-3.5" aria-hidden="true" />}
             label={`${percent(averageSourceConfidence)} sure on average`}
           />
           {weakChunks > 0 && (
-            <SummaryPill icon={<Eye className="h-3.5 w-3.5" />} label={`${weakChunks} to check`} />
+            <SummaryPill icon={<Eye className="h-3.5 w-3.5" aria-hidden="true" />} label={`${weakChunks} to check`} />
           )}
         </div>
       </div>
@@ -92,7 +92,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={assetUrl(chunk.keyframe_path)}
-                alt={`Lecture source image for ${chunk.start}-${chunk.end}`}
+                alt={imageAltText(chunk)}
                 loading="lazy"
                 className="aspect-video w-full object-contain"
               />
@@ -260,6 +260,18 @@ function EvidencePanel({
 
 function percent(value: number): string {
   return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`;
+}
+
+// The slide text panel below starts closed, so the alt text carries what the slide says.
+function imageAltText(chunk: TimelineChunk): string {
+  const lines = chunk.ocr
+    .filter((item) => hasReadableOcrEvidence([item]))
+    .map((item) => item.replace(/^[-*\u2022]\s*/, "").replace(/[.\s]+$/, ""));
+  if (lines.length === 0) {
+    return `Slide image at ${chunk.start}. No slide text found.`;
+  }
+  const text = lines.join(". ").replace(/\s+/g, " ").trim();
+  return `Slide image at ${chunk.start}: ${text.length > 220 ? `${text.slice(0, 217).trimEnd()}...` : text}`;
 }
 
 function hasReadableOcrEvidence(items: string[]): boolean {

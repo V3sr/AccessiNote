@@ -227,16 +227,20 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
         </p>
       </div>
 
-      {message && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-950">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-900">
-          {error}
-        </p>
-      )}
+      <div role="status" className="empty:!mt-0">
+        {message && (
+          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-950">
+            {message}
+          </p>
+        )}
+      </div>
+      <div role="alert" className="empty:!mt-0">
+        {error && (
+          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-900">
+            {error}
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button
@@ -244,7 +248,7 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
           disabled={isSaving}
           className="min-h-10 flex-1 rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:bg-emerald-50 disabled:text-emerald-900"
         >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}
           Save settings
         </Button>
         <Button

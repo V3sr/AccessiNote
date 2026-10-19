@@ -60,8 +60,15 @@ export function SettingsPageClient() {
   const providerStatus = providerSummary(providers);
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-zinc-950 focus:shadow-soft"
+      >
+        Skip to main content
+      </a>
       <Header />
+      <main id="main">
 
       <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_62%,#f7f9fb_100%)]">
         <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:px-8">
@@ -167,7 +174,8 @@ export function SettingsPageClient() {
           <DemoChecklist status={demoStatus} />
         </aside>
       </section>
-    </main>
+      </main>
+    </div>
   );
 }
 
@@ -350,7 +358,10 @@ function DemoCheckRow({ check }: { check: DemoCheck }) {
     <div className="rounded-xl bg-zinc-50 p-3 ring-1 ring-zinc-200">
       <div className="flex items-center gap-2">
         <Icon className={`h-4 w-4 shrink-0 ${tone}`} aria-hidden="true" />
-        <p className="min-w-0 truncate text-sm font-semibold text-zinc-950">{check.label}</p>
+        <p className="min-w-0 truncate text-sm font-semibold text-zinc-950">
+          <span className="sr-only">{statusWord(check.status)}: </span>
+          {check.label}
+        </p>
       </div>
       <p className="mt-1 line-clamp-3 text-xs leading-5 text-zinc-600">{check.detail}</p>
     </div>
@@ -375,6 +386,11 @@ function SafetyRow({ label }: { label: string }) {
   );
 }
 
+// Screen reader text for states the icons show by shape and color.
+function statusWord(status: DemoCheckStatus): string {
+  return status === "pass" ? "Fine" : status === "fail" ? "Problem" : "Check";
+}
+
 function StatusLine({ label, value, status }: { label: string; value: string; status: DemoCheckStatus }) {
   const Icon = status === "pass" ? CheckCircle2 : status === "fail" ? XCircle : AlertTriangle;
   const tone =
@@ -389,6 +405,7 @@ function StatusLine({ label, value, status }: { label: string; value: string; st
       <span className="text-sm font-semibold text-zinc-800">{label}</span>
       <span className={`flex min-w-0 items-center gap-2 text-right text-sm font-semibold ${tone}`}>
         <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="sr-only">{statusWord(status)}: </span>
         <span className="truncate">{value}</span>
       </span>
     </div>
