@@ -53,12 +53,15 @@ def process_image_to_timeline(
     if ocr_warning:
         warnings.append(ocr_warning)
     notes_text = normalize_whitespace(notes_hint)
-    transcript = notes_text or (
+    # Without notes, the slide text is the only real content. Use it so study outputs describe the
+    # slide instead of repeating the placeholder sentence.
+    slide_text = slide_text_from_ocr(ocr_result.lines)
+    transcript = notes_text or slide_text or (
         "Still image uploaded locally. No audio transcription is attached; use OCR text and human review "
         "to describe slide, board, or screenshot content."
     )
     ocr_items = ocr_result.lines or [ocr_status_message(ocr_result.engine)]
-    concepts = extract_concepts(" ".join([transcript, " ".join(ocr_result.lines)]))[:5]
+    concepts = extract_concepts(" ".join([notes_text, " ".join(ocr_result.lines)]))[:5]
     source_confidence = 0.74 if ocr_result.lines else 0.48
     if notes_text and ocr_result.lines:
         source_confidence = 0.88
@@ -133,6 +136,16 @@ def process_image_to_timeline(
         ocr_text_count=len(ocr_result.lines),
         ocr_engine=ocr_result.engine if ocr_result.engine != "none" else "none",
     )
+
+
+def slide_text_from_ocr(lines: list[str]) -> str:
+    sentences = []
+    for line in lines:
+        clean = normalize_whitespace(line).lstrip("-*• ").strip()
+        if not clean:
+            continue
+        sentences.append(clean if clean[-1] in ".!?:" else f"{clean}.")
+    return " ".join(sentences)
 
 
 def visual_description_for_image(engine: str, has_text: bool) -> str:
