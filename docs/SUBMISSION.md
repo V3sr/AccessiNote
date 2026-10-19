@@ -26,7 +26,7 @@ Use this section to fill the contest platform submission.
 
 Demo video URL: `TODO`
 
-Public GitHub repository URL: `TODO`
+Public GitHub repository URL: https://github.com/V3sr/AccessiNote
 
 Team / Microsoft Learn usernames: `TODO if applicable`
 
