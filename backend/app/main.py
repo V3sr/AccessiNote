@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -58,6 +59,8 @@ from .video_processor import (
     tesseract_available,
 )
 
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AccessiNote API", version="0.2.0")
 MEDIA_JOBS: dict[str, ProcessingJob] = {}
@@ -796,8 +799,10 @@ def run_media_job(payload: MediaJobPayload) -> None:
             )
         except JobStopped:
             return
-        except Exception as error:
-            update_job(payload.job_id, status="failed", stage="failed", progress=100, error=str(error))
+        except Exception:
+            # Unexpected errors can name local file paths, so the detail stays in the server log.
+            logger.exception("Processing job %s failed.", payload.job_id)
+            update_job(payload.job_id, status="failed", stage="failed", progress=100, error="Processing failed.")
     finally:
         reset_current_provider_session(token)
 

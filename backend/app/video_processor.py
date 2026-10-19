@@ -933,9 +933,11 @@ def transcribe_video_with_local_whisper(
     except Exception as error:
         if error.__class__.__name__ in {"JobCanceled", "JobStopped"}:
             raise
+        # The error can name local file paths, so the detail stays in the server log.
+        logger.warning("Local caption generation failed for %s. Detail: %s", video_path.name, error)
         return TranscriptResult(
             segments=[],
-            warnings=[f"Local caption generation failed: {error}"],
+            warnings=["Local caption generation failed."],
             engine="faster-whisper",
         )
     finally:
