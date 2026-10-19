@@ -90,6 +90,19 @@ class SettingsChecksTest(unittest.TestCase):
         self.assertEqual((check.status, check.detail), ("fail", "Cannot write data/outputs."))
         assert_logged(self, logs.output)
 
+    def test_production_storage_check_shows_a_plain_sentence(self) -> None:
+        # Not on a page, but /api/production/status is a public response.
+        uploads_dir = mock.Mock()
+        uploads_dir.mkdir.side_effect = PermissionError(f"[WinError 5] Access is denied: '{FAKE_PATH}'")
+        with (
+            mock.patch.object(main, "UPLOADS_DIR", uploads_dir),
+            self.assertLogs("app.main", level="WARNING") as logs,
+        ):
+            check = main.production_storage_check()
+
+        self.assertEqual((check.status, check.detail), ("fail", "Backend cannot write upload/output data."))
+        assert_logged(self, logs.output)
+
 
 if __name__ == "__main__":
     unittest.main()

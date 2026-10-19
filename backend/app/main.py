@@ -642,11 +642,13 @@ def production_storage_check() -> DemoCheck:
         UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     except OSError as error:
+        # This status is a public API response, and the error names local file paths, so it stays in the server log.
+        logger.warning("Backend cannot write upload/output data. Detail: %s", error)
         return DemoCheck(
             id="production_storage",
             label="Upload and output storage",
             status="fail",
-            detail=f"Backend cannot write upload/output data: {error}",
+            detail="Backend cannot write upload/output data.",
         )
     return DemoCheck(
         id="production_storage",
