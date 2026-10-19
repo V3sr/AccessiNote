@@ -320,6 +320,7 @@ def process_video_to_timeline(
     frame_evidence = []
     used_engines: set[str] = set()
     ocr_frame_count = 0
+    vision_errors: list[Exception] = []
     for index, frame in enumerate(frames, start=1):
         start_seconds = frame.start_seconds
         ocr_result, ocr_warning = run_configured_ocr(
@@ -327,6 +328,7 @@ def process_video_to_timeline(
             tesseract_path=tesseract_path,
             prefer_rapidocr=has_rapidocr,
             prefer_azure=azure_ocr_configured,
+            on_azure_failure=vision_errors.append,
         )
         if ocr_warning and ocr_warning not in warnings:
             warnings.append(ocr_warning)
@@ -374,6 +376,15 @@ def process_video_to_timeline(
                 source_confidence=source_confidence,
                 keyframe_path=keyframe_path,
             )
+        )
+    if vision_errors:
+        # One line per video, not one per failed frame.
+        logger.warning(
+            "Azure AI Vision OCR failed on %d of %d frames of %s; local OCR fallback used. First detail: %s",
+            len(vision_errors),
+            len(frames),
+            video_path.name,
+            vision_errors[0],
         )
     completed_stages.extend(["running OCR", "aligning evidence", "assembling timeline"])
 
@@ -933,9 +944,11 @@ def transcribe_video_with_local_whisper(
     except Exception as error:
         if error.__class__.__name__ in {"JobCanceled", "JobStopped"}:
             raise
+        # The error can name local file paths, so the detail stays in the server log.
+        logger.warning("Local caption generation failed for %s. Detail: %s", video_path.name, error)
         return TranscriptResult(
             segments=[],
-            warnings=[f"Local caption generation failed: {error}"],
+            warnings=["Local caption generation failed."],
             engine="faster-whisper",
         )
     finally:
@@ -1029,6 +1042,7 @@ def run_configured_ocr(
     tesseract_path: str | None,
     prefer_rapidocr: bool,
     prefer_azure: bool | None = None,
+    on_azure_failure: Callable[[Exception], None] | None = None,
 ) -> tuple[OcrResult, str]:
     use_azure = prefer_azure if prefer_azure is not None else (
         selected_provider("ocr") == "azure_vision" and provider_status("ocr").configured
@@ -1044,7 +1058,11 @@ def run_configured_ocr(
             return OcrResult(lines=[], confidence=result.confidence, engine=result.engine), ""
         except Exception as error:
             # Provider errors can name the endpoint host, so the detail stays in the server log.
-            logger.warning("Azure AI Vision OCR failed on %s; local OCR fallback used. Detail: %s", frame_path.name, error)
+            # A caller that scans many frames collects the errors and logs them once.
+            if on_azure_failure:
+                on_azure_failure(error)
+            else:
+                logger.warning("Azure AI Vision OCR failed on %s; local OCR fallback used. Detail: %s", frame_path.name, error)
             local_result = run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=prefer_rapidocr)
             return local_result, "Azure AI Vision OCR failed on at least one frame; local OCR fallback was used."
     return run_local_ocr(frame_path, tesseract_path=tesseract_path, prefer_rapidocr=prefer_rapidocr), ""

@@ -81,6 +81,8 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
   const hasFrame = Boolean(chunk.keyframe_path);
   const ocrDetected = chunk.ocr_confidence > 0 || hasReadableOcrEvidence(chunk.ocr);
   const reviewNeeded = chunk.source_confidence < 0.68 || chunk.evidence_flags.some(isReviewFlag);
+  // The slide text badge already says when slide text was found, so that flag is not repeated as a chip.
+  const flags = chunk.evidence_flags.filter((flag) => !(ocrDetected && isSlideTextFoundFlag(flag)));
   const title = chunkTitle(chunk);
 
   return (
@@ -162,9 +164,9 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
             </div>
           )}
 
-          {chunk.evidence_flags.length > 0 && (
+          {flags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {chunk.evidence_flags.map((flag) => (
+              {flags.map((flag) => (
                 <span
                   key={flag}
                   className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ${
@@ -322,8 +324,13 @@ function isReviewFlag(flag: string): boolean {
     normalized.includes("missing") ||
     normalized.includes("no readable") ||
     normalized.includes("weak") ||
-    normalized.includes("low-confidence")
+    normalized.includes("low-confidence") ||
+    normalized.includes("fallback")
   );
+}
+
+function isSlideTextFoundFlag(flag: string): boolean {
+  return flag.toLowerCase().includes("ocr") && !isReviewFlag(flag);
 }
 
 function formatEvidenceFlag(flag: string): string {
@@ -342,6 +349,15 @@ function formatEvidenceFlag(flag: string): string {
   }
   if (normalized.includes("keyframe") || normalized.includes("visual")) {
     return "Visual source available";
+  }
+  if (normalized.includes("keyword")) {
+    return "Slide picked at key words";
+  }
+  if (normalized.includes("notes")) {
+    return "Your notes added";
+  }
+  if (normalized.includes("fallback")) {
+    return "Made without slide images";
   }
   return flag.replaceAll("_", " ");
 }
