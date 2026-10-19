@@ -3,6 +3,7 @@
 import { BookOpen, Brain, Captions, ClipboardCheck, FileJson, FileSearch, FileText, Glasses, Languages } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { MODE_OPTIONS } from "@/lib/modes";
 import type { OutputMode } from "@/lib/types";
 
 interface ModeSelectorProps {
@@ -11,82 +12,33 @@ interface ModeSelectorProps {
   disabled?: boolean;
 }
 
-const modes: Array<{
-  mode: OutputMode;
-  label: string;
-  description: string;
-  icon: typeof BookOpen;
-}> = [
-  {
-    mode: "structured_notes",
-    label: "Visual Descriptions",
-    description: "Notes with visual context, source anchors, and key details.",
-    icon: BookOpen,
-  },
-  {
-    mode: "adhd_study_pack",
-    label: "ADHD/Focus Pack",
-    description: "Short path, must-know ideas, quick checks, and recovery steps.",
-    icon: Brain,
-  },
-  {
-    mode: "screen_reader_notes",
-    label: "Screen-reader Notes",
-    description: "Linear notes with visual descriptions and timestamp anchors.",
-    icon: Glasses,
-  },
-  {
-    mode: "exam_prep_pack",
-    label: "Exam Review Pack",
-    description: "Flashcards, practice questions, and likely mistakes.",
-    icon: FileSearch,
-  },
-  {
-    mode: "plain_language",
-    label: "Plain-language",
-    description: "Simple explanation, analogy, and core terms.",
-    icon: Languages,
-  },
-  {
-    mode: "notetaker_quality_report",
-    label: "Notetaker Review",
-    description: "Checks for missing, unclear, or hard-to-use notes.",
-    icon: ClipboardCheck,
-  },
-  {
-    mode: "captions_vtt",
-    label: "Caption Export",
-    description: "Timed captions for review and download.",
-    icon: Captions,
-  },
-  {
-    mode: "timeline_json",
-    label: "Source Timeline",
-    description: "Downloadable timestamp trail for review.",
-    icon: FileJson,
-  },
-  {
-    mode: "transcript_txt",
-    label: "Transcript Export",
-    description: "Plain text transcript with timestamps.",
-    icon: FileText,
-  },
-];
+const modeIcons: Record<OutputMode, typeof BookOpen> = {
+  structured_notes: BookOpen,
+  adhd_study_pack: Brain,
+  screen_reader_notes: Glasses,
+  exam_prep_pack: FileSearch,
+  plain_language: Languages,
+  notetaker_quality_report: ClipboardCheck,
+  captions_vtt: Captions,
+  timeline_json: FileJson,
+  transcript_txt: FileText,
+};
 
 export function ModeSelector({ selectedMode, onSelectMode, disabled }: ModeSelectorProps) {
-  const selected = modes.find((mode) => mode.mode === selectedMode) ?? modes[0];
+  const selected = MODE_OPTIONS.find((option) => option.mode === selectedMode) ?? MODE_OPTIONS[0];
 
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-2 border-b border-zinc-200 p-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-zinc-950">Choose accessibility goal</h2>
-          <p className="mt-1 text-sm leading-5 text-zinc-600">Pick the learner or review need for this draft.</p>
+          <h2 className="text-base font-semibold text-zinc-950">Pick a format</h2>
+          <p className="mt-1 text-sm leading-5 text-zinc-600">Choose the one that fits how you study.</p>
         </div>
         <p className="text-xs font-semibold text-emerald-800">{selected.description}</p>
       </div>
-      <div className="flex flex-wrap justify-start gap-2 p-3" role="group" aria-label="Accessibility goals">
-        {modes.map(({ mode, label, icon: Icon }) => {
+      <div className="flex flex-wrap justify-start gap-2 p-3" role="group" aria-label="Formats">
+        {MODE_OPTIONS.map(({ mode, label }) => {
+          const Icon = modeIcons[mode];
           const isSelected = selectedMode === mode;
           return (
             <button

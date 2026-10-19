@@ -10,9 +10,9 @@ export function SafetyBanner() {
           <AlertTriangle className="h-4 w-4" aria-hidden="true" />
         </span>
         <AlertDescription className="min-w-0 break-words pl-0 text-sm leading-6 text-amber-950">
-          Use permitted lecture materials only. Do not upload private student data, exams,
-          accommodation records, or unauthorized recordings. AI outputs may contain errors and
-          require human review.
+          Use only lecture material you are allowed to use. Do not upload private student data, exams,
+          accommodation records or recordings you do not have permission for. Check every set of notes for
+          mistakes before you use it.
         </AlertDescription>
       </Alert>
     </section>

@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getProviderSettings, updateProviderSettings } from "@/lib/api";
+import { countOf, friendlySettingsError } from "@/lib/messages";
 import type { CapabilityResponse, ProviderSettingsRequest, ProviderSettingsResponse, ProviderStatus } from "@/lib/types";
 
 interface ProviderSettingsPanelProps {
@@ -90,11 +91,11 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
       assignIfPresent(payload, "azure_openai_deployment", openaiDeployment);
       const saved = await updateProviderSettings(payload);
       setSettings(saved);
-      setMessage(saved.message);
+      setMessage("Saved. Your keys stay on the server until it restarts, and are never shown again.");
       clearSecretFields();
       await onSaved();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Could not save provider settings.");
+      setError(friendlySettingsError(caughtError instanceof Error ? caughtError.message : String(caughtError)));
     } finally {
       setIsSaving(false);
     }
@@ -115,20 +116,19 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
       setOcrProvider("local");
       setGenerationProvider("local");
       setSettings(saved);
-      setMessage("Runtime provider overrides cleared. AccessiNote is using local providers for this session.");
+      setMessage("Keys cleared. AccessiNote runs on this computer again.");
       clearSecretFields();
       await onSaved();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Could not clear provider settings.");
+      setError(friendlySettingsError(caughtError instanceof Error ? caughtError.message : String(caughtError)));
     } finally {
       setIsSaving(false);
     }
   }
 
   const providers = settings?.providers ?? capabilities?.providers ?? {};
-  const configuredEnv = settings?.configured_env ?? [];
+  const savedKeyCount = (settings?.configured_env ?? []).filter((name) => name.startsWith("AZURE_")).length;
   const runtimeSettingsEnabled = settings?.runtime_settings_enabled ?? true;
-  const sessionLabel = settings?.session_id ? shortSessionId(settings.session_id) : "Browser";
   const selectedAzureCount = [transcriptionProvider, ocrProvider, generationProvider].filter((name) =>
     name.startsWith("azure"),
   ).length;
@@ -137,29 +137,29 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
     <form onSubmit={handleSave} className={isFull ? "mt-5 space-y-5" : "mt-3 space-y-4"}>
       <div className={isFull ? "grid gap-3 lg:grid-cols-3" : "grid gap-3"}>
         <ProviderSelect
-          label="Speech transcription"
+          label="Captions"
           value={transcriptionProvider}
           onChange={setTranscriptionProvider}
           options={[
-            ["local", "Local faster-whisper"],
+            ["local", "On this computer (faster-whisper)"],
             ["azure_speech", "Azure Speech"],
           ]}
         />
         <ProviderSelect
-          label="OCR"
+          label="Slide text"
           value={ocrProvider}
           onChange={setOcrProvider}
           options={[
-            ["local", "Local RapidOCR/Tesseract"],
+            ["local", "On this computer (RapidOCR)"],
             ["azure_vision", "Azure AI Vision"],
           ]}
         />
         <ProviderSelect
-          label="Study output generation"
+          label="Notes"
           value={generationProvider}
           onChange={setGenerationProvider}
           options={[
-            ["local", "Local deterministic"],
+            ["local", "On this computer"],
             ["azure_openai", "Azure OpenAI"],
           ]}
         />
@@ -168,10 +168,10 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
       <div className={isFull ? "grid gap-3 xl:grid-cols-3" : "grid gap-3"}>
         <SecretGroup
           title="Azure Speech"
-          description="Use this for caption generation from uploaded lecture recordings."
+          description="Makes captions from a recording's audio."
           links={[
-            ["Speech quickstart", "https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-speech-to-text"],
-            ["Region list", "https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions"],
+            ["Speech setup guide", "https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-speech-to-text"],
+            ["Speech regions list", "https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions"],
           ]}
         >
           <SecretInput label="Speech key" value={speechKey} onChange={setSpeechKey} />
@@ -181,10 +181,10 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 
         <SecretGroup
           title="Azure AI Vision"
-          description="Use this for reading text from slides, screenshots, and selected video frames."
+          description="Reads text on slides, screenshots and video frames."
           links={[
-            ["OCR quickstart", "https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/quickstarts-sdk/client-library"],
-            ["OCR overview", "https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview-ocr"],
+            ["Vision setup guide", "https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/quickstarts-sdk/client-library"],
+            ["How Vision reads text", "https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview-ocr"],
           ]}
         >
           <TextInput
@@ -198,10 +198,10 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 
         <SecretGroup
           title="Azure OpenAI"
-          description="Use this for higher-quality accessible study outputs from the reviewed source timeline. Azure requires the deployment name you created, not just the model name."
+          description="Rewrites your notes from the lecture timeline. Use the deployment name you created in Azure, not the model name."
           links={[
-            ["Create resource", "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource"],
-            ["Responses API", "https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses"],
+            ["Create an Azure OpenAI resource", "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource"],
+            ["Azure OpenAI Responses API", "https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses"],
           ]}
         >
           <TextInput
@@ -223,8 +223,7 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
       <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-950">
         <p className="flex items-start gap-2">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Leave a key field blank to keep the existing browser session or private `.env` value. Use local-only to clear
-          this browser session.
+          Leave a key blank to keep the one already saved. Select Use local only to clear all keys.
         </p>
       </div>
 
@@ -268,33 +267,32 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
         <div className="min-w-0">
           <h2 className={isFull ? "flex items-center gap-2 text-xl font-semibold text-zinc-950" : "flex items-center gap-2 text-base font-semibold text-zinc-950"}>
             <KeyRound className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-            Optional key setup
+            Azure keys
           </h2>
           <p className={isFull ? "mt-2 max-w-3xl text-sm leading-6 text-zinc-700" : "mt-1 text-sm leading-6 text-zinc-700"}>
             {runtimeSettingsEnabled
-              ? "Choose the provider routes you want, paste the matching keys, and save. Keys stay server-side, are scoped to this browser session, are never shown again, and can be cleared back to local processing."
-              : "Provider values are managed by backend environment secrets in this local environment. Secret values are never returned to the browser."}
+              ? "Choose where each step runs, add the matching keys, then save. Keys stay on the server and are never shown again. Select Use local only to clear them."
+              : "Keys are set on the server for this copy of AccessiNote. They are never sent to this page."}
           </p>
         </div>
         <Badge className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">
-          {runtimeSettingsEnabled ? "Browser session" : "Backend managed"}
+          {runtimeSettingsEnabled ? "This browser" : "Set on the server"}
         </Badge>
       </div>
 
       {isFull && (
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <SetupMetric label="Azure routes selected" value={String(selectedAzureCount)} />
-          <SetupMetric label="Configured values" value={String(configuredEnv.length)} />
-          <SetupMetric label="Session scope" value={sessionLabel} />
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <SetupMetric label="Steps using Azure" value={String(selectedAzureCount)} />
+          <SetupMetric label="Azure values saved" value={String(savedKeyCount)} />
         </div>
       )}
 
       {isFull && runtimeSettingsEnabled && <ProviderSetupGuide />}
 
       <div className={isFull ? "mt-4 grid gap-3 sm:grid-cols-3" : "mt-3 grid gap-2"}>
-        <ProviderStatusRow label="Speech" status={providers.transcription} />
-        <ProviderStatusRow label="OCR" status={providers.ocr} />
-        <ProviderStatusRow label="Generation" status={providers.generation} />
+        <ProviderStatusRow label="Captions" status={providers.transcription} />
+        <ProviderStatusRow label="Slide text" status={providers.ocr} />
+        <ProviderStatusRow label="Notes" status={providers.generation} />
       </div>
 
       {isFull ? (
@@ -303,8 +301,8 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
             <p className="flex items-start gap-2">
               <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               {runtimeSettingsEnabled
-                ? "Use this page for local setup or session-scoped testing. Do not show real keys in recordings or screenshots."
-                : "Runtime edits are disabled in this environment. Configure providers through backend environment variables or local .env values."}
+                ? "Keep real keys out of screen recordings and screenshots."
+                : "Key entry is turned off here. Set keys in the server environment, then restart it."}
             </p>
           </div>
           {runtimeSettingsEnabled ? formBody : <ReadOnlyProviderNotice />}
@@ -317,7 +315,7 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
             className="mt-4 min-h-10 w-full rounded-md border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 active:translate-y-px"
           >
             <Link href="/settings">
-              Open full setup
+              Open Azure key setup
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>
@@ -326,9 +324,9 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
                 <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
                   <Cloud className="h-4 w-4 text-sky-700" aria-hidden="true" />
-                  Quick configure
+                  Set up here
                 </span>
-                <span className="text-xs font-semibold text-zinc-600">{configuredEnv.length} value(s)</span>
+                <span className="text-xs font-semibold text-zinc-600">{countOf(savedKeyCount, "Azure value saved", "Azure values saved")}</span>
               </summary>
               {formBody}
             </details>
@@ -350,8 +348,8 @@ export function ProviderSettingsPanel({ capabilities, onSaved, variant = "compac
 function ReadOnlyProviderNotice() {
   return (
     <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm leading-6 text-zinc-700">
-      Provider editing is read-only in this environment. Update your backend environment variables or local
-      `.env` values, then restart the backend.
+      Key entry is turned off on this server. Set the keys in the server environment or .env file, then restart
+      it.
     </div>
   );
 }
@@ -359,21 +357,21 @@ function ReadOnlyProviderNotice() {
 function ProviderSetupGuide() {
   const steps = [
     {
-      title: "1. Choose the providers you want",
-      detail: "Use Microsoft Learn or the Azure portal links below to create Speech, Vision, and Azure OpenAI resources.",
-      linkLabel: "Open Azure portal",
+      title: "1. Create the Azure resources",
+      detail: "Create a Speech, Vision or Azure OpenAI resource in the Azure portal. You only need the ones you want to use.",
+      linkLabel: "Open the Azure portal",
       href: "https://portal.azure.com/",
     },
     {
-      title: "2. Paste keys and endpoints",
-      detail: "Speech needs key plus region. Vision needs endpoint plus key. Azure OpenAI needs endpoint, key, and deployment name.",
-      linkLabel: "Azure OpenAI setup",
+      title: "2. Add keys and endpoints",
+      detail: "Speech needs a key and region. Vision needs an endpoint and key. Azure OpenAI needs an endpoint, key and deployment name.",
+      linkLabel: "Azure OpenAI setup guide",
       href: "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/create-resource",
     },
     {
-      title: "3. Save, then test locally",
-      detail: "After saving, provider status updates for this browser session. Load the sample or upload permitted material to test.",
-      linkLabel: "Back to workspace",
+      title: "3. Save, then try it",
+      detail: "Save, then load the sample or add your own lecture to check it works.",
+      linkLabel: "Back to your notes",
       href: "/#source-desk",
       internal: true,
     },
@@ -383,13 +381,13 @@ function ProviderSetupGuide() {
     <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-950">Quick setup guide</h3>
+          <h3 className="text-sm font-semibold text-zinc-950">Set up Azure in three steps</h3>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-700">
-            Use the slots below when you want to test your own keys in this browser session.
+            You need an Azure account. Your keys apply to this browser only.
           </p>
         </div>
         <Badge className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100 hover:bg-emerald-50">
-          Per-browser keys
+          This browser only
         </Badge>
       </div>
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
@@ -413,6 +411,7 @@ function ProviderSetupGuide() {
                 className="mt-3 inline-flex min-h-8 items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
               >
                 {step.linkLabel}
+                <span className="sr-only"> (opens in a new tab)</span>
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
               </a>
             )}
@@ -508,6 +507,7 @@ function SecretGroup({
                 className="inline-flex min-h-7 items-center gap-1 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1 text-[11px] font-semibold text-zinc-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
               >
                 {label}
+                <span className="sr-only"> (opens in a new tab)</span>
                 <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             ))}
@@ -551,7 +551,6 @@ function SecretInput({ label, value, onChange }: { label: string; value: string;
         type="password"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Paste key"
         autoComplete="off"
         className="mt-1 min-h-10 w-full rounded-md border border-zinc-500 px-3 py-2 text-sm text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
       />
@@ -568,20 +567,13 @@ function assignIfPresent(payload: ProviderSettingsRequest, field: keyof Provider
 
 function providerLabel(name: string, configured: boolean): string {
   if (name === "azure_speech") {
-    return configured ? "Azure Speech" : "Azure Speech missing keys";
+    return configured ? "Azure Speech" : "Azure Speech: add keys";
   }
   if (name === "azure_vision") {
-    return configured ? "Azure Vision" : "Azure Vision missing keys";
+    return configured ? "Azure Vision" : "Azure Vision: add keys";
   }
   if (name === "azure_openai") {
-    return configured ? "Azure OpenAI" : "Azure OpenAI missing keys";
+    return configured ? "Azure OpenAI" : "Azure OpenAI: add keys";
   }
-  return "Local";
-}
-
-function shortSessionId(sessionId: string): string {
-  if (!sessionId || sessionId === "__default__") {
-    return "Browser";
-  }
-  return sessionId.length > 18 ? `${sessionId.slice(0, 10)}...` : sessionId;
+  return "This computer";
 }

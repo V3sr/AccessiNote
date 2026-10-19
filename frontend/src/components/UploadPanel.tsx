@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatUserStage, friendlyError } from "@/lib/messages";
 import type { ProcessingJob } from "@/lib/types";
 
 interface UploadPanelProps {
@@ -50,8 +51,8 @@ const sourceTabs: Array<{
 const supportedSources = [
   { label: "Recordings", detail: "MP4, MOV, WebM", icon: Video },
   { label: "Transcripts", detail: "TXT, SRT, VTT", icon: FileText },
-  { label: "Slides and notes", detail: "PNG, JPG, WebP", icon: ImageIcon },
-  { label: "Sample lecture", detail: "Try the workflow", icon: Layers },
+  { label: "Slides and images", detail: "PNG, JPG, WebP", icon: ImageIcon },
+  { label: "Sample lecture", detail: "Try it first", icon: Layers },
 ];
 
 export function UploadPanel({
@@ -66,10 +67,10 @@ export function UploadPanel({
   const [activeTab, setActiveTab] = useState<SourceTab>("sample");
   const [title, setTitle] = useState("My transcript");
   const [transcript, setTranscript] = useState("");
-  const [imageTitle, setImageTitle] = useState("Uploaded Slide Image");
+  const [imageTitle, setImageTitle] = useState("My slide");
   const [imageNotes, setImageNotes] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [videoTitle, setVideoTitle] = useState("Uploaded lecture recording");
+  const [videoTitle, setVideoTitle] = useState("My lecture recording");
   const [videoTranscript, setVideoTranscript] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoTranscriptFile, setVideoTranscriptFile] = useState<File | null>(null);
@@ -104,13 +105,13 @@ export function UploadPanel({
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-emerald-700 shadow-soft ring-1 ring-zinc-200">
                 <UploadCloud className="h-7 w-7" aria-hidden="true" />
               </div>
-              <h2 className="mt-4 text-lg font-semibold tracking-normal text-zinc-950">Add lecture materials</h2>
+              <h2 className="mt-4 text-lg font-semibold tracking-normal text-zinc-950">Add a lecture</h2>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-600">
-                Choose a permitted source to create a reviewable study draft with timestamps.
+                Pick a recording, transcript or slide you are allowed to use. AccessiNote adds timestamps to everything.
               </p>
               <Badge className="mt-4 inline-flex min-h-9 gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
                 <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-                Draft - human review required
+                Check before you share
               </Badge>
             </div>
 
@@ -132,7 +133,7 @@ export function UploadPanel({
           <div className="mt-4 flex flex-col gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm leading-6 text-sky-950 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0">
               <span className="font-semibold">Runs on this computer.</span> No account or keys needed. Captions,
-              slide text and notes are made locally.
+              slide text and notes are all made here.
             </p>
             <Button
               asChild
@@ -141,7 +142,7 @@ export function UploadPanel({
             >
               <Link href="/settings">
                 <Settings className="h-4 w-4" aria-hidden="true" />
-                Optional settings
+                Optional Azure keys
               </Link>
             </Button>
           </div>
@@ -169,7 +170,7 @@ export function UploadPanel({
             <div>
               <h3 className="text-sm font-semibold text-zinc-950">Sample lecture</h3>
               <p className="mt-2 text-sm leading-6 text-zinc-700">
-                Try AccessiNote with a sample lecture that already includes timestamps, source chunks, and review notes.
+                Try a short sample lecture that already has timestamps, parts and review notes.
               </p>
               <Button
                 type="button"
@@ -198,26 +199,26 @@ export function UploadPanel({
                 value={transcript}
                 onChange={(event) => setTranscript(event.target.value)}
                 rows={8}
-                placeholder="Paste permitted lecture transcript text here."
+                placeholder="Today we look at how plants turn light energy into chemical energy..."
                 className={textareaClass}
               />
               <Button type="submit" disabled={isBusy || transcript.trim().length === 0} className={primaryButtonClass}>
                 {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
-                Create timeline
+                Add transcript
               </Button>
             </form>
           </TabsContent>
 
           <TabsContent value="image" className="mt-0">
             <form onSubmit={submitImage}>
-              <FieldLabel htmlFor="image-title">Image title</FieldLabel>
+              <FieldLabel htmlFor="image-title">Slide title</FieldLabel>
               <input
                 id="image-title"
                 value={imageTitle}
                 onChange={(event) => setImageTitle(event.target.value)}
                 className={inputClass}
               />
-              <FieldLabel htmlFor="image-file">Image file</FieldLabel>
+              <FieldLabel htmlFor="image-file">Slide or image file</FieldLabel>
               <input
                 id="image-file"
                 type="file"
@@ -226,32 +227,32 @@ export function UploadPanel({
                 className={fileInputClass}
               />
               <SelectedFile file={imageFile} />
-              <FieldLabel htmlFor="image-notes">Optional notes</FieldLabel>
+              <FieldLabel htmlFor="image-notes">Notes (optional)</FieldLabel>
               <textarea
                 id="image-notes"
                 value={imageNotes}
                 onChange={(event) => setImageNotes(event.target.value)}
                 rows={4}
-                placeholder="Optional: add slide context, course topic, or what a reviewer should check."
+                placeholder="Biology 101, week 3. The diagram on the right shows the Calvin cycle."
                 className={textareaClass}
               />
               <Button type="submit" disabled={isBusy || !imageFile} className={primaryButtonClass}>
                 {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
-                Add slides or image
+                Add slide
               </Button>
             </form>
           </TabsContent>
 
           <TabsContent value="video" className="mt-0">
             <form onSubmit={submitVideo}>
-              <FieldLabel htmlFor="video-title">Video title</FieldLabel>
+              <FieldLabel htmlFor="video-title">Recording title</FieldLabel>
               <input
                 id="video-title"
                 value={videoTitle}
                 onChange={(event) => setVideoTitle(event.target.value)}
                 className={inputClass}
               />
-              <FieldLabel htmlFor="video-file">Video file</FieldLabel>
+              <FieldLabel htmlFor="video-file">Recording file</FieldLabel>
               <input
                 id="video-file"
                 type="file"
@@ -260,7 +261,7 @@ export function UploadPanel({
                 className={fileInputClass}
               />
               <SelectedFile file={videoFile} />
-              <FieldLabel htmlFor="video-transcript-file">Optional captions/transcript file</FieldLabel>
+              <FieldLabel htmlFor="video-transcript-file">Captions or transcript file (optional)</FieldLabel>
               <input
                 id="video-transcript-file"
                 type="file"
@@ -269,13 +270,13 @@ export function UploadPanel({
                 className={fileInputClass}
               />
               <SelectedFile file={videoTranscriptFile} />
-              <FieldLabel htmlFor="video-transcript">Optional transcript or notes text</FieldLabel>
+              <FieldLabel htmlFor="video-transcript">Transcript or notes (optional)</FieldLabel>
               <textarea
                 id="video-transcript"
                 value={videoTranscript}
                 onChange={(event) => setVideoTranscript(event.target.value)}
                 rows={5}
-                placeholder="Optional: paste captions or notes to improve the review draft."
+                placeholder="Week 3 lecture on photosynthesis. Slides 4 to 6 cover the Calvin cycle."
                 className={textareaClass}
               />
               <Button
@@ -296,14 +297,12 @@ export function UploadPanel({
 
 function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: (jobId: string) => void }) {
   const canCancel = job.status === "queued" || job.status === "running";
-  const statusLabel =
+  const statusLine =
     job.status === "failed"
-      ? "Failed"
+      ? "AccessiNote could not finish this upload"
       : job.status === "canceled"
-        ? "Canceled"
-        : job.status === "queued"
-          ? "Queued"
-          : "Preparing draft";
+        ? "Upload stopped"
+        : formatUserStage(job.stage);
   return (
     <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-950">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -313,7 +312,7 @@ function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: 
           ) : (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           )}
-          {statusLabel}: {formatUserStage(job.stage)}
+          {statusLine}
         </p>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold">{job.progress}%</span>
@@ -325,7 +324,7 @@ function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: 
               className="min-h-8 rounded-md border-sky-300 bg-white px-2 py-1 text-xs font-semibold text-sky-950 hover:bg-sky-100"
             >
               <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
-              Cancel
+              Stop upload
             </Button>
           ) : null}
         </div>
@@ -333,7 +332,7 @@ function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: 
       <div
         className="mt-2 h-2 overflow-hidden rounded-full bg-sky-100"
         role="progressbar"
-        aria-label="Draft preparation progress"
+        aria-label="Upload progress"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={job.progress}
@@ -345,7 +344,7 @@ function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: 
       </div>
       {job.error && (
         <p className="mt-2 text-xs leading-5 text-rose-900" role="alert">
-          {friendlyJobError(job.error)}
+          {friendlyError(job.error)}
         </p>
       )}
     </div>
@@ -365,7 +364,7 @@ function SelectedFile({ file }: { file: File | null }) {
     return null;
   }
   return (
-    <p className="mt-2 rounded-md bg-zinc-50 px-3 py-2 text-xs leading-5 text-zinc-700">
+    <p className="mt-2 rounded-md bg-zinc-50 px-3 py-2 text-xs leading-5 text-zinc-700" role="status">
       Selected: <span className="font-semibold text-zinc-950">{file.name}</span> ({formatBytes(file.size)})
     </p>
   );
@@ -379,42 +378,6 @@ function formatBytes(bytes: number): string {
     return `${(bytes / 1024).toFixed(1)} KB`;
   }
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatUserStage(stage: string): string {
-  const normalized = stage.toLowerCase();
-  if (normalized.includes("queued")) {
-    return "waiting to start";
-  }
-  if (normalized.includes("audio") || normalized.includes("transcrib")) {
-    return "reading the recording";
-  }
-  if (normalized.includes("ocr") || normalized.includes("frame") || normalized.includes("visual")) {
-    return "checking slides and visual content";
-  }
-  if (normalized.includes("align")) {
-    return "matching notes to timestamps";
-  }
-  if (normalized.includes("ready")) {
-    return "ready for review";
-  }
-  if (normalized.includes("failed")) {
-    return "needs attention";
-  }
-  return stage || "preparing accessible notes";
-}
-
-function friendlyJobError(error: string): string {
-  if (!error) {
-    return "";
-  }
-  if (error.toLowerCase().includes("unsupported file type")) {
-    return "This file type is not supported. Try a recording, transcript, caption file, slide, or image.";
-  }
-  if (error.toLowerCase().includes("too large")) {
-    return "This file is too large for the current draft workflow. Try a shorter recording or smaller file.";
-  }
-  return "AccessiNote could not finish this draft. Try again with a shorter source or attach captions/transcript text.";
 }
 
 const primaryButtonClass =

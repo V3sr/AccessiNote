@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { assetUrl } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { countOf, formatAttribution, formatCaptionSource, partLabel } from "@/lib/messages";
 import type { LectureTimeline, TimelineChunk } from "@/lib/types";
 
 interface TimelineViewerProps {
@@ -17,10 +18,10 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 h-5 w-5 text-emerald-700" aria-hidden="true" />
           <div>
-            <h2 className="font-semibold text-zinc-950">No source timeline yet</h2>
+            <h2 className="font-semibold text-zinc-950">No timeline yet</h2>
             <p className="mt-1 max-w-2xl">
-              Load a sample lecture, paste a transcript, or upload permitted media to inspect timestamps, captions,
-              slide text, visual notes, and review confidence.
+              Add a lecture or try the sample to see its timestamps, captions, slide text and how sure AccessiNote is
+              about each part.
             </p>
           </div>
         </div>
@@ -38,24 +39,26 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold text-emerald-800">Source timeline</p>
+          <p className="text-sm font-semibold text-emerald-800">Timeline</p>
           <h2 className="mt-1 text-xl font-semibold tracking-normal text-zinc-950">{lecture.title}</h2>
-          <p className="mt-1 text-sm text-zinc-600">{lecture.source.attribution || lecture.source.type}</p>
+          <p className="mt-1 text-sm text-zinc-600">{formatAttribution(lecture.source.attribution, lecture.source.type)}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          <SummaryPill icon={<Clock className="h-3.5 w-3.5" />} label={`${lecture.chunks.length} chunks`} />
+          <SummaryPill icon={<Clock className="h-3.5 w-3.5" />} label={countOf(lecture.chunks.length, "part", "parts")} />
           <SummaryPill icon={<ScanText className="h-3.5 w-3.5" />} label={`${ocrChunks} with slide text`} />
           <SummaryPill
             icon={<Captions className="h-3.5 w-3.5" />}
-            label={lecture.caption_segments.length ? `${lecture.caption_segments.length} captions` : "No captions"}
+            label={lecture.caption_segments.length ? countOf(lecture.caption_segments.length, "caption", "captions") : "No captions"}
           />
-          <SummaryPill icon={<FileText className="h-3.5 w-3.5" />} label={formatCaptionSource(captionSource)} />
+          {captionSource && captionSource !== "none" && (
+            <SummaryPill icon={<FileText className="h-3.5 w-3.5" />} label={formatCaptionSource(captionSource)} />
+          )}
           <SummaryPill
             icon={<Gauge className="h-3.5 w-3.5" />}
-            label={`${percent(averageSourceConfidence)} avg confidence`}
+            label={`${percent(averageSourceConfidence)} sure on average`}
           />
           {weakChunks > 0 && (
-            <SummaryPill icon={<Eye className="h-3.5 w-3.5" />} label={`${weakChunks} need review`} />
+            <SummaryPill icon={<Eye className="h-3.5 w-3.5" />} label={`${weakChunks} to check`} />
           )}
         </div>
       </div>
@@ -65,8 +68,8 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
           lecture.chunks.map((chunk) => <TimelineChunkCard key={chunk.chunk_id} chunk={chunk} />)
         ) : (
           <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm leading-6 text-zinc-700">
-            This lecture has no timeline chunks yet. Try a shorter source, attach captions, or add clearer slides before
-            processing again.
+            This lecture has no parts yet. Try a shorter file, add a captions file, or use clearer slides, then add it
+            again.
           </div>
         )}
       </div>
@@ -97,7 +100,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="inline-flex items-center gap-1 font-semibold text-zinc-700">
                 <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                Source image
+                Slide image
               </span>
               <Badge
                 className={`rounded-md px-2 py-1 font-semibold ${
@@ -105,8 +108,10 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
                 }`}
               >
                 {ocrDetected
-                  ? `Slide text ${chunk.ocr_confidence > 0 ? percent(chunk.ocr_confidence) : "found"}`
-                  : "Slide text needs review"}
+                  ? chunk.ocr_confidence > 0
+                    ? `Slide text ${percent(chunk.ocr_confidence)} sure`
+                    : "Slide text found"
+                  : "Check slide text"}
               </Badge>
             </div>
           </div>
@@ -118,15 +123,15 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               <Clock className="h-3.5 w-3.5" aria-hidden="true" />
               {chunk.start}-{chunk.end}
             </Badge>
-            <Badge className="rounded-md bg-zinc-950 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-950">{chunk.chunk_id}</Badge>
+            <Badge className="rounded-md bg-zinc-950 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-950">{partLabel(chunk.chunk_id)}</Badge>
             <Badge className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100 hover:bg-emerald-50">
               <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
-              {percent(chunk.source_confidence)} confidence
+              {percent(chunk.source_confidence)} sure
             </Badge>
             {reviewNeeded && (
               <Badge className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 hover:bg-amber-50">
                 <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-                Review needed
+                Check this part
               </Badge>
             )}
           </div>
@@ -135,15 +140,15 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
 
           <div className="mt-3 flex flex-wrap gap-2">
             <EvidenceBadge active={Boolean(chunk.transcript.trim())} label="Transcript" />
-            <EvidenceBadge active={hasFrame} label="Source image" />
-            <EvidenceBadge active={ocrDetected} label={ocrDetected ? "Slide text found" : "Slide text missing"} />
+            <EvidenceBadge active={hasFrame} label="Slide image" />
+            <EvidenceBadge active={ocrDetected} label={ocrDetected ? "Slide text found" : "No slide text"} />
             <EvidenceBadge active={chunk.visual_description.trim().length > 0} label="Visual note" />
           </div>
 
           <div className="mt-3 rounded-lg bg-zinc-50 px-3 py-2">
             <p className="text-xs font-semibold text-zinc-600">Transcript or caption text</p>
             <p className="mt-1 text-sm leading-6 text-zinc-800">
-              {chunk.transcript || "No transcript text was aligned to this chunk."}
+              {chunk.transcript || "No transcript for this part."}
             </p>
           </div>
 
@@ -181,7 +186,7 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
         <EvidencePanel
           icon={<ScanText className="h-4 w-4 text-emerald-700" aria-hidden="true" />}
           title="Slide text"
-          summary={ocrDetected ? `${chunk.ocr.length} readable item(s)` : "No readable text found"}
+          summary={ocrDetected ? countOf(chunk.ocr.length, "line", "lines") : "No slide text found"}
           tone={ocrDetected ? "strong" : "quiet"}
         >
           {chunk.ocr.length > 0 ? (
@@ -191,14 +196,14 @@ function TimelineChunkCard({ chunk }: { chunk: TimelineChunk }) {
               ))}
             </ul>
           ) : (
-            <p className="text-sm leading-6">No readable slide text was found for this source image.</p>
+            <p className="text-sm leading-6">No slide text found on this image.</p>
           )}
         </EvidencePanel>
 
         <EvidencePanel
           icon={<Eye className="h-4 w-4 text-zinc-600" aria-hidden="true" />}
-          title="Visual review"
-          summary={hasFrame ? "Source image note" : "No source image attached"}
+          title="Visual notes"
+          summary={hasFrame ? "Note on the slide image" : "No slide image"}
           tone="quiet"
         >
           <p className="text-sm leading-6">{chunk.visual_description}</p>
@@ -275,7 +280,7 @@ function chunkTitle(chunk: TimelineChunk): string {
   if (firstSentence) {
     return trimToWords(firstSentence.trim(), 9);
   }
-  return `Source checkpoint ${chunk.chunk_id}`;
+  return partLabel(chunk.chunk_id);
 }
 
 function trimToWords(text: string, wordLimit: number): string {
@@ -293,6 +298,7 @@ function EvidenceBadge({ active, label }: { active: boolean; label: string }) {
   return (
     <span className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${className}`}>
       {label}
+      {!active && <span className="sr-only">: not found</span>}
     </span>
   );
 }
@@ -328,15 +334,3 @@ function formatEvidenceFlag(flag: string): string {
   return flag.replaceAll("_", " ");
 }
 
-function formatCaptionSource(value: string): string {
-  if (!value || value === "none") {
-    return "No captions";
-  }
-  if (value === "faster-whisper") {
-    return "Generated captions";
-  }
-  if (value === "uploaded captions") {
-    return "Uploaded captions";
-  }
-  return value;
-}

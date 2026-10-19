@@ -7,7 +7,7 @@ const navItems = [
   { label: "Start", href: "/#product" },
   { label: "How it works", href: "/#workflow" },
   { label: "Formats", href: "/#formats" },
-  { label: "Review", href: "/#workbench" },
+  { label: "Your notes", href: "/#workbench" },
   { label: "Safety", href: "/#safety" },
 ];
 
@@ -51,8 +51,8 @@ export function Header() {
             className="min-h-10 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 active:translate-y-px active:bg-emerald-900"
           >
             <Link href="/#source-desk">
-              <span className="hidden sm:inline">Create accessible notes</span>
-              <span className="sr-only sm:hidden">Create accessible notes</span>
+              <span className="hidden sm:inline">Add a lecture</span>
+              <span className="sr-only sm:hidden">Add a lecture</span>
               <ArrowDown className="h-4 w-4 sm:hidden" aria-hidden="true" />
             </Link>
           </Button>

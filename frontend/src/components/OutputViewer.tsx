@@ -6,6 +6,8 @@ import remarkGfm from "remark-gfm";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { countOf, friendlyWarnings, partLabel } from "@/lib/messages";
+import { modeLabel } from "@/lib/modes";
 import type { GenerateResponse } from "@/lib/types";
 
 interface OutputViewerProps {
@@ -39,10 +41,9 @@ export function OutputViewer({ output }: OutputViewerProps) {
   if (!output) {
     return (
       <Card className="rounded-2xl border-dashed border-zinc-300 bg-white p-6 text-sm leading-6 text-zinc-700 shadow-none">
-        <p className="font-semibold text-zinc-950">Generated output preview</p>
+        <p className="font-semibold text-zinc-950">Your notes show up here</p>
         <p className="mt-1 max-w-2xl">
-          Choose a format and generate an accessible draft. Source checkpoints will stay available without crowding
-          the student-facing material.
+          Pick a format above, then select Make notes. The parts each note came from are listed beside it.
         </p>
       </Card>
     );
@@ -52,13 +53,14 @@ export function OutputViewer({ output }: OutputViewerProps) {
   const fileType = outputFileType(output.mode);
   const topSources = output.sources.slice(0, 5);
   const hiddenSourceCount = Math.max(0, output.sources.length - topSources.length);
+  const warnings = friendlyWarnings(output.warnings);
 
   return (
     <Card className="rounded-2xl border-zinc-200 bg-white shadow-soft">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-emerald-800">Generated draft</p>
-          <h2 className="text-lg font-semibold tracking-normal text-zinc-950">{output.title}</h2>
+          <p className="text-sm font-semibold text-emerald-800">Your notes</p>
+          <h2 className="text-lg font-semibold tracking-normal text-zinc-950">{modeLabel(output.mode)}</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -76,7 +78,7 @@ export function OutputViewer({ output }: OutputViewerProps) {
             className="min-h-11 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800 active:translate-y-px active:bg-zinc-700"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
-            Download .{fileType.extension}
+            Download {fileType.label} (.{fileType.extension})
           </Button>
         </div>
       </div>
@@ -84,14 +86,14 @@ export function OutputViewer({ output }: OutputViewerProps) {
       <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
         <p className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          Draft - human review required. Check timestamps, visual details, and warnings before sharing or using this
-          material.
+          These notes may have mistakes. Check the timestamps, slide details and warnings before you study from them
+          or share them.
         </p>
       </div>
 
-      {output.warnings.length > 0 && (
+      {warnings.length > 0 && (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-          {output.warnings.map((warning) => (
+          {warnings.map((warning) => (
             <p key={warning}>{warning}</p>
           ))}
         </div>
@@ -112,12 +114,12 @@ export function OutputViewer({ output }: OutputViewerProps) {
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
               <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
                 <FileDown className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-                Source used
+                Where these notes came from
               </span>
               <ChevronDown className="h-4 w-4 shrink-0 text-zinc-600 transition group-open:rotate-180" aria-hidden="true" />
             </summary>
             <p className="mt-2 text-xs leading-5 text-zinc-600">
-              Top checkpoints used for this draft. Open the timeline or source timeline export for the full trail.
+              These parts shaped your notes. Open the timeline to see every part.
             </p>
 
             {topSources.length > 0 ? (
@@ -125,20 +127,20 @@ export function OutputViewer({ output }: OutputViewerProps) {
                 {topSources.map((source) => (
                   <div key={source.chunk_id} className="rounded-lg bg-white p-3 text-sm leading-5 text-zinc-700 ring-1 ring-zinc-200">
                     <p className="font-semibold text-zinc-950">
-                      {source.chunk_id} - {source.start}-{source.end}
+                      {partLabel(source.chunk_id)}, {source.start}-{source.end}
                     </p>
-                    <p className="mt-1">{source.reason}</p>
+                    <p className="mt-1">{source.reason.replace(/^Used for:\s*/, "")}</p>
                   </div>
                 ))}
                 {hiddenSourceCount > 0 && (
                   <p className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
-                    {hiddenSourceCount} more checkpoint(s) available in the timeline and source timeline export.
+                    {countOf(hiddenSourceCount, "more part is", "more parts are")} in the timeline below.
                   </p>
                 )}
               </div>
             ) : (
               <p className="mt-3 rounded-lg bg-white p-3 text-sm leading-6 text-zinc-700 ring-1 ring-zinc-200">
-                This export does not include source checkpoints. Review the timeline before using it.
+                This export does not list its parts. Check the timeline below before you use it.
               </p>
             )}
           </details>
@@ -150,13 +152,13 @@ export function OutputViewer({ output }: OutputViewerProps) {
 
 function outputFileType(mode: GenerateResponse["mode"]): { extension: string; mime: string; label: string } {
   if (mode === "captions_vtt") {
-    return { extension: "vtt", mime: "text/vtt;charset=utf-8", label: "VTT" };
+    return { extension: "vtt", mime: "text/vtt;charset=utf-8", label: "captions" };
   }
   if (mode === "timeline_json") {
-    return { extension: "json", mime: "application/json;charset=utf-8", label: "source timeline" };
+    return { extension: "json", mime: "application/json;charset=utf-8", label: "full record" };
   }
   if (mode === "transcript_txt") {
-    return { extension: "txt", mime: "text/plain;charset=utf-8", label: "text" };
+    return { extension: "txt", mime: "text/plain;charset=utf-8", label: "transcript" };
   }
-  return { extension: "md", mime: "text/markdown;charset=utf-8", label: "Markdown" };
+  return { extension: "md", mime: "text/markdown;charset=utf-8", label: "notes" };
 }
