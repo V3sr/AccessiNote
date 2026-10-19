@@ -133,7 +133,7 @@ export function UploadPanel({
           <div className="mt-4 flex flex-col gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm leading-6 text-sky-950 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0">
               <span className="font-semibold">Runs on this computer.</span> No account or keys needed. Captions,
-              slide text and notes are all made here.
+              slide text and notes are made here unless you turn on Azure in Settings.
             </p>
             <Button
               asChild
@@ -345,7 +345,7 @@ function ProcessingProgress({ job, onCancel }: { job: ProcessingJob; onCancel?: 
           style={{ width: `${Math.max(5, Math.min(100, job.progress))}%` }}
         />
       </div>
-      {job.error && (
+      {job.status === "failed" && job.error && (
         <p className="mt-2 text-xs leading-5 text-rose-900" role="alert">
           {friendlyError(job.error)}
         </p>

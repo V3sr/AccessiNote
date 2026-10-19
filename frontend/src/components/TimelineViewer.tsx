@@ -32,6 +32,9 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
   const ocrChunks = lecture.chunks.filter((chunk) => hasReadableOcrEvidence(chunk.ocr)).length;
   const weakChunks = lecture.processing_metadata.metrics.weak_chunk_count;
   const captionSource = lecture.processing_metadata.metrics.caption_source;
+  // A caption run that heard nothing still names its engine, so only show the source when captions exist (or it timed out).
+  const showCaptionSource =
+    Boolean(captionSource) && captionSource !== "none" && (lecture.caption_segments.length > 0 || captionSource.includes("timeout"));
   const averageSourceConfidence =
     lecture.chunks.reduce((total, chunk) => total + chunk.source_confidence, 0) / Math.max(1, lecture.chunks.length);
 
@@ -50,7 +53,7 @@ export function TimelineViewer({ lecture }: TimelineViewerProps) {
             icon={<Captions className="h-3.5 w-3.5" aria-hidden="true" />}
             label={lecture.caption_segments.length ? countOf(lecture.caption_segments.length, "caption", "captions") : "No captions"}
           />
-          {captionSource && captionSource !== "none" && (
+          {showCaptionSource && (
             <SummaryPill icon={<FileText className="h-3.5 w-3.5" aria-hidden="true" />} label={formatCaptionSource(captionSource)} />
           )}
           <SummaryPill

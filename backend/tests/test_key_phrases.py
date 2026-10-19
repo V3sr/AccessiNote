@@ -150,6 +150,12 @@ class TopConceptsTest(unittest.TestCase):
         self.assertIn("cell signaling", concepts, concepts)
         self.assertIn("receptor proteins", concepts, concepts)
 
+    def test_fallback_video_placeholder_is_not_a_concept_source(self) -> None:
+        text = "Video uploaded locally. No transcript was provided and local video scanning tools are not available yet."
+        concepts = top_concepts([chunk(text, ocr=["No keyframes were available for OCR scanning."])])
+        for bad in ["video uploaded", "local video", "scanning tools", "video scanning"]:
+            self.assertNotIn(bad, concepts, concepts)
+
     def test_image_placeholder_is_not_a_concept_source(self) -> None:
         concepts = top_concepts([chunk(IMAGE_PLACEHOLDER, ocr=["OCR engine ran, but no readable text was detected in this frame."])])
         for bad in ["still image", "image uploaded", "uploaded locally", "audio transcription"]:

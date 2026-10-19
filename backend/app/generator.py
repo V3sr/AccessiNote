@@ -1160,10 +1160,14 @@ def adhd_quick_checks(chunks: list[TimelineChunk], concepts: list[str]) -> list[
     return checks[:4]
 
 
+# Sentences the upload pipeline writes when it has no transcript; they describe the upload, not the lecture.
+UPLOAD_PLACEHOLDER_MARKERS = ("no audio transcription is attached", "no transcript was provided")
+
+
 def concept_text(chunk: TimelineChunk) -> str:
     # Upload placeholders describe the upload, not the lecture, so read the slide or frame text instead.
     teaching_text = clean_teaching_text(chunk.transcript)
-    if teaching_text and "no audio transcription is attached" not in teaching_text.lower():
+    if teaching_text and not any(marker in teaching_text.lower() for marker in UPLOAD_PLACEHOLDER_MARKERS):
         return chunk.transcript
     return ". ".join(item for item in chunk.ocr if has_ocr_evidence_text(item))
 

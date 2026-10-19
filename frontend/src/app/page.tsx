@@ -313,7 +313,7 @@ export default function Home() {
                 </div>
 
                 <div className="sr-only" aria-live="polite">
-                  {isBusy ? "Working on it." : output ? "Notes ready. Check them before you share." : ""}
+                  {isBusy ? "Working on it." : ""}
                 </div>
 
                 <div role="alert">
@@ -592,7 +592,7 @@ function RecentTimelines({
 
       {lectures.length === 0 ? (
         <p className="mt-3 text-sm leading-6 text-zinc-600">
-          Lectures you add show up here, on this computer only.
+          Lectures you add show up here.
         </p>
       ) : (
         <div className="mt-3 space-y-2">
