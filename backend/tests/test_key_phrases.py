@@ -99,6 +99,15 @@ class TwoWordPhrasesTest(unittest.TestCase):
         ]:
             self.assertIn(good, phrases, phrases)
 
+    def test_terms_that_start_with_a_filler_looking_word_are_kept(self) -> None:
+        # Code review H1: "while", "create" and "find" were filler, so these terms vanished.
+        phrases = two_word_phrases(
+            "A while loop repeats until the condition fails. Create table makes a new table. Union find merges sets."
+        )
+        for good in ["while loop", "create table", "union find"]:
+            self.assertIn(good, phrases, phrases)
+        self.assertNotIn("fails while", two_word_phrases("The condition fails while the loop runs."))
+
     def test_phrases_do_not_cross_line_breaks(self) -> None:
         phrases = two_word_phrases("Inputs\nwater\ncarbon dioxide\nOutputs")
         self.assertNotIn("inputs water", phrases, phrases)
@@ -142,6 +151,15 @@ class TopConceptsTest(unittest.TestCase):
         concepts = top_concepts([chunk(text)], limit=8)
         for bad in ["mean", "need", "check", "making", "turn", "worked", "help"]:
             self.assertNotIn(bad, concepts, concepts)
+
+    def test_while_loop_is_a_concept_but_while_alone_is_not(self) -> None:
+        text = (
+            "A while loop repeats until the condition fails. The while loop checks the condition first. "
+            "While we wait, the loop runs again. While it runs, nothing else happens."
+        )
+        concepts = top_concepts([chunk(text)], limit=5)
+        self.assertIn("while loop", concepts, concepts)
+        self.assertNotIn("while", concepts, concepts)
 
     def test_video_placeholder_is_not_a_concept_source(self) -> None:
         concepts = top_concepts([chunk(VIDEO_PLACEHOLDER, ocr=["Cell signaling", "Receptor proteins and ligands"])], limit=5)

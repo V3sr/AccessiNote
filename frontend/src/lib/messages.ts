@@ -47,7 +47,7 @@ export function friendlySettingsError(error: string): string {
     return friendlyError(error);
   }
   console.error("AccessiNote settings error:", error);
-  return "Your settings were not saved. Check that the AccessiNote server is running, then try again.";
+  return "Your settings were not saved. Try again. If it keeps happening, restart the AccessiNote server.";
 }
 
 const SAFETY_WARNING_START = "ai-generated content may contain errors";

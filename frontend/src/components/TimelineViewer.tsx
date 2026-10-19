@@ -313,7 +313,7 @@ function EvidenceBadge({ active, label }: { active: boolean; label: string }) {
   return (
     <span className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${className}`}>
       {label}
-      {!active && <span className="sr-only">: not found</span>}
+      {!active && !label.startsWith("No ") && <span className="sr-only">: not found</span>}
     </span>
   );
 }

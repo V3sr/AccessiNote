@@ -177,7 +177,6 @@ FILLER_WORDS = {
     "contains",
     "could",
     "covers",
-    "create",
     "creates",
     "define",
     "defines",
@@ -203,7 +202,6 @@ FILLER_WORDS = {
     "explain",
     "explained",
     "explains",
-    "find",
     "finds",
     "focuses",
     "found",
@@ -339,7 +337,6 @@ FILLER_WORDS = {
     "whenever",
     "whether",
     "which",
-    "while",
     "whom",
     "whose",
     "within",
@@ -362,6 +359,8 @@ PHRASE_ONLY_WORDS = {
     "checks",
     "connected",
     "cover",
+    "create",
+    "find",
     "good",
     "help",
     "making",
@@ -377,8 +376,12 @@ PHRASE_ONLY_WORDS = {
     "talks",
     "turn",
     "turns",
+    "while",
     "worked",
 }
+
+# Allowed only as the first word of a term ("while loop", "create table"), never as the second ("fails while").
+PHRASE_START_WORDS = {"create", "while"}
 
 # A word right after one of these is a verb ("can transform vectors"), so it does not start a phrase.
 HELPER_VERBS = {"can", "could", "may", "might", "must", "should", "will", "would"}
@@ -1189,7 +1192,8 @@ def phrase_runs(text: str) -> list[list[str]]:
         tokens = re.findall(r"[A-Za-z0-9][A-Za-z0-9'\u2019-]*", clause.lower())
         run: list[str] = []
         for index in range(len(tokens) - 1):
-            phrase = f"{concept_word(tokens[index])} {concept_word(tokens[index + 1])}"
+            second = concept_word(tokens[index + 1])
+            phrase = f"{concept_word(tokens[index])} {'' if second in PHRASE_START_WORDS else second}"
             after_helper_verb = index > 0 and tokens[index - 1] in HELPER_VERBS
             if is_useful_phrase(phrase) and not after_helper_verb:
                 run.append(phrase)

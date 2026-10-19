@@ -137,8 +137,13 @@ export default function Home() {
       setProcessingJob(canceledJob);
       setNotice("Upload stopped. Add the file again when you are ready.");
       setIsBusy(false);
-    } catch {
-      setError("AccessiNote could not stop the upload. Wait for it to finish, or reload the page.");
+    } catch (caughtError) {
+      const message = caughtError instanceof Error ? caughtError.message.toLowerCase() : "";
+      setError(
+        message.includes("not found")
+          ? "AccessiNote lost track of this upload, maybe because the server restarted. Reload the page."
+          : "AccessiNote could not stop the upload. Wait for it to finish, or reload the page.",
+      );
     }
   }
 
