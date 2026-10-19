@@ -559,8 +559,11 @@ function LectureOverview({ lecture }: { lecture: LectureTimeline | null }) {
           <div key={`${item.start}-${item.title}`} className="grid grid-cols-[60px_minmax(0,1fr)] gap-3">
             <span className="text-xs font-semibold text-emerald-700">{item.start}</span>
             <div className="min-w-0 border-l border-zinc-200 pl-3">
-              <p className="truncate text-sm font-semibold text-zinc-900">{item.title}</p>
-              <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-600">{item.detail}</p>
+              <p className="break-words text-sm font-semibold text-zinc-900">{item.title}</p>
+              {/* Real parts show a short preview (the full text is in the timeline below); the placeholder steps show in full. */}
+              <p className={`mt-1 text-xs leading-5 text-zinc-600 ${timelineItems.length > 0 ? "line-clamp-2" : ""}`}>
+                {item.detail}
+              </p>
             </div>
           </div>
         ))}
@@ -601,7 +604,7 @@ function RecentTimelines({
               disabled={disabled}
               className="w-full rounded-xl border border-zinc-200 bg-white p-3 text-left transition hover:bg-zinc-50 active:translate-y-px disabled:cursor-not-allowed disabled:bg-zinc-50"
             >
-              <span className="block truncate text-sm font-semibold text-zinc-950">{item.title}</span>
+              <span className="block break-words text-sm font-semibold text-zinc-950">{item.title}</span>
               <span className="mt-1 flex flex-wrap gap-2 text-xs font-medium text-zinc-600">
                 <span>{formatSourceType(item.source_type)}</span>
                 <span>{countOf(item.chunk_count, "part", "parts")}</span>

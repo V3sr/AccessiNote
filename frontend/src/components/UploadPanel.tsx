@@ -122,8 +122,8 @@ export function UploadPanel({
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate text-xs font-semibold text-zinc-950">{label}</span>
-                    <span className="block truncate text-xs text-zinc-600">{detail}</span>
+                    <span className="block text-xs font-semibold text-zinc-950">{label}</span>
+                    <span className="block text-xs text-zinc-600">{detail}</span>
                   </span>
                 </div>
               ))}
