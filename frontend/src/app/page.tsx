@@ -201,7 +201,7 @@ export default function Home() {
   const reviewWarnings = scanReviewMessages(lecture, processingJob);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#f7f9fb] text-zinc-950">
+    <div className="min-h-screen w-full overflow-x-clip bg-[#f7f9fb] text-zinc-950">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-zinc-950 focus:shadow-soft"
